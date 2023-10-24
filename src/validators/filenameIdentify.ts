@@ -1,0 +1,177 @@
+/*
+ * filenameIdentify.ts attempts to determine which schema rules from
+ * `schema.rules.files` might apply to a given file context by looking at the
+ * files suffix then its location in the directory hierarchy, and finally at
+ * its extensions and entities. Ideally we end up with a single rule to
+ * validate against. We try to take as broad an approach to finding a single
+ * file rule as possible to generate the most possible errors for incorrectly
+ * named files. Historically a regex was applied that was pass/fail with
+ * little in the way of feed back. This way we can say hey you got the suffix
+ * correct, but the directory is slightly off, or some entities are missing,
+ * or too many are there for this rule. All while being able to point at an
+ * object in the schema for reference.
+ */
+// @ts-nocheck
+import { SEP } from '../deps/path.ts'
+import { GenericSchema, Schema } from '../types/schema.ts'
+import { BIDSContext } from '../schema/context.ts'
+import { CheckFunction } from '../types/check.ts'
+
+const CHECKS: CheckFunction[] = [
+  findRuleMatches,
+  hasMatch
+]
+
+export async function filenameIdentify(schema, context) {
+  for (const check of CHECKS) {
+    await check(schema as unknown as GenericSchema, context)
+  }
+}
+
+export function checkDirRules(schema,rulesRecord,baseDirs) {
+    Object.keys(rulesRecord)
+    .filter((key) => {
+        return (key.startsWith('rules.files.common.core') &&
+        !rulesRecord[key])
+    })
+    .map((key) => {
+        const node = schema[key]
+        if (node.directory === true && 
+            baseDirs.includes(node.path)
+            )
+            rulesRecord[key] = true
+            
+      })
+}
+
+/* In order to check for the abscence of files in addition to their validity, we
+ * need to keep a persistent rulesRecord object that contains all the file rules 
+ * from the schema, so we can record which rules were satisfied by a file and which weren't
+ */
+export function findFileRules(schema,rulesRecord) {
+    const schemaPath = 'rules.files'
+    
+    Object.keys(schema[schemaPath]).map((key) => {
+        const path = `${schemaPath}.${key}`
+        _findFileRules(schema[path], path,rulesRecord)
+      })
+
+    
+    return Promise.resolve()
+}
+
+export function _findFileRules(node, path,rulesRecord) {
+    if (
+      ('path' in node) ||
+      ('stem' in node) ||
+      (('baseDir' in node) &&
+      ('extensions' in node) &&
+      ('suffix'))
+    ) {
+      rulesRecord[path] = false
+      return
+    }
+    else {
+      Object.keys(node).map((key) => {
+        if(
+          typeof node[key] === 'object'
+        ){
+          _findFileRules(node[key], `${path}.${key}`, rulesRecord)
+        }
+      })
+    }
+  }
+
+function findRuleMatches(schema, context) {
+  const schemaPath = 'rules.files'
+  Object.keys(schema[schemaPath]).map((key) => {
+    const path = `${schemaPath}.${key}`
+    _findRuleMatches(schema[path], path, context)
+  })
+  return Promise.resolve()
+}
+
+/* Schema rules specifying valid filenames follow a variety of patterns.
+ * 'path', 'stem' or 'suffixies' contain the most unique identifying
+ * information for a rule. We don't know what kind of filename the context is,
+ * so if one of these three match the respective value in the context lets
+ * assume that this schema rule is applicable to this file.
+ */
+export function _findRuleMatches(node, path, context) {
+  if (
+    ('path' in node && context.file.name.endsWith(node.path)) ||
+    ('stem' in node && context.file.name.startsWith(node.stem)) ||
+    (('baseDir' in node && context.baseDir === node.baseDir) &&
+    ('extensions' in node && node.extensions.includes(context.extension)) &&
+    ('suffix' in node && context.suffix == node.suffix))
+  ) {
+    context.filenameRules.push(path)
+    return
+  }
+  if (
+    !('path' in node || 'stem' in node || 'baseDir' in node || 'extensions' in node || 'suffix' in node)
+  ) {
+    Object.keys(node).map((key) => {
+      if(
+        typeof node[key] === 'object'
+      ){
+        _findRuleMatches(node[key], `${path}.${key}`, context)
+      }
+    })
+  }
+}
+
+export function hasMatch(schema, context) {
+  if (
+    context.filenameRules.length === 0 &&
+    context.file.path !== '/.bidsignore'
+  ) {
+    context.issues.addNonSchemaIssue('NOT_INCLUDED', [context.file])
+  }
+
+  /* we have matched multiple rules and a datatype, lets see if we have one
+   *   rule with the same datatype, if so just use that one.
+   */
+  if (context.filenameRules.length > 1) {
+    const datatypeMatch = context.filenameRules.filter((rulePath) => {
+      if (Array.isArray(schema[rulePath].datatypes)) {
+        return schema[rulePath].datatypes.includes(context.datatype)
+      } else {
+        return false
+      }
+    })
+    if (datatypeMatch.length > 0) {
+      context.filenameRules = datatypeMatch
+    }
+  }
+
+  /* Filtering applicable rules based on datatypes failed, lets see if the
+   * entities and extensions are enough to find a single rule to use.
+   */
+  if (context.filenameRules.length > 1) {
+    const entExtMatch = context.filenameRules.filter((rulePath) => {
+      return extensionsInRule(schema, context, rulePath)
+    })
+    if (entExtMatch.length > 0) {
+      context.filenameRules = [entExtMatch[0]]
+    }
+  }
+
+  return Promise.resolve()
+}
+
+/* Test if all of a given context's extension and entities are present in a
+ * given rule. Only used to see if one rule is more applicable than another
+ * after suffix and datatype matches couldn't find only one rule.
+ */
+function extensionsInRule(
+  schema: GenericSchema,
+  context: BIDSContext,
+  path: string,
+): boolean {
+  const rule = schema[path]
+  const extInRule =
+    !rule.extensions ||
+    (rule.extensions && rule.extensions.includes(context.extension))
+  return extInRule
+}
