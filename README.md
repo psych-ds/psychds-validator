@@ -15,10 +15,29 @@ Open the terminal and input this command:
 
 `curl -fsSL https://deno.land/x/install/install.sh | sh`
 
+After installing, deno will output some instructions about how to add deno to your PATH variable (so that you can use it without writing out the entire path to the app). It will look like this:
+
+```
+export DENO_INSTALL="/Users/<your_username>/.deno"
+export PATH="$DENO_INSTALL/bin:$PATH"
+```
+
+ If you're unsure how to handle this, you can use these commands to add the lines to the .zshrc file and then source the file so the changes are reloaded:
+ (make sure to modify the command by replacing <your_username> with your actual mac username)
+
+```
+echo -e '\nexport DENO_INSTALL="/Users/<your_username>/.deno"\nexport PATH="$DENO_INSTALL/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+You can test to see if the commands have worked by typing `deno --version` and confirming that deno returns a series of version numbers instead of something like 'deno could not be found'.
+
 ### PC
 Open powershell (cmd.exe) and input this command:
 
 `irm https://deno.land/install.ps1 | iex`
+
+
 
 ## Usage
 To run the CLI validator, navigate to the psychds-validator directory and input this command:
