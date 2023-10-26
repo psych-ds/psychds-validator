@@ -1,18 +1,8 @@
 ---
-name: scoping.md
-about: Raise a point, ask a question, or provide an idea concerning the scope and   design
-  of the psych-DS Validator
-title: ''
-labels: ''
-assignees: ''
-
----
-
----
 name: Scoping Issue
 about: Raise a point, ask a question, or provide an idea concerning the scope and
   design of the psych-DS Validator
-title: ''
+title: 'Scoping Issue'
 labels: Scoping
 assignees: bleonar5
 
