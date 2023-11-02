@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { DatasetIssues } from '../issues/datasetIssues.ts'
 
 export interface SubjectMetadata {
@@ -20,12 +21,14 @@ export interface SummaryOutput {
   pet: Record<string, any>
   dataTypes: string[]
   schemaVersion: string
+  suggestedColumns: string[]
 }
 
 /**
  * The output of a validation run
  */
 export interface ValidationResult {
+  valid: boolean
   issues: DatasetIssues
   summary: SummaryOutput
   derivativesSummary?: Record<string, ValidationResult>

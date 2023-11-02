@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { ValidatorOptions } from '../setup/options.ts'
 
 export interface ContextDataset {
@@ -17,6 +18,7 @@ export interface Context {
   suffix: string
   sidecar: object
   validColumns: object
+  suggestedColumns: string[]
   json: object
   
 }

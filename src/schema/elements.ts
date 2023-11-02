@@ -6,6 +6,7 @@ export interface psychDSElements {
     extension: string
 }
 
+//split filename into constituent parts
 export function _readElements(filename: string): psychDSElements {
     let extension = ''
     let suffix = ''

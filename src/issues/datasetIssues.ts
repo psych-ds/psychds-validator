@@ -82,6 +82,7 @@ export class DatasetIssues extends Map<string, Issue> {
     return false
   }
 
+  //add issue that doesn't arise from schema def. TODO: eliminate this or reduce to just "ELEMENT_NOT_INCLUDED"
   addNonSchemaIssue(key: string, files: Array<IssueFile>) {
     if (key in nonSchemaIssues) {
       this.add({
@@ -99,7 +100,7 @@ export class DatasetIssues extends Map<string, Issue> {
 
   fileInIssues(path: string): Issue[] {
     const matchingIssues = []
-    for (const [key, issue] of this) {
+    for (const [_, issue] of this) {
       if (issue.files.get(path)) {
         matchingIssues.push(issue)
       }
@@ -126,7 +127,7 @@ export class DatasetIssues extends Map<string, Issue> {
       errors: [],
       warnings: [],
     }
-    for (const [key, issue] of this) {
+    for (const [_, issue] of this) {
       const outputIssue: IssueOutput = {
         severity: issue.severity,
         key: issue.key,

@@ -11,15 +11,12 @@
  * or too many are there for this rule. All while being able to point at an
  * object in the schema for reference.
  */
-// @ts-nocheck
-import { SEP } from '../deps/path.ts'
-import { GenericSchema, Schema } from '../types/schema.ts'
-import { BIDSContext } from '../schema/context.ts'
+// @ts-nocheck: untyped functions
+import { GenericSchema } from '../types/schema.ts'
 import { CheckFunction } from '../types/check.ts'
 
 const CHECKS: CheckFunction[] = [
-  findRuleMatches,
-  hasMatch
+  findRuleMatches
 ]
 
 export async function filenameIdentify(schema, context) {
@@ -56,6 +53,8 @@ export function findFileRules(schema,rulesRecord) {
         _findFileRules(schema[path], path,rulesRecord)
       })
 
+
+
     
     return Promise.resolve()
 }
@@ -88,6 +87,12 @@ function findRuleMatches(schema, context) {
     const path = `${schemaPath}.${key}`
     _findRuleMatches(schema[path], path, context)
   })
+  if (
+    context.filenameRules.length === 0 &&
+    context.file.path !== '/.bidsignore'
+  ) {
+    context.issues.addNonSchemaIssue('NOT_INCLUDED', [context.file])
+  }
   return Promise.resolve()
 }
 
@@ -103,7 +108,7 @@ export function _findRuleMatches(node, path, context) {
     ('stem' in node && context.file.name.startsWith(node.stem)) ||
     (('baseDir' in node && context.baseDir === node.baseDir) &&
     ('extensions' in node && node.extensions.includes(context.extension)) &&
-    ('suffix' in node && context.suffix == node.suffix))
+    ('suffix' in node && context.suffix === node.suffix))
   ) {
     context.filenameRules.push(path)
     return
@@ -119,59 +124,4 @@ export function _findRuleMatches(node, path, context) {
       }
     })
   }
-}
-
-export function hasMatch(schema, context) {
-  if (
-    context.filenameRules.length === 0 &&
-    context.file.path !== '/.bidsignore'
-  ) {
-    context.issues.addNonSchemaIssue('NOT_INCLUDED', [context.file])
-  }
-
-  /* we have matched multiple rules and a datatype, lets see if we have one
-   *   rule with the same datatype, if so just use that one.
-   */
-  if (context.filenameRules.length > 1) {
-    const datatypeMatch = context.filenameRules.filter((rulePath) => {
-      if (Array.isArray(schema[rulePath].datatypes)) {
-        return schema[rulePath].datatypes.includes(context.datatype)
-      } else {
-        return false
-      }
-    })
-    if (datatypeMatch.length > 0) {
-      context.filenameRules = datatypeMatch
-    }
-  }
-
-  /* Filtering applicable rules based on datatypes failed, lets see if the
-   * entities and extensions are enough to find a single rule to use.
-   */
-  if (context.filenameRules.length > 1) {
-    const entExtMatch = context.filenameRules.filter((rulePath) => {
-      return extensionsInRule(schema, context, rulePath)
-    })
-    if (entExtMatch.length > 0) {
-      context.filenameRules = [entExtMatch[0]]
-    }
-  }
-
-  return Promise.resolve()
-}
-
-/* Test if all of a given context's extension and entities are present in a
- * given rule. Only used to see if one rule is more applicable than another
- * after suffix and datatype matches couldn't find only one rule.
- */
-function extensionsInRule(
-  schema: GenericSchema,
-  context: BIDSContext,
-  path: string,
-): boolean {
-  const rule = schema[path]
-  const extInRule =
-    !rule.extensions ||
-    (rule.extensions && rule.extensions.includes(context.extension))
-  return extInRule
 }

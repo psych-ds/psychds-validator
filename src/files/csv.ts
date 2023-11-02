@@ -1,6 +1,6 @@
 /*
- * TSV
- * Module for parsing TSV
+ * CSV
+ * Module for parsing CSV
  */
 import { ColumnsMap } from '../types/columns.ts'
 
@@ -9,6 +9,7 @@ const normalizeEOL = (str: string): string =>
 // Typescript resolved `row && !/^\s*$/.test(row)` as `string | boolean`
 const isContentfulRow = (row: string): boolean => !!(row && !/^\s*$/.test(row))
 
+// gets columns from CSV
 export function parseCSV(contents: string) {
   const columns = new ColumnsMap()
   const rows: string[][] = normalizeEOL(contents)
