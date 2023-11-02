@@ -1,15 +1,11 @@
 import { CheckFunction, RuleCheckFunction } from '../types/check.ts'
 import { DatasetIssues } from '../issues/datasetIssues.ts'
 import { psychDSContext } from '../schema/context.ts'
-import { GenericSchema, Schema, Format } from '../types/schema.ts'
+import { GenericSchema } from '../types/schema.ts'
 import { SEP } from '../deps/path.ts'
-import { hasProp } from '../utils/objectPathHandler.ts'
 import { Severity } from '../types/issues.ts'
 
-const sidecarExtensions = ['.json']
-
 const CHECKS: CheckFunction[] = [
-  atRoot,
   checkRules,
 ]
 
@@ -31,21 +27,11 @@ export function isAtRoot(context: psychDSContext) {
 }
 
 
-export function atRoot(schema: GenericSchema, context: psychDSContext) {
-  /*
-  if (fileIsAtRoot && !sidecarExtensions.includes(context.extension)) {
-    // create issue for data file in root of dataset
-  }
-  */
-  return Promise.resolve()
-}
-
-
 const ruleChecks: RuleCheckFunction[] = [
   extensionMismatch,
 ]
 
-async function checkRules(schema: GenericSchema, context: psychDSContext) {
+export function checkRules(schema: GenericSchema, context: psychDSContext) {
   if (context.filenameRules.length === 1) {
     for (const check of ruleChecks) {
       check(
@@ -87,7 +73,7 @@ async function checkRules(schema: GenericSchema, context: psychDSContext) {
   return Promise.resolve()
 }
 
-async function extensionMismatch(
+export function extensionMismatch(
   path: string,
   schema: GenericSchema,
   context: psychDSContext,

@@ -1,4 +1,4 @@
-import { SummaryOutput, SubjectMetadata } from '../types/validation-result.ts'
+import { SummaryOutput } from '../types/validation-result.ts'
 import { psychDSContext } from '../schema/context.ts'
 
 
@@ -6,9 +6,11 @@ export class Summary {
   totalFiles: number
   size: number
   dataProcessed: boolean
+  // deno-lint-ignore no-explicit-any
   pet: Record<string, any>
   dataTypes: Set<string>
   schemaVersion: string
+  suggestedColumns: string[]
   constructor() {
     this.dataProcessed = false
     this.totalFiles = -1
@@ -16,6 +18,7 @@ export class Summary {
     this.pet = {}
     this.dataTypes = new Set()
     this.schemaVersion = ''
+    this.suggestedColumns = []
   }
   async update(context: psychDSContext): Promise<void> {
     if (context.file.path.startsWith('/derivatives') && !this.dataProcessed) {
@@ -29,10 +32,6 @@ export class Summary {
       this.dataTypes.add(context.datatype)
     }
 
-    if (context.extension === '.json') {
-      const parsedJson = await context.json
-    }
-
   }
 
   formatOutput(): SummaryOutput {
@@ -43,6 +42,7 @@ export class Summary {
       pet: this.pet,
       dataTypes: Array.from(this.dataTypes),
       schemaVersion: this.schemaVersion,
+      suggestedColumns: this.suggestedColumns
     }
   }
 }

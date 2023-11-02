@@ -10,7 +10,7 @@ import { DatasetIssues } from '../issues/datasetIssues.ts'
 import { Summary } from '../summary/summary.ts'
 import { loadSchema } from '../setup/loadSchema.ts'
 import { psychDSFile } from '../types/file.ts'
-import { psychDSContext, psychDSContextDataset } from '../schema/context.ts'
+import { psychDSContextDataset } from '../schema/context.ts'
 import { walkFileTree } from '../schema/walk.ts'
 import { GenericSchema } from '../types/schema.ts'
 
@@ -52,7 +52,7 @@ export async function validate(
 
   // generate rulesRecord object to keep track of which schema rules 
   // are not satisfied by a file in the dataset.
-  let rulesRecord: Record<string,boolean> = {}
+  const rulesRecord: Record<string,boolean> = {}
   findFileRules(schema,rulesRecord)
 
   for await (const context of walkFileTree(fileTree, issues, dsContext)) {
@@ -62,6 +62,7 @@ export async function validate(
     }
     if(context.extension === ".csv"){
         await context.asyncLoads()
+        summary.suggestedColumns  = [...new Set([...summary.suggestedColumns,...Object.keys(context.columns)])]
         //TODO: this should really just be part of loadSidecar()
         context.loadValidColumns()
     }
@@ -86,7 +87,8 @@ export async function validate(
   checkDirRules(schema,rulesRecord,dsContext.baseDirs)
   checkMissingRules(schema as unknown as GenericSchema,rulesRecord,issues)
 
-  let output: ValidationResult = {
+  const output: ValidationResult = {
+    valid: [...issues.values()].filter(issue => issue.severity === "error").length === 0,
     issues,
     summary: summary.formatOutput(),
   }

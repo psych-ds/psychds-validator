@@ -24,6 +24,7 @@ export function consoleFormat(
   const output = []
   const errors = [...result.issues.values()].filter(issue => issue.severity === "error")
   const warnings = [...result.issues.values()].filter(issue => issue.severity === "warning")
+  const csv_issue = [...result.issues.values()].filter(issue => issue.key === "CSV_COLUMN_MISSING").length === 1
   if (errors.length === 0) {
     output.push(colors.green(`
         **********************************************
@@ -41,6 +42,12 @@ export function consoleFormat(
     if (options?.showWarnings){
         warnings.forEach((issue) => output.push(formatIssue(issue, options)))
     }
+  }
+  if(csv_issue){
+    output.push('')
+    output.push(`There was an issue with your variableMeasured value. Here is a suggested value:`)
+    output.push('')
+    output.push(JSON.stringify(result.summary.suggestedColumns))
   }
   output.push('')
   output.push(formatSummary(result.summary))
@@ -96,6 +103,7 @@ function formatIssue(issue: Issue, options?: LoggingOptions): string {
     )
     output.push('')
   }
+
   return output.join('\n')
 }
 

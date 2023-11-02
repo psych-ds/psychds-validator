@@ -14,9 +14,11 @@ import {
   export class psychDSContextDataset implements ContextDataset {
     dataset_description: Record<string, unknown>
     options?: ValidatorOptions
+    // deno-lint-ignore no-explicit-any
     files: any[]
     baseDirs: string[]
     tree: object
+    // deno-lint-ignore no-explicit-any
     ignored: any[]
   
     constructor(options?: ValidatorOptions, description = {}) {
@@ -56,6 +58,7 @@ import {
     datatype: string
     sidecar: object
     columns: ColumnsMap
+    suggestedColumns: string[]
     validColumns: string[]
   
     constructor(
@@ -79,13 +82,15 @@ import {
       this.sidecar = dsContext ? dsContext.dataset_description : {}
       this.validColumns = []
       this.columns = new ColumnsMap()
+      this.suggestedColumns = []
     }
   
+    // deno-lint-ignore no-explicit-any
     get json(): Promise<Record<string, any>> {
       return this.file
         .text()
         .then((text) => JSON.parse(text))
-        .catch((error) => {})
+        .catch((_error) => {})
     }
     get path(): string {
       return this.file.path
@@ -109,7 +114,8 @@ import {
         fileTree = this.fileTree
       }
       const validSidecars = fileTree.files.filter((file) => {
-        const { keywords, suffix, extension } = readElements(file.name)
+        const { suffix, extension } = readElements(file.name)
+        
         return (
           // TODO: Possibly better to just specify that files matching any rule from the metadata.yaml file are sidecars
           (
@@ -127,7 +133,8 @@ import {
           (
             extension === '.json' &&
             file.name.split('.')[0] == "file_metadata"
-          )
+          ) 
+           
         )
       })
       if (validSidecars.length > 1) {
@@ -149,7 +156,7 @@ import {
         const json = await validSidecars[0]
           .text()
           .then((text) => JSON.parse(text))
-          .catch((error) => {})
+          .catch((_error) => {})
         this.sidecar = { ...this.sidecar, ...json }
       }
       const nextDir = fileTree.directories.find((directory) => {
@@ -160,6 +167,7 @@ import {
       }
     }
   
+    // get validColumns from metadata sidecar
     loadValidColumns() {
         if (this.extension !== '.csv') {
             return
@@ -183,6 +191,7 @@ import {
         this.validColumns = validColumns
     }
   
+    // get columns from csv file
     async loadColumns(): Promise<void> {
       if (this.extension !== '.csv') {
         return
