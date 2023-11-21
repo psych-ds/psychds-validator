@@ -108,6 +108,7 @@ export class psychDSFileDeno implements psychDSFile {
   }
 }
 
+/* recursive function for readFileTree, crawls through dataset */
 export async function _readFileTree(
   rootPath: string,
   relativePath: string,

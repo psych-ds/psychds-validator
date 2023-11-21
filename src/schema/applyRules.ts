@@ -2,11 +2,9 @@ import {
     GenericRule,
     GenericSchema,
     SchemaFields,
-    SchemaTypeLike,
   } from '../types/schema.ts'
   import { Severity } from '../types/issues.ts'
   import { psychDSContext } from './context.ts'
-  import { expressionFunctions } from './expressionLanguage.ts'
   import { logger } from '../utils/logger.ts'
   import { memoize } from '../utils/memoize.ts'
   
@@ -33,9 +31,6 @@ import {
     if (!schemaPath) {
       schemaPath = 'schema'
     }
-    Object.assign(context, expressionFunctions)
-    // @ts-expect-error
-    context.exists.bind(context)
     for (const key in schema) {
       if (!(schema[key].constructor === Object)) {
         continue
@@ -59,9 +54,11 @@ import {
     return Promise.resolve()
   }
   
+  // deno-lint-ignore ban-types
   const evalConstructor = (src: string): Function =>
     new Function('context', `with (context) { return ${src} }`)
   const safeHas = () => true 
+  // deno-lint-ignore no-explicit-any
   const safeGet = (target: any, prop: any) =>
     prop === Symbol.unscopables ? undefined : target[prop]
   
@@ -83,7 +80,7 @@ import {
    * We associate theys keys from a rule object to a function adds an
    * issue to the context if the rule evaluation fails.
    */
-  // @ts-expect-error
+  // @ts-expect-error: most props not needed
   const evalMap: Record<
     keyof GenericRule,
     (
@@ -93,7 +90,6 @@ import {
       schemaPath: string,
     ) => boolean | void
   > = {
-    checks: evalRuleChecks,
     columns: evalColumns,
     fields: evalJsonCheck,
   }
@@ -116,7 +112,7 @@ import {
     Object.keys(rule)
       .filter((key) => key in evalMap)
       .map((key) => {
-        //@ts-expect-error
+        //@ts-expect-error: most props not needed
         evalMap[key](rule, context, schema, schemaPath)
       })
   }
@@ -125,71 +121,15 @@ import {
     return statements.every((x) => evalCheck(x, context))
   }
   
-  /**
-   * Classic rules interpreted like selectors. Examples in specification:
-   * schema/rules/checks/*
-   */
-  function evalRuleChecks(
-    rule: GenericRule,
-    context: psychDSContext,
-    schema: GenericSchema,
-    schemaPath: string,
-  ): boolean {
-    if (rule.checks && !mapEvalCheck(rule.checks, context)) {
-      if (rule.issue?.code && rule.issue?.message) {
-        context.issues.add({
-          key: rule.issue.code,
-          reason: rule.issue.message,
-          files: [{ ...context.file, evidence: schemaPath }],
-          severity: rule.issue.level as Severity,
-        })
-      } else {
-        context.issues.addNonSchemaIssue('CHECK_ERROR', [
-          { ...context.file, evidence: schemaPath },
-        ])
-      }
-    }
-    return true
-  }
-  
-  /**
-   * schema.formats contains named types with patterns. Many entries in
-   * schema.objects have a format to constrain its possible values. Presently
-   * this is written with tsv's in mind. The blanket n/a pass may be inappropriate
-   * for other type checks. filenameValidate predates this but does similar type
-   * checking for entities.
-   */
-  function schemaObjectTypeCheck(
-    schemaObject: SchemaTypeLike,
-    value: string,
-    schema: GenericSchema,
-  ): boolean {
-    // always allow n/a?
-    if (value === 'n/a') {
-      return true
-    }
-    if ('anyOf' in schemaObject) {
-      return schemaObject.anyOf.some((x) =>
-        schemaObjectTypeCheck(x, value, schema),
-      )
-    }
-    if ('enum' in schemaObject && schemaObject.enum) {
-      return schemaObject.enum.some((x) => x === value)
-    }
-    // @ts-expect-error
-    const format = schema.objects.formats[schemaObject.type]
-    const re = new RegExp(`^${format.pattern}$`)
-    return re.test(value)
-  }
   
   /**
    * Columns headers must all be included under the variableMeasured metadata property
    * The "columns" property on schema rules indicates that this is required
    */
   function evalColumns(
-    rule: GenericRule,
+    _rule: GenericRule,
     context: psychDSContext,
-    schema: GenericSchema,
+    _schema: GenericSchema,
     schemaPath: string,
   ): void {
     if (context.extension !== '.csv') return
@@ -226,7 +166,7 @@ import {
   ): void {
     for (const [key, requirement] of Object.entries(rule.fields)) {
       const severity = getFieldSeverity(requirement, context)
-      //@ts-expect-error
+      //@ts-expect-error: metadata presence assumed
       const keyName = schema.objects.metadata[key].name
       if (severity && severity !== 'ignore' && !(keyName in context.sidecar)) {
         if (requirement.issue?.code && requirement.issue?.message) {
@@ -275,7 +215,7 @@ import {
         const match = addendumRegex.exec(requirement.level_addendum)
         if (match && match.length === 4) {
           const [_, addendumLevel, key, value] = match
-          // @ts-expect-error
+          // @ts-expect-error: sidecar assumed
           if (key in context.sidecar && context.sidecar[key] === value) {
             severity = levelToSeverity[addendumLevel]
           }

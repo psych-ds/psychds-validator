@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { DatasetIssues } from '../issues/datasetIssues.ts'
 
 export interface SubjectMetadata {
@@ -19,6 +20,7 @@ export interface SummaryOutput {
   dataProcessed: boolean
   dataTypes: string[]
   schemaVersion: string
+  suggestedColumns: string[]
 }
 
 /**
