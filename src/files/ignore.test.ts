@@ -11,6 +11,7 @@ Deno.test('Deno implementation of FileIgnoreRules', async (t) => {
       '/participants.tsv',
       '/.git/HEAD',
       '/sub-01/anat/non-bidsy-file.xyz',
+      '/data/study-1_data.csv'
     ]
     const rules = ['.git', '**/*.xyz']
     const ignore = new FileIgnoreRules(rules)
@@ -19,8 +20,8 @@ Deno.test('Deno implementation of FileIgnoreRules', async (t) => {
       '/sub-01/anat/sub-01_T1w.nii.gz',
       '/dataset_description.json',
       '/README',
-      '/CHANGES',
       '/participants.tsv',
+      '/data/study-1_data.csv'
     ])
   })
 })

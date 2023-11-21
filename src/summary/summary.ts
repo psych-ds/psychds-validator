@@ -1,4 +1,4 @@
-import { SummaryOutput, SubjectMetadata } from '../types/validation-result.ts'
+import { SummaryOutput } from '../types/validation-result.ts'
 import { psychDSContext } from '../schema/context.ts'
 
 
@@ -6,14 +6,12 @@ export class Summary {
   totalFiles: number
   size: number
   dataProcessed: boolean
-  pet: Record<string, any>
   dataTypes: Set<string>
   schemaVersion: string
   constructor() {
     this.dataProcessed = false
     this.totalFiles = -1
     this.size = 0
-    this.pet = {}
     this.dataTypes = new Set()
     this.schemaVersion = ''
   }
@@ -29,10 +27,6 @@ export class Summary {
       this.dataTypes.add(context.datatype)
     }
 
-    if (context.extension === '.json') {
-      const parsedJson = await context.json
-    }
-
   }
 
   formatOutput(): SummaryOutput {
@@ -40,7 +34,6 @@ export class Summary {
       totalFiles: this.totalFiles,
       size: this.size,
       dataProcessed: this.dataProcessed,
-      pet: this.pet,
       dataTypes: Array.from(this.dataTypes),
       schemaVersion: this.schemaVersion,
     }

@@ -26,7 +26,6 @@ Deno.test('applyRules test', async(t) => {
         context.validColumns = ["A1","A2","A3","A4","A5","C1","C2","C3","C4","C5","E1","E2","E3","E4","E5","N1","N2","N3","N4","N5","O1","O2","O3","O4","O5","gender","education","age"]
 
         await applyRules(schema as unknown as GenericSchema,context)
-        console.log(context.issues)
         assertEquals(context.issues.has('CSV_COLUMN_MISSING'),false)
     })
     await t.step('Columns Not Found', async () => {
@@ -47,15 +46,12 @@ Deno.test('applyRules test', async(t) => {
         context.dataset.dataset_description.variableMeasured = []
         context.validColumns = []
         await applyRules(schema as unknown as GenericSchema,context)
-        
-        console.log(context)
         assertEquals(context.issues.has('JSON_KEY_REQUIRED'),true)
     })
     await t.step('Fields missing', async () => {
         const ddFile = fileTree.files.find(
             (file: psychDSFile) => file.name === 'dataset_description.json',
           )
-        console.log(ddFile,'ye')
           let dsContext
           if (ddFile) {
             const description = await ddFile.text().then((text) => JSON.parse(text))
@@ -70,7 +66,6 @@ Deno.test('applyRules test', async(t) => {
         const context = new psychDSContext(fileTree, file, issues,dsContext)
         await context.asyncLoads()
         context.validColumns = []
-        console.log(context)
         await applyRules(schema as unknown as GenericSchema,context)
         
         

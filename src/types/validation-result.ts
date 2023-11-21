@@ -17,7 +17,6 @@ export interface SummaryOutput {
   totalFiles: number
   size: number
   dataProcessed: boolean
-  pet: Record<string, any>
   dataTypes: string[]
   schemaVersion: string
 }
@@ -26,6 +25,7 @@ export interface SummaryOutput {
  * The output of a validation run
  */
 export interface ValidationResult {
+  valid: boolean
   issues: DatasetIssues
   summary: SummaryOutput
   derivativesSummary?: Record<string, ValidationResult>
