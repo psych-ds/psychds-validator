@@ -23,13 +23,16 @@ Open the terminal and input this command:
 
 After installing, deno will output some instructions about how to add deno to your PATH variable (so that you can use it without writing out the entire path to the app). It will look like this:
 
+(make sure to modify the command by replacing <your_username> with your actual mac username)
+
 ```
 export DENO_INSTALL="/Users/<your_username>/.deno"
 export PATH="$DENO_INSTALL/bin:$PATH"
 ```
 
- If you're unsure how to handle this, you can use these commands to add the lines to the .zshrc file and then source the file so the changes are reloaded:
- (make sure to modify the command by replacing <your_username> with your actual mac username)
+If you're unsure how to handle this, you can use these commands to add the lines to the .zshrc file and then source the file so the changes are reloaded:
+
+(The point of adding these commands to the .zshrc file instead of just running them directly is that, if you run them directly, they will only affect your current terminal session. By adding them to .zshrc, they will apply every time you open a new terminal)
 
 ```
 echo -e '\nexport DENO_INSTALL="/Users/<your_username>/.deno"\nexport PATH="$DENO_INSTALL/bin:$PATH"' >> ~/.zshrc
@@ -54,6 +57,11 @@ To run the CLI validator, navigate to the psychds-validator directory and input 
 `deno run --allow-net --allow-read --allow-env src/psychds-validator.ts <input_dataset_to_validate>`
 
 By default, the validator only outputs errors that it finds in the dataset. To show warnings as well, add the `--showWarnings` tag to the end of the command.
+
+## Testing
+To run the testing suite for the application, navigate to the base directory and run the command:
+
+`deno test --allow-net --allow-read --allow-env`
 
 ## Basis of the Code
 The core infrastructure is derived explicitly from the [BIDS Deno-based CLI validator](https://github.com/bids-standard/bids-validator/tree/master/bids-validator/src).
