@@ -55,6 +55,11 @@ To run the CLI validator, navigate to the psychds-validator directory and input 
 
 By default, the validator only outputs errors that it finds in the dataset. To show warnings as well, add the `--showWarnings` tag to the end of the command.
 
+## Testing
+To run the testing suite for the application, navigate to the base directory and run the command:
+
+`deno test --allow-net --allow-read --allow-env`
+
 ## Basis of the Code
 The core infrastructure is derived explicitly from the [BIDS Deno-based CLI validator](https://github.com/bids-standard/bids-validator/tree/master/bids-validator/src).
 
