@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-unused-vars
 // @ts-nocheck This is an NPM module we depend on forked for Deno
 // See https://github.com/kaelzhang/node-ignore/blob/master/index.js and following license text
 /**

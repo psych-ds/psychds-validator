@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 export const memoize = <T>(
     fn: (...args: any[]) => T,
   ): ((...args: any[]) => T) => {
