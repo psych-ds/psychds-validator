@@ -18,7 +18,6 @@ export interface SummaryOutput {
   totalFiles: number
   size: number
   dataProcessed: boolean
-  pet: Record<string, any>
   dataTypes: string[]
   schemaVersion: string
   suggestedColumns: string[]

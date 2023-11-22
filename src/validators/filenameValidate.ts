@@ -31,7 +31,7 @@ const ruleChecks: RuleCheckFunction[] = [
   extensionMismatch,
 ]
 
-export function checkRules(schema: GenericSchema, context: psychDSContext) {
+export async function checkRules(schema: GenericSchema, context: psychDSContext) {
   if (context.filenameRules.length === 1) {
     for (const check of ruleChecks) {
       check(
@@ -73,7 +73,7 @@ export function checkRules(schema: GenericSchema, context: psychDSContext) {
   return Promise.resolve()
 }
 
-export function extensionMismatch(
+export async function extensionMismatch(
   path: string,
   schema: GenericSchema,
   context: psychDSContext,
