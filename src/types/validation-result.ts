@@ -1,4 +1,3 @@
-// deno-lint-ignore-file no-explicit-any
 import { DatasetIssues } from '../issues/datasetIssues.ts'
 
 export interface SubjectMetadata {
