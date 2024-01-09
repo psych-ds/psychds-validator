@@ -14,6 +14,7 @@ import { psychDSContextDataset } from '../schema/context.ts'
 import { walkFileTree } from '../schema/walk.ts'
 import { GenericSchema } from '../types/schema.ts'
 
+
 const CHECKS: CheckFunction[] = [
     emptyFile,
     filenameIdentify,
@@ -32,7 +33,7 @@ export async function validate(
   const summary = new Summary()
   const schema = await loadSchema(options.schema)
   summary.schemaVersion = schema.schema_version
-
+  
   /* There should be a dataset_description in root, this will tell us if we
    * are dealing with a derivative dataset
    */
@@ -42,10 +43,18 @@ export async function validate(
 
   let dsContext
   if (ddFile) {
-    const description = await ddFile.text().then((text) => JSON.parse(text))
-    //console.log(description)
-    dsContext = new psychDSContextDataset(options, description)
-    //console.log(dsContext)
+    try{
+      const description = await ddFile.text().then((text) => JSON.parse(text))
+      dsContext = new psychDSContextDataset(options, description)
+    }
+    catch(_error){
+      dsContext = new psychDSContextDataset(options)
+      issues.addNonSchemaIssue(
+        'INVALID_JSON_FORMATTING',
+        [ddFile]
+      )
+    }
+  
   } else {
     dsContext = new psychDSContextDataset(options)
   }
@@ -60,11 +69,9 @@ export async function validate(
     if (context.file.ignored) {
       continue
     }
+    await context.asyncLoads()
     if(context.extension === ".csv"){
-        await context.asyncLoads()
         summary.suggestedColumns  = [...new Set([...summary.suggestedColumns,...Object.keys(context.columns)])]
-        //TODO: this should really just be part of loadSidecar()
-        context.loadValidColumns()
     }
         
     // Run majority of checks
@@ -92,7 +99,5 @@ export async function validate(
     issues,
     summary: summary.formatOutput(),
   }
-  
   return output
-  
 }
