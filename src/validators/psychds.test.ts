@@ -63,6 +63,7 @@ Deno.test('test validate (valid datasets)', async (t) => {
         const absolutePath = resolve(PATH)
         const tree = await readFileTree(absolutePath)
         const schemaResult = await validate(tree, {datasetPath:PATH} as ValidatorOptions)
+        
         assertEquals(schemaResult.valid,false)
       })
 
