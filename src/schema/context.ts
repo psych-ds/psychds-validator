@@ -10,6 +10,9 @@ import {
   import { parseCSV } from '../files/csv.ts'
   import { ValidatorOptions } from '../setup/options.ts'
   import { logger } from '../utils/logger.ts'
+  import jsonld from "npm:jsonld";
+  import { IssueFile } from "../types/issues.ts";
+
   
   export class psychDSContextDataset implements ContextDataset {
     dataset_description: Record<string, unknown>
@@ -30,14 +33,6 @@ import {
       if (options) {
         this.options = options
       }
-      if (
-        !this.dataset_description.DatasetType &&
-        this.dataset_description.GeneratedBy
-      ) {
-        this.dataset_description.DatasetType = 'derivative'
-      } else if (!this.dataset_description.DatasetType) {
-        this.dataset_description.DatasetType = 'raw'
-      }
     }
   }
   
@@ -57,6 +52,7 @@ import {
     dataset: ContextDataset
     datatype: string
     sidecar: object
+    expandedSidecar: object
     columns: ColumnsMap
     suggestedColumns: string[]
     validColumns: string[]
@@ -80,6 +76,7 @@ import {
       this.dataset = dsContext ? dsContext : defaultDsContext
       this.datatype = ''
       this.sidecar = dsContext ? dsContext.dataset_description : {}
+      this.expandedSidecar = {}
       this.validColumns = []
       this.columns = new ColumnsMap()
       this.suggestedColumns = []
@@ -112,6 +109,7 @@ import {
     async loadSidecar(fileTree?: FileTree) {
       if (!fileTree) {
         fileTree = this.fileTree
+
       }
       const validSidecars = fileTree.files.filter((file) => {
         const { suffix, extension } = readElements(file.name)
@@ -156,7 +154,12 @@ import {
         const json = await validSidecars[0]
           .text()
           .then((text) => JSON.parse(text))
-          .catch((_error) => {})
+          .catch((_error) => {
+            this.issues.addNonSchemaIssue(
+              'INVALID_JSON_FORMATTING',
+              [validSidecars[0]]
+            )
+          })
         this.sidecar = { ...this.sidecar, ...json }
       }
       const nextDir = fileTree.directories.find((directory) => {
@@ -165,29 +168,46 @@ import {
       if (nextDir) {
         await this.loadSidecar(nextDir)
       }
+      else{
+        //moved getExpandedSidecar to the end of loadSidecar since it is asyncronous, subsequent to 
+        //the content of loadSidecar, and necessary for loadValidColumns. previous implementation had them
+        //all running in parallel, which caused issues.
+        this.expandedSidecar = await this.getExpandedSidecar()
+        this.loadValidColumns()
+      }
     }
   
     // get validColumns from metadata sidecar
+    // used to determined which columns can/must appear within csv headers
     loadValidColumns() {
         if (this.extension !== '.csv') {
             return
           }
-
-        const variableMeasured = ('variableMeasured' in this.sidecar) ? this.sidecar.variableMeasured : this.dataset.dataset_description.variableMeasured
-        if(!variableMeasured){
+        //TODO:possibly redundant (could maybe be stored in one place)
+        const nameSpace = "http://schema.org/"
+        //if there's no variableMeasured property, then the valid column headers cannot be determined
+        if(!(`${nameSpace}variableMeasured`in this.expandedSidecar)){
             return
         }
         
         let validColumns :string[] = []
 
-        for(const variable of variableMeasured as Array<string|Record<string,string>>){
-            if(typeof variable === "string"){
-                validColumns = [...validColumns,variable]
-            } else {
-                validColumns = [...validColumns,variable['name']]
+        for(const variable of this.expandedSidecar[`${nameSpace}variableMeasured`] as object[]){
+            //jsonld.expand turns string values in json into untyped objects with @value keys
+            if('@value' in variable)
+              validColumns = [...validColumns,variable['@value'] as string]
+            else{
+              if(`${nameSpace}name` in variable){
+                const subVar = (variable[`${nameSpace}name`] as object[])[0]
+                if('@value' in subVar)
+                  validColumns = [...validColumns,subVar['@value'] as string]
+              }
+              //TODO: find most logical way to throw error when PropertyValue object 
+              // does not have "name" as a property. Ideally, should also detect whether the 
+              // object IS a PropertyValue or one of its subclasses. may need to locate this 
+              // whole function downstream of schemaCheck for this reason
             }
         }
-
         this.validColumns = validColumns
     }
   
@@ -208,11 +228,38 @@ import {
         })
       return
     }
+
+    async getExpandedSidecar(){
+      try{
+        //account for possibility of both http and https in metadata context
+        if('@context' in this.sidecar)
+          (this.sidecar['@context'] as string).replace('https','http')
+        //use the jsonld library to expand metadata json and remove context.
+        //in addition to adding the appropriate namespace (e.g. http://schema.org)
+        //to all keys within the json, it also throws a variety of errors for improper JSON-LD syntax,
+        //which mostly all pertain to improper usages of privileged @____ keywords
+        const exp = await jsonld.expand(this.sidecar)
+        return exp[0]
+      }
+      catch(error){
+        //format thrown error and pipe into validator issues
+        const issueFile = {
+          ...this.file,
+          evidence:JSON.stringify(error.details.context)
+        } as IssueFile
+        this.issues.add({
+          key:'INVALID_JSONLD_SYNTAX',
+          reason:`${error.message.split(';')[1]}`,
+          severity:'error',
+          files:[issueFile]
+        })
+        return {}
+      }
+    }
   
     async asyncLoads() {
       await Promise.allSettled([
         this.loadSidecar(),
-        this.loadValidColumns(),
         this.loadColumns(),
       ])
     }

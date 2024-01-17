@@ -31,8 +31,7 @@ Deno.test('file tree walking', async (t) => {
     }
     assertEquals(
       accumulator,
-      13,
-      'visited file count does not match expected value',
+      12
     )
   })
 })

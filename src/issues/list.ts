@@ -61,8 +61,8 @@ export const filenameIssues: IssueDefinitionRecord = {
     reason:
       'Files with such naming scheme are not part of psych-DS specification. ' +
       'Under the rules of psych-DS, non-specified files are allowed to be included, ' +
-      'but if you would like to avoid receiving this warning moving forward, you can include ' +
-      'in your ".psychdsignore" file' 
+      'but if you would like to avoid receiving this warning moving forward, you can add ' +
+      'the following lines into your ".psychdsignore" file' 
   },
   MISSING_REQUIRED_ELEMENT: {
     severity: 'error',
@@ -73,6 +73,44 @@ export const filenameIssues: IssueDefinitionRecord = {
     severity: 'error',
     reason: 'Empty files not allowed.',
   },
+  INVALID_JSON_FORMATTING: {
+    severity: 'error',
+    reason: 'One of your metadata files is not in valid JSON format.'
+  },
+  INCORRECT_DATASET_TYPE: {
+    severity: 'error',
+    reason: 'Your metadata is missing the required schema.org "Dataset" type'
+  },
+  MISSING_DATASET_TYPE: {
+    severity: 'error',
+    reason: 'Your metadata object is missing the "@type"/"type" property.'
+  },
+  UNKNOWN_NAMESPACE: {
+    severity: 'warning',
+    reason: 'The psych-DS validator only has access to one external vocabulary, "http://schema.org";' +
+            'any other reference to an external schema is permitted, but the validity of the terms used ' +
+            'cannot be confirmed.'
+  },
+  OBJECT_TYPE_MISSING: {
+    severity: 'warning',
+    reason: `For compliance with the schema.org ontology, all objects within the metadata (with a few exceptions)
+            that appear as the value of a schema.org key/property must contain a "@type" key with a valid schema.org type 
+            as its value.`
+
+  },
+  INVALID_SCHEMAORG_PROPERTY: {
+    severity: 'warning',
+    reason: `The schema.org ontology contains a fixed set of legal properties which can be applied to objects within the metadata.
+            If schema.org is used as the only @context within your metadata, then all properties will be interpreted as schema.org properties.
+            Using an invalid schema.org property is not considered an error in the psych-DS specification, but it should be understood
+            that such usages result in the property in question not being interpretable by machines`
+  },
+  INVALID_OBJECT_TYPE: {
+    severity: 'warning',
+    reason: `Properties in the schema.org ontology have selective restrictions on which types of objects can be used for their values.
+            including an object with a @type that does not match the selective restrictions of its property is not an error in psych-DS,
+            but it will result in the object in question not being interpretable by machines.`
+  }
 }
 
 export const nonSchemaIssues = { ...filenameIssues }

@@ -6,14 +6,14 @@ import { DatasetIssues } from '../issues/datasetIssues.ts'
 import { FileIgnoreRules } from '../files/ignore.ts'
 
 
-const PATH = 'test_data/valid_datasets/bfi-dataset/data/raw_data'
+const PATH = 'test_data/valid_datasets/bfi-dataset'
 const fileTree = new FileTree(PATH, '/')
 const issues = new DatasetIssues()
 const ignore = new FileIgnoreRules([])
 
 Deno.test('Test parseCSV', async (t) => {
     await t.step('csv exists', async() => {
-        const fileName = 'study-bfi_data.csv'
+        const fileName = '/data/raw_data/study-bfi_data.csv'
         const file = new psychDSFileDeno(PATH, fileName, ignore)
         const context = new psychDSContext(fileTree, file, issues)
         await context.asyncLoads()
@@ -22,7 +22,7 @@ Deno.test('Test parseCSV', async (t) => {
 
     await t.step('csv does not exist', async() => {
         let errFound = false
-        const fileName = 'study-bfi_datas.csv'
+        const fileName = '/data/raw_data/study-bfi_datas.csv'
         try{
             const file = new psychDSFileDeno(PATH, fileName, ignore)
             const context = new psychDSContext(fileTree, file, issues)

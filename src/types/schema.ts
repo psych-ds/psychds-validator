@@ -36,6 +36,7 @@ export interface Schema {
   rules: SchemaRules
   schema_version: string
   meta: SchemaMeta
+  schemaOrg: object
 }
 
 export interface SchemaIssue {
@@ -44,7 +45,25 @@ export interface SchemaIssue {
   level?: string
 }
 
-export type GenericSchema = { [key: string]: GenericRule | GenericSchema }
+export interface SchemaOrgIssues {
+  termIssues: string[],
+  unknownNamespaceIssues: string[],
+  typeIssues: string[],
+  typeMissingIssues: string[]
+}
+
+export type GenericSchema = { [key: string]: GenericRule | GenericSchema | GenericRuleOrg }
+
+export interface GenericRuleOrg {
+  multivalued?: boolean,
+  any_of?: object[],
+  range?: string,
+  is_a?: string,
+  comments?: string[],
+  slot_uri?: string,
+  class_uri?: string,
+  slots?: string[],
+}
 
 export interface GenericRule {
   selectors?: string[]
@@ -53,6 +72,7 @@ export interface GenericRule {
   additional_columns?: string
   initial_columns?: string[]
   fields: Record<string, SchemaFields>
+  jsonld?: boolean
   issue?: SchemaIssue
   extensions?: string[]
   suffix?: string

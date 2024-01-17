@@ -1,7 +1,7 @@
 import { CheckFunction, RuleCheckFunction } from '../types/check.ts'
 import { DatasetIssues } from '../issues/datasetIssues.ts'
 import { psychDSContext } from '../schema/context.ts'
-import { GenericSchema } from '../types/schema.ts'
+import { GenericRule, GenericSchema } from '../types/schema.ts'
 import { SEP } from '../deps/path.ts'
 import { Severity } from '../types/issues.ts'
 
@@ -78,7 +78,7 @@ export function extensionMismatch(
   schema: GenericSchema,
   context: psychDSContext,
 ) {
-  const rule = schema[path]
+  const rule = schema[path] as GenericRule
   if (
     Array.isArray(rule.extensions) &&
     !rule.extensions.includes(context.extension)
@@ -87,6 +87,7 @@ export function extensionMismatch(
       { ...context.file, evidence: `Rule: ${path}` },
     ])
   }
+  
 }
 
 /* Checks the rulesRecord object to see which rules were satisfied (or at least detected)
@@ -103,7 +104,7 @@ export function checkMissingRules(
     Object.keys(rulesRecord)
         .filter((key) => {return rulesRecord[key] === false})
         .map((key) => {
-            const node = schema[key]
+            const node = schema[key] as GenericRule
             issues.add({
                 key:node.code as string,
                 reason:node.reason as string,
