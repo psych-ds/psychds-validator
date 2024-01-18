@@ -1,6 +1,6 @@
 import { Schema } from '../types/schema.ts'
 import { objectPathHandler } from '../utils/objectPathHandler.ts'
-import * as schemaDefault from 'https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons/latest/schema.json' assert { type: 'json' }
+import * as schemaDefault from 'https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons/latest/schema.json' with { type: 'json' }
 
 /**
  * Load the schema from the specification
@@ -20,11 +20,11 @@ export async function loadSchema(version = 'latest'): Promise<Schema> {
   }
   try {
     let schemaModule = await import(schemaUrl, {
-      assert: { type: 'json' },
+      with: { type: 'json' },
     })
     schemaModule = {...schemaModule}
     const schemaOrgModule = await import(schemaOrgUrl, {
-      assert: { type: 'json'},
+      with: { type: 'json'},
     })
     //console.log(schemaModule)
     schemaModule.default = {...schemaModule.default,
