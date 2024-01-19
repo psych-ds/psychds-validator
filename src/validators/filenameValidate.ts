@@ -29,6 +29,7 @@ export function isAtRoot(context: psychDSContext) {
 
 const ruleChecks: RuleCheckFunction[] = [
   extensionMismatch,
+  keywordCheck
 ]
 
 export function checkRules(schema: GenericSchema, context: psychDSContext) {
@@ -86,6 +87,42 @@ export function extensionMismatch(
     context.issues.addNonSchemaIssue('EXTENSION_MISMATCH', [
       { ...context.file, evidence: `Rule: ${path}` },
     ])
+  }
+}
+
+export function keywordCheck(
+  path: string,
+  schema: GenericSchema,
+  context: psychDSContext,
+) {
+  const rule = schema[path]
+  if ("usesKeywords" in rule && rule.usesKeywords){
+    if('fileRegex' in rule){
+      const fileRegex = new RegExp(rule.fileRegex as unknown as string)
+      const regexMatch = context.file.name.match(fileRegex) 
+      if((regexMatch && regexMatch[0] !== context.file.name) || !regexMatch){
+        context.issues.addNonSchemaIssue(
+          "KEYWORD_FORMATTING_ERROR",
+          [context.file]
+        )
+      }
+    }
+    if('nonCanonicalKeywordsAllowed' in rule){
+      if(!Object.keys(context.keywords).every((keyword) => keyword in schema['meta.context.context.properties.keywords.properties'])){
+        if(rule.nonCanonicalKeywordsAllowed){
+          context.issues.addNonSchemaIssue(
+            "UNOFFICIAL_KEYWORD_WARNING",
+            [context.file]
+          )
+        }
+        else{
+          context.issues.addNonSchemaIssue(
+            "UNOFFICIAL_KEYWORD_ERROR",
+            [context.file]
+          )
+        }
+      }
+    }
   }
 }
 
