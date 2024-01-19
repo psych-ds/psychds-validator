@@ -73,6 +73,41 @@ export const filenameIssues: IssueDefinitionRecord = {
     severity: 'error',
     reason: 'Empty files not allowed.',
   },
+  NO_HEADER:{
+    severity:'error',
+    reason:'CSV data files must contain valid header with at least one column.'
+  },
+  HEADER_ROW_MISMATCH:{
+    severity:'error',
+    reason:'The header and all rows for CSV data files must contain the same number of columns.'
+  },
+  ROWID_VALUES_NOT_UNIQUE:{
+    severity:'error',
+    reason:'Columns within CSV data files with the header "row_id" must contain unique values in every row.'
+  },
+  WRONG_METADATA_LOCATION:{
+    severity:'warning',
+    reason:'The main metadata file must be located within the root directory.'
+  },
+  KEYWORD_FORMATTING_ERROR:{
+    severity:'error',
+    reason:`All datafiles must use psych-DS keyword formatting. That is, datafile names must consist of
+            a series of keyword-value pairs, separated by underscores, with keywords using only lowercase
+            alphabetic characters and values using any alphanumeric characters of either case. The file must
+            end with '_data.csv'. In other words, files must follow this regex: 
+            /([a-z]+-[a-zA-Z0-9]+)(_[a-z]+-[a-zA-Z0-9]+)*_data\.csv/`
+  },
+  UNOFFICIAL_KEYWORD_WARNING:{
+    severity:'warning',
+    reason:`Although it is not recommended, datafiles are permitted to use keywords other than those provided
+            in the official psych-DS specification. If you do choose to use unofficial keywords, please ensure
+            that they are clearly defined within your research community and used consistently across relevant datasets.`
+  },
+  UNOFFICIAL_KEYWORD_ERROR:{
+    severity:'error',
+    reason:`datafiles are not permitted to use keywords other than those provided in the official psych-DS specification.`
+  }
+
 }
 
 export const nonSchemaIssues = { ...filenameIssues }
