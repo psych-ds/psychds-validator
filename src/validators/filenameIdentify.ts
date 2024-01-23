@@ -52,10 +52,7 @@ export function findFileRules(schema,rulesRecord) {
         const path = `${schemaPath}.${key}`
         _findFileRules(schema[path], path,rulesRecord)
       })
-
-
-
-    
+      
     return Promise.resolve()
 }
 
