@@ -4,10 +4,11 @@ export class ColumnsMap extends Map<string, string[]> {
     constructor() {
       super()
       const columns = new Map<string, string[]>() as ColumnsMap
-      return new Proxy<ColumnsMap>(columns, columnMapAccessorProxy)
+      return columns
+      //return new Proxy<ColumnsMap>(columns, columnMapAccessorProxy)
     }
   }
-  
+  /*
   // Proxy handler to implement ColumnsMap type
   export const columnMapAccessorProxy = {
     get: function (
@@ -38,3 +39,4 @@ export class ColumnsMap extends Map<string, string[]> {
       return { enumerable: true, configurable: true, value: target.get(prop) }
     },
   }
+  */
