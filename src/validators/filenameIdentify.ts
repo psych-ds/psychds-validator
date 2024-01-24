@@ -103,10 +103,13 @@ export function _findRuleMatches(node, path, context) {
   if (
     ('path' in node && context.file.name.endsWith(node.path)) ||
     ('stem' in node && context.file.name.startsWith(node.stem)) ||
-    (('baseDir' in node && context.baseDir === node.baseDir) &&
+    ((('baseDir' in node && 'arbitraryNesting' in node && node.arbitraryNesting && context.baseDir === node.baseDir) ||
+    ('baseDir' in node && 'arbitraryNesting' in node && !node.arbitraryNesting && context.path === `/${node.baseDir}/${context.file.name}`)) &&
     ('extensions' in node && node.extensions.includes(context.extension)) &&
     ('suffix' in node && context.suffix === node.suffix))
   ) {
+    console.log(('extensions' in node && node.extensions.includes(context.extension)))
+    console.log(('suffix' in node && context.suffix === node.suffix))
     context.filenameRules.push(path)
     return
   }
@@ -117,6 +120,7 @@ export function _findRuleMatches(node, path, context) {
       if(
         typeof node[key] === 'object'
       ){
+        console.log('recurse')
         _findRuleMatches(node[key], `${path}.${key}`, context)
       }
     })
