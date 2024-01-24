@@ -108,8 +108,6 @@ export function _findRuleMatches(node, path, context) {
     ('extensions' in node && node.extensions.includes(context.extension)) &&
     ('suffix' in node && context.suffix === node.suffix))
   ) {
-    console.log(('extensions' in node && node.extensions.includes(context.extension)))
-    console.log(('suffix' in node && context.suffix === node.suffix))
     context.filenameRules.push(path)
     return
   }
@@ -120,7 +118,6 @@ export function _findRuleMatches(node, path, context) {
       if(
         typeof node[key] === 'object'
       ){
-        console.log('recurse')
         _findRuleMatches(node[key], `${path}.${key}`, context)
       }
     })
