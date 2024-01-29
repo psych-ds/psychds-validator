@@ -89,6 +89,14 @@ function findRuleMatches(schema, context) {
     context.file.path !== '/.bidsignore'
   ) {
     context.issues.addNonSchemaIssue('NOT_INCLUDED', [context.file])
+    if(context.file.name === "dataset_description.json"){
+      context.issues.addNonSchemaIssue(
+        "WRONG_METADATA_LOCATION",
+        [context.file],
+        `You have placed a file called "dataset_description.json" within the ${context.baseDir} 
+        subDirectory. Such files are only valid when placed in the root directory.`
+      )
+    }
   }
   return Promise.resolve()
 }
@@ -100,8 +108,9 @@ function findRuleMatches(schema, context) {
  * assume that this schema rule is applicable to this file.
  */
 export function _findRuleMatches(node, path, context) {
+  //console.log(node)
   if (
-    ('path' in node && context.file.name.endsWith(node.path)) ||
+    ('path' in node && context.file.path === node.path) ||
     ('stem' in node && context.file.name.startsWith(node.stem)) ||
     (('baseDir' in node && context.baseDir === node.baseDir) &&
     ('extensions' in node && node.extensions.includes(context.extension)) &&
