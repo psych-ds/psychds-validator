@@ -73,11 +73,15 @@ Deno.test('test findFileRules', async (t) => {
     })
   })
 
-  Deno.test('misplaced metadata', async (t) => {
-    await t.step('misplaced metadata', async () => {
-      const absolutePath = resolve('test_data/valid_datasets/nih-reviews')
-      const tree = await readFileTree(absolutePath)
-      const schemaResult = await validate(tree, {} as ValidatorOptions)
-      assertEquals(schemaResult.issues.has('WRONG_METADATA_LOCATION'),true)
-    })
+  Deno.test({
+    name:'misplaced metadata', 
+    sanitizeResources: false,
+    fn: async (t) => {
+      await t.step('misplaced metadata', async () => {
+        const absolutePath = resolve('test_data/valid_datasets/nih-reviews')
+        const tree = await readFileTree(absolutePath)
+        const schemaResult = await validate(tree, {} as ValidatorOptions)
+        assertEquals(schemaResult.issues.has('WRONG_METADATA_LOCATION'),true)
+      })
+    }
   })

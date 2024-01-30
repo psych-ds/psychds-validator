@@ -94,7 +94,7 @@ export class psychDSFileDeno implements psychDSFile {
     const buf = new Uint8Array(size)
     await handle.seek(offset, Deno.SeekMode.Start)
     await handle.read(buf)
-    Deno.close(handle.rid)
+    handle.close()
     return buf
   }
 
