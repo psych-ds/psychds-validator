@@ -114,6 +114,17 @@ export const filenameIssues: IssueDefinitionRecord = {
   WRONG_METADATA_LOCATION:{
     severity: 'warning',
     reason: 'Files named "dataset_description.json" only count as valid metadata objects when they are located within the base directory.'
+  },
+  KEYWORD_FORMATTING_ERROR:{
+    severity: 'error',
+    reason: 'Datafiles must use keyword formatting. Keywords are defined as pairs of keys and values separated by a hypen, with underscores between each keyword pair.'
+  },
+  UNOFFICIAL_KEYWORD_WARNING:{
+    severity: 'warning',
+    reason: `The psych-DS schema model has a list of official keywords that can be used in filenames.
+            The official keywords are study, site, subject, session, task, condition, trial, stimulus, and description.
+            Using unofficial keywords does not result in an error, but users should make an effort to define their new keywords well
+            and use them consistently.`
   }
 }
 

@@ -29,6 +29,7 @@ export function isAtRoot(context: psychDSContext) {
 
 const ruleChecks: RuleCheckFunction[] = [
   extensionMismatch,
+  keywordCheck
 ]
 
 export function checkRules(schema: GenericSchema, context: psychDSContext) {
@@ -88,6 +89,44 @@ export function extensionMismatch(
     ])
   }
   
+}
+
+/*
+* Function to evaluate filename for keyword formatting and log warnings/errors
+* about non-canonical keyword usage
+* params:
+* path: specific string location within the schema model
+* schema: schema model object
+* context: context objectfor this particular file within the file tree
+*/
+export function keywordCheck(
+  path: string,
+  schema: GenericSchema,
+  context: psychDSContext,
+) {
+  const rule = schema[path]
+  if ("usesKeywords" in rule && rule.usesKeywords){
+    if('fileRegex' in rule){
+      const fileRegex = new RegExp(rule.fileRegex as unknown as string)
+      const regexMatch = context.file.name.match(fileRegex) 
+      // If only a fraction of the filename or the whole filename is invalid according to regex
+      // within the schema model, log error
+      if((regexMatch && regexMatch[0] !== context.file.name) || !regexMatch){
+        context.issues.addNonSchemaIssue(
+          "KEYWORD_FORMATTING_ERROR",
+          [context.file]
+        )
+      }
+    }
+    //if any of the keywords are not part of the official list within the schema model
+    if(!Object.keys(context.keywords).every((keyword) => keyword in schema['meta.context.context.properties.keywords.properties'])){
+      //will be delivered either as warning or error depending on schema model configuration.
+      context.issues.addNonSchemaIssue(
+        "UNOFFICIAL_KEYWORD_WARNING",
+        [context.file]
+      )
+    }
+  }
 }
 
 /* Checks the rulesRecord object to see which rules were satisfied (or at least detected)
