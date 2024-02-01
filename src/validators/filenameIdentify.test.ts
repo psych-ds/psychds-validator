@@ -23,6 +23,7 @@ const node = {
 const recurseNode = {
   recurse: {
     baseDir: "data",
+    arbitraryNesting: true,
     extensions: [".csv"],
     suffix: "data"
   },
@@ -50,6 +51,18 @@ Deno.test('test _findRuleMatches', async (t) => {
       context.baseDir = 'data'
       _findRuleMatches(recurseNode, schemaPath, context)
       assertEquals(context.filenameRules[0], `${schemaPath}.recurse`)
+    },
+  )
+  await t.step(
+    'recurse failure without arbitraryNesting',
+     () => {
+      const fileName = 'data/raw_data/study-bfi_data.csv'
+      const file = new psychDSFileDeno(PATH, fileName, ignore)
+      const context = new psychDSContext(fileTree, file, issues)
+      context.baseDir = 'data'
+      recurseNode.recurse.arbitraryNesting = false
+      _findRuleMatches(recurseNode, schemaPath, context)
+      assertEquals(context.filenameRules, [])
     },
   )
 })
