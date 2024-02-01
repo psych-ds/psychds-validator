@@ -9,7 +9,6 @@ import { Severity } from '../types/issues.ts'
 import { psychDSContext } from './context.ts'
 import { logger } from '../utils/logger.ts'
 import { memoize } from '../utils/memoize.ts'
-import { closeResources } from "../utils/resources.ts";
   
   /**
    * Given a schema and context, evaluate which rules match and test them.
@@ -55,8 +54,6 @@ import { closeResources } from "../utils/resources.ts";
 
       }
     }
-    //Added this to resolve issue where filestreams were not closing in Deno vscode env
-    closeResources()
     return Promise.resolve()
   }
   
