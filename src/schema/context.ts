@@ -216,7 +216,7 @@ import {
       if (this.extension !== '.csv') {
         return
       }
-      this.columns = await this.file
+      const result = await this.file
         .text()
         .then((text) => parseCSV(text))
         .catch((error) => {
@@ -226,7 +226,19 @@ import {
           logger.debug(error)
           return new Map<string, string[]>() as ColumnsMap
         })
+      this.columns = result['columns'] as ColumnsMap
+      this.reportCSVIssues(result['issues'] as string[])
       return
+    }
+    
+    //multiple CSV issues are possible, so these are unpacked from the issue object
+    reportCSVIssues(issues: string[]){
+      issues.forEach((issue) => {
+        this.issues.addNonSchemaIssue(
+          issue,
+          [this.file]
+        )
+      })
     }
 
     async getExpandedSidecar(){
