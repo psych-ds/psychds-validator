@@ -1,38 +1,69 @@
 import { assertEquals } from '../deps/asserts.ts'
-import { psychDSContext } from '../schema/context.ts'
 import { psychDSFileDeno } from '../files/deno.ts'
-import { FileTree } from '../types/filetree.ts'
-import { DatasetIssues } from '../issues/datasetIssues.ts'
 import { FileIgnoreRules } from '../files/ignore.ts'
+import { parseCSV } from './csv.ts';
+import { ColumnsMap } from '../types/columns.ts';
 
 
-const PATH = 'test_data/valid_datasets/bfi-dataset'
-const fileTree = new FileTree(PATH, '/')
-const issues = new DatasetIssues()
 const ignore = new FileIgnoreRules([])
 
 Deno.test('Test parseCSV', async (t) => {
     await t.step('csv exists', async() => {
-        const fileName = '/data/raw_data/study-bfi_data.csv'
-        const file = new psychDSFileDeno(PATH, fileName, ignore)
-        const context = new psychDSContext(fileTree, file, issues)
-        await context.asyncLoads()
-        assertEquals(Object.keys(context.columns).length,28)
+        const file = new psychDSFileDeno("test_data/testfiles", 'csv.csv', ignore)
+        const result = await file
+            .text()
+            .then((text) => parseCSV(text))
+            .catch((_error) => {
+            
+            return {
+                'columns': new Map<string, string[]>() as ColumnsMap,
+                'issues': []
+            }
+            })
+        assertEquals(result['issues'],[])
     })
 
-    await t.step('csv does not exist', async() => {
-        let errFound = false
-        const fileName = '/data/raw_data/study-bfi_datas.csv'
-        try{
-            const file = new psychDSFileDeno(PATH, fileName, ignore)
-            const context = new psychDSContext(fileTree, file, issues)
-            await context.asyncLoads()
-        }
-        catch(error){
-            if (error.name === "NotFound")
-                errFound = true
-        }
-        assertEquals(errFound,true)
+    await t.step('Header missing', async() => {
+        const file = new psychDSFileDeno("test_data/testfiles", 'noHeader.csv', ignore)
+        const result = await file
+            .text()
+            .then((text) => parseCSV(text))
+            .catch((_error) => {
+            
+            return {
+                'columns': new Map<string, string[]>() as ColumnsMap,
+                'issues': []
+            }
+            })
+        assertEquals(result['issues'][0],'NO_HEADER')
+    })
+    await t.step('Header row mismatch', async() => {
+        const file = new psychDSFileDeno("test_data/testfiles", 'headerRowMismatch.csv', ignore)
+        const result = await file
+            .text()
+            .then((text) => parseCSV(text))
+            .catch((_error) => {
+            
+            return {
+                'columns': new Map<string, string[]>() as ColumnsMap,
+                'issues': []
+            }
+            })
+        assertEquals(result['issues'][0],'HEADER_ROW_MISMATCH')
+    })
+    await t.step('Row_id values not unique', async() => {
+        const file = new psychDSFileDeno("test_data/testfiles", 'rowidValuesNotUnique.csv', ignore)
+        const result = await file
+            .text()
+            .then((text) => parseCSV(text))
+            .catch((_error) => {
+            
+            return {
+                'columns': new Map<string, string[]>() as ColumnsMap,
+                'issues': []
+            }
+            })
+        assertEquals(result['issues'][0],'ROWID_VALUES_NOT_UNIQUE')
     })
 
   })

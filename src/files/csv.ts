@@ -12,11 +12,29 @@ const isContentfulRow = (row: string): boolean => !!(row && !/^\s*$/.test(row))
 // gets columns from CSV
 export function parseCSV(contents: string) {
   const columns = new ColumnsMap()
+  const issues: string[] = []
   const rows: string[][] = normalizeEOL(contents)
     .split('\n')
     .filter(isContentfulRow)
-    .map((str) => str.split(','))
+    .map((str) => {
+      //extra logic to confirm that commas used within double quotes are maintained and not considered delimiters
+      const matches = str.match(/".*"/)
+      matches?.forEach((match) => {
+        const newMatch = match.replace(",","[REPLACE]")
+        str = str.replace(match,newMatch)
+      })
+     return str.split(',').map((x)=>x.replace("[REPLACE]",","))
+    })
   const headers = rows.length ? rows[0] : []
+  
+  //if no header is present, log error
+  if (headers.length === 0)
+    issues.push('NO_HEADER')
+  else{
+    //if any row in CSV contains different number of cells than the header, log error
+    if(!rows.slice(1).every((row) => row.length === headers.length))
+      issues.push("HEADER_ROW_MISMATCH")
+  }
 
   headers.map((x) => {
     columns[x] = []
@@ -27,5 +45,15 @@ export function parseCSV(contents: string) {
       col.push(rows[i][j])
     }
   }
-  return columns
+  //if header called "row_id" is present, assert that all cells are unique values
+  if (Object.keys(columns).includes("row_id") && [...new Set(columns["row_id"] as string[])].length !== (columns["row_id"] as string[]).length)
+    issues.push("ROWID_VALUES_NOT_UNIQUE")
+
+  //response has been modified to return columns object as well as issues object, 
+  //to account for the fact that multiple types of issues are now possible
+  const response = {
+    'columns':columns as ColumnsMap,
+    'issues':issues as string[]
+  }
+  return response
 }

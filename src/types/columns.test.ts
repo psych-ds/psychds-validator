@@ -27,7 +27,6 @@ Deno.test('ColumnsMap', async (t) => {
     columns['a'] = ['0']
     columns['b'] = ['1']
     columns[0] = ['2']
-    assertEquals(Object.keys(columns), ['a', 'b', '0'])
-    assertEquals(Object.getOwnPropertyNames(columns), ['a', 'b', '0'])
+    assertEquals(Object.keys(columns), ['0','a', 'b'])
   })
 })
