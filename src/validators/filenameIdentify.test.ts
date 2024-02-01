@@ -4,11 +4,14 @@ import {
   _findRuleMatches,
   findFileRules
 } from './filenameIdentify.ts'
-import { psychDSFileDeno } from '../files/deno.ts'
+import { psychDSFileDeno, readFileTree } from '../files/deno.ts'
 import { FileTree } from '../types/filetree.ts'
 import { DatasetIssues } from '../issues/datasetIssues.ts'
 import { FileIgnoreRules } from '../files/ignore.ts'
 import { loadSchema } from '../setup/loadSchema.ts'
+import { validate } from './psychds.ts';
+import { ValidatorOptions } from '../setup/options.ts';
+import { resolve } from '../deps/path.ts';
 
 const PATH = 'test_data/valid_datasets/bfi-dataset'
 const schema = await loadSchema()
@@ -23,6 +26,7 @@ const node = {
 const recurseNode = {
   recurse: {
     baseDir: "data",
+    arbitraryNesting: true,
     extensions: [".csv"],
     suffix: "data"
   },
@@ -52,6 +56,18 @@ Deno.test('test _findRuleMatches', async (t) => {
       assertEquals(context.filenameRules[0], `${schemaPath}.recurse`)
     },
   )
+  await t.step(
+    'recurse failure without arbitraryNesting',
+     () => {
+      const fileName = 'data/raw_data/study-bfi_data.csv'
+      const file = new psychDSFileDeno(PATH, fileName, ignore)
+      const context = new psychDSContext(fileTree, file, issues)
+      context.baseDir = 'data'
+      recurseNode.recurse.arbitraryNesting = false
+      _findRuleMatches(recurseNode, schemaPath, context)
+      assertEquals(context.filenameRules, [])
+    },
+  )
 })
 
 Deno.test('test findFileRules', async (t) => {
@@ -68,4 +84,16 @@ Deno.test('test findFileRules', async (t) => {
       await findFileRules(schema, rulesRecord)
       assertEquals(Object.keys(rulesRecord).length, 11)
     })
+  })
+  Deno.test({
+    name:'misplaced metadata', 
+    sanitizeResources: false,
+    fn: async (t) => {
+      await t.step('misplaced metadata', async () => {
+        const absolutePath = resolve('test_data/valid_datasets/nih-reviews')
+        const tree = await readFileTree(absolutePath)
+        const schemaResult = await validate(tree, {} as ValidatorOptions)
+        assertEquals(schemaResult.issues.has('WRONG_METADATA_LOCATION'),true)
+      })
+    }
   })

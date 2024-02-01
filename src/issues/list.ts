@@ -121,7 +121,11 @@ export const filenameIssues: IssueDefinitionRecord = {
             The official keywords are study, site, subject, session, task, condition, trial, stimulus, and description.
             Using unofficial keywords does not result in an error, but users should make an effort to define their new keywords well
             and use them consistently.`
-  }	  
+  },
+  WRONG_METADATA_LOCATION:{
+    severity: 'warning',
+    reason: 'Files named "dataset_description.json" only count as valid metadata objects when they are located within the base directory.'
+  }
 }
 
 export const nonSchemaIssues = { ...filenameIssues }

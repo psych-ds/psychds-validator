@@ -14,7 +14,7 @@ export async function* _walkFileTree(
   }
   for (const dir of fileTree.directories) {
     if(fileTree.path === "/" && dsContext){
-        dsContext.baseDirs = [...dsContext.baseDirs,dir.name]
+        dsContext.baseDirs = [...dsContext.baseDirs,`/${dir.name}`]
     }
     yield* _walkFileTree(dir, root, issues, dsContext)
   }
