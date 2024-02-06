@@ -45,10 +45,10 @@ export async function validate(
   if (ddFile) {
     try{
       const description = await ddFile.text().then((text) => JSON.parse(text))
-      dsContext = new psychDSContextDataset(options, description)
+      dsContext = new psychDSContextDataset(options, ddFile,description)
     }
     catch(_error){
-      dsContext = new psychDSContextDataset(options)
+      dsContext = new psychDSContextDataset(options,ddFile)
       issues.addNonSchemaIssue(
         'INVALID_JSON_FORMATTING',
         [ddFile]
