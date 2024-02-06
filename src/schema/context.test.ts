@@ -18,7 +18,7 @@ const ddFile = fileTree.files.find(
 let dsContext: psychDSContextDataset = new psychDSContextDataset()
 if (ddFile) {
   const description = await ddFile.text().then((text) => JSON.parse(text))
-  dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions, description)
+  dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions, ddFile,description)
 }
 
 
