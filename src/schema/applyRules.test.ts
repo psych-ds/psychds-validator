@@ -13,7 +13,7 @@ import { ValidatorOptions } from "../setup/options.ts";
 const PATH = 'test_data/valid_datasets/bfi-dataset'
 const schema = await loadSchema()
 const fileTree = await readFileTree(PATH)
-const issues = new DatasetIssues()
+const issues = new DatasetIssues(schema as unknown as GenericSchema)
 const ignore = new FileIgnoreRules([])
 
 const invPATH = 'test_data/invalid_datasets/bfi-dataset'
@@ -82,8 +82,6 @@ Deno.test({
         assertEquals(context.issues.has('JSON_KEY_REQUIRED'),false)
     })
     await t.step('Fields missing', async () => {
-      const issues = new DatasetIssues()
-      const ignore = new FileIgnoreRules([])
       const ddFile = invFileTree.files.find(
             (file: psychDSFile) => file.name === 'dataset_description.json',
           )
@@ -192,21 +190,19 @@ Deno.test({
       let dsContext
       if (ddFile) {
         const description = await ddFile.text().then((text) => JSON.parse(text))
-        dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions, description)
-        //console.log(dsContext)
+        dsContext = new psychDSContextDataset({datasetPath:wrongTypePATH} as ValidatorOptions, description)
       } else {
-        dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions)
+        dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions)
       }
 
       const fileName = '/dataset_description.json'
-      const file = new psychDSFileDeno(PATH, fileName, ignore)
-      const context = new psychDSContext(fileTree, file, issues,dsContext)
+      const file = new psychDSFileDeno(invPATH, fileName, ignore)
+      const context = new psychDSContext(invFileTree, file, issues,dsContext)
       await context.asyncLoads()
-      context.dataset.dataset_description.variableMeasured = []
       context.validColumns = []
 
       await applyRules(schema as unknown as GenericSchema,context)
-      assertEquals(context.issues.has('INVALID_SCHEMAORG_PROPERTY'),false)
+      assertEquals(context.issues.has('INVALID_SCHEMAORG_PROPERTY'),true)
     })
 
     await t.step('invalid object type', async () => {

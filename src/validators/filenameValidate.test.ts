@@ -1,36 +1,17 @@
-import { FileTree } from '../types/filetree.ts'
 import { GenericSchema } from '../types/schema.ts'
 import { assertEquals } from '../deps/asserts.ts'
 import { psychDSContext } from '../schema/context.ts'
-import { checkRules,extensionMismatch, checkMissingRules, keywordCheck } from './filenameValidate.ts'
-import { psychDSFileDeno } from '../files/deno.ts'
+import { extensionMismatch, checkMissingRules, keywordCheck } from './filenameValidate.ts'
+import { psychDSFileDeno, readFileTree } from '../files/deno.ts'
 import { DatasetIssues } from '../issues/datasetIssues.ts'
 import { FileIgnoreRules } from '../files/ignore.ts'
 import { loadSchema } from '../setup/loadSchema.ts'
 
 const PATH = 'test_data/valid_datasets/bfi-dataset'
 const schema = (await loadSchema()) as unknown as GenericSchema
-const fileTree = new FileTree(PATH, '/')
-const issues = new DatasetIssues()
+const fileTree = await readFileTree(PATH)
+const issues = new DatasetIssues(schema)
 const ignore = new FileIgnoreRules([])
-
-Deno.test('test checkRules', async (t) => {
-  await t.step('One rule found', async () => {
-    const fileName = 'dataset_description.json'
-    const file = new psychDSFileDeno(PATH,fileName, ignore)
-    const context = new psychDSContext(fileTree, file, issues)
-    context.filenameRules = [...context.filenameRules,"rules.files.common.core.dataset_description"]
-    await checkRules(schema,context)
-  })
-
-  await t.step('No rule found', async () => {
-    const fileName = 'dataset_description.json'
-    const file = new psychDSFileDeno(PATH,fileName, ignore)
-    const context = new psychDSContext(fileTree, file, issues)
-    await checkRules(schema,context)
-  })
-
-})
 
 Deno.test('test extensionMismatch', async (t) => {
     await t.step('extensions match', async () => {
@@ -39,9 +20,7 @@ Deno.test('test extensionMismatch', async (t) => {
       const context = new psychDSContext(fileTree, file, issues)
       await extensionMismatch('rules.files.common.core.dataset_description',schema,context)
       assertEquals(
-        context.issues
-          .getFileIssueKeys(context.file.path)
-          .includes('EXTENSION_MISMATCH'),
+        context.issues.has('EXTENSION_MISMATCH'),
         false,
       )
     })
@@ -52,10 +31,8 @@ Deno.test('test extensionMismatch', async (t) => {
         const context = new psychDSContext(fileTree, file, issues)
         await extensionMismatch('rules.files.common.core.README',schema,context)
         assertEquals(
-          context.issues
-            .getFileIssueKeys(context.file.path)
-            .includes('EXTENSION_MISMATCH'),
-          true,
+          context.issues.has('EXTENSION_MISMATCH'),
+          true
         )
       })
   
