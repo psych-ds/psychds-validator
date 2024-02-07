@@ -1,4 +1,3 @@
-import { nonSchemaIssues } from './list.ts'
 import {
   Issue,
   IssueFile,
@@ -7,6 +6,8 @@ import {
   Severity,
   FullTestIssuesReturn,
 } from '../types/issues.ts'
+import { GenericSchema } from '../types/schema.ts';
+
 
 // Code is deprecated, return something unusual but JSON serializable
 const CODE_DEPRECATED = Number.MIN_SAFE_INTEGER
@@ -45,8 +46,13 @@ interface DatasetIssuesAddParams {
  * Management class for dataset issues
  */
 export class DatasetIssues extends Map<string, Issue> {
-  constructor() {
+  //added optional schema hook so addSchemaIssue can reference the error list from schema model
+  schema?: GenericSchema
+  constructor(
+    schema?: GenericSchema
+  ) {
     super()
+    this.schema = schema ? schema : {}
   }
 
   add({
@@ -82,19 +88,15 @@ export class DatasetIssues extends Map<string, Issue> {
     return false
   }
 
-  //add issue that doesn't arise from schema def. TODO: eliminate this or reduce to just "ELEMENT_NOT_INCLUDED"
-  addNonSchemaIssue(key: string, files: Array<IssueFile>) {
-    if (key in nonSchemaIssues) {
+  //adds issue from errors.yaml file of schema model
+  addSchemaIssue(key: string,files: Array<IssueFile>) {
+    if(this.schema){
       this.add({
-        key,
-        reason: nonSchemaIssues[key].reason,
-        severity: nonSchemaIssues[key].severity,
-        files,
+        key: this.schema[`rules.errors.${key}.code`] as string,
+        reason: this.schema[`rules.errors.${key}.reason`] as string,
+        severity: this.schema[`rules.errors.${key}.level`] as string as Severity,
+        files: files
       })
-    } else {
-      throw new Error(
-        `key: ${key} does not exist in non-schema issues definitions`,
-      )
     }
   }
 
