@@ -144,7 +144,7 @@ import { memoize } from '../utils/memoize.ts'
         }
     }
     if(invalidHeaders.length != 0){
-        context.issues.addNonSchemaIssue('CSV_COLUMN_MISSING', [
+        context.issues.addSchemaIssue('CsvColumnMissing', [
             {
               ...context.file,
               evidence: `Column headers: [${invalidHeaders}] do not appear in variableMeasured. ${schemaPath}`,
@@ -200,7 +200,7 @@ import { memoize } from '../utils/memoize.ts'
     }
     //once all missing fields are found, create issue
     if(issueKeys.length != 0){
-      context.issues.addNonSchemaIssue('JSON_KEY_REQUIRED', [
+      context.issues.addSchemaIssue('JsonKeyRequired', [
         {
           ...context.file,
           evidence: `metadata object missing fields: [${issueKeys}] as per ${schemaPath}. 
@@ -230,7 +230,7 @@ import { memoize } from '../utils/memoize.ts'
       //TODO: Check if it's even valid JSON-LD to have more than one values assigned for type
         //if it is valid, it should be accounted for
       if ((context.expandedSidecar['@type'] as string[])[0] !== `${schemaNamespace}Dataset`){
-        context.issues.addNonSchemaIssue('INCORRECT_DATASET_TYPE', [
+        context.issues.addSchemaIssue('IncorrectDatasetType', [
           {
             ...context.file,
             evidence: `dataset_description.json's "@type" property must have "Dataset" as its value.
@@ -242,7 +242,7 @@ import { memoize } from '../utils/memoize.ts'
       }
     }
     else{
-      context.issues.addNonSchemaIssue('MISSING_DATASET_TYPE', [
+      context.issues.addSchemaIssue('MissingDatasetType', [
         {
           ...context.file,
           evidence: `dataset_description.json must have either the "@type" or the "type" property.`,
@@ -262,7 +262,7 @@ import { memoize } from '../utils/memoize.ts'
     issues: SchemaOrgIssues
   ){
     if(issues.termIssues.length != 0){
-      context.issues.addNonSchemaIssue('INVALID_SCHEMAORG_PROPERTY', [
+      context.issues.addSchemaIssue('InvalidSchemaorgProperty', [
         {
           ...context.file,
           evidence: `This file contains one or more keys that use the schema.org namespace, but are not  official schema.org properties.
@@ -272,7 +272,7 @@ import { memoize } from '../utils/memoize.ts'
       ])
     }
     if(issues.typeIssues.length != 0){
-      context.issues.addNonSchemaIssue('INVALID_OBJECT_TYPE', [
+      context.issues.addSchemaIssue('InvalidObjectType', [
         {
           ...context.file,
           evidence: `This file contains one or more objects with types that do not match the selectional constraints of their keys.
@@ -284,7 +284,7 @@ import { memoize } from '../utils/memoize.ts'
       ])
     }
     if(issues.typeMissingIssues.length != 0){
-      context.issues.addNonSchemaIssue('OBJECT_TYPE_MISSING', [
+      context.issues.addSchemaIssue('ObjectTypeMissing', [
         {
           ...context.file,
           evidence: `This file contains one or more objects without a @type property. Make sure that any object that you include
@@ -295,7 +295,7 @@ import { memoize } from '../utils/memoize.ts'
       ])
     }
     if(issues.unknownNamespaceIssues.length != 0){
-      context.issues.addNonSchemaIssue('UNKNOWN_NAMESPACE', [
+      context.issues.addSchemaIssue('UnknownNamespace', [
         {
           ...context.file,
           evidence: `This file contains one or more references to namespaces other than http://schema.org:

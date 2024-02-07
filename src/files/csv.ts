@@ -29,11 +29,11 @@ export function parseCSV(contents: string) {
   
   //if no header is present, log error
   if (headers.length === 0)
-    issues.push('NO_HEADER')
+    issues.push('NoHeader')
   else{
     //if any row in CSV contains different number of cells than the header, log error
     if(!rows.slice(1).every((row) => row.length === headers.length))
-      issues.push("HEADER_ROW_MISMATCH")
+      issues.push("HeaderRowMismatch")
   }
 
   headers.map((x) => {
@@ -47,7 +47,7 @@ export function parseCSV(contents: string) {
   }
   //if header called "row_id" is present, assert that all cells are unique values
   if (Object.keys(columns).includes("row_id") && [...new Set(columns["row_id"] as string[])].length !== (columns["row_id"] as string[]).length)
-    issues.push("ROWID_VALUES_NOT_UNIQUE")
+    issues.push("RowidValuesNotUnique")
 
   //response has been modified to return columns object as well as issues object, 
   //to account for the fact that multiple types of issues are now possible

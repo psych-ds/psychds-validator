@@ -155,8 +155,8 @@ import {
           .text()
           .then((text) => JSON.parse(text))
           .catch((_error) => {
-            this.issues.addNonSchemaIssue(
-              'INVALID_JSON_FORMATTING',
+            this.issues.addSchemaIssue(
+              'InvalidJsonFormatting',
               [validSidecars[0]]
             )
           })
@@ -234,7 +234,7 @@ import {
     //multiple CSV issues are possible, so these are unpacked from the issue object
     reportCSVIssues(issues: string[]){
       issues.forEach((issue) => {
-        this.issues.addNonSchemaIssue(
+        this.issues.addSchemaIssue(
           issue,
           [this.file]
         )
