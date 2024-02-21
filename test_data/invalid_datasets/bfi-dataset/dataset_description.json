@@ -3,7 +3,7 @@
   "identifier": ["https://dx.doi.org/10.17605/OSF.IO/K39BG"],
   "creator": [
     {
-      "@type":["Dataset"],
+      "@type":["Person"],
       "name": "William Revelle"
     }
   ],
@@ -28,7 +28,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"],
+      "@type": ["PropertyValue"],
       "https://linkml/minValue":[2]
     },
     {
@@ -37,7 +37,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["A4"],
@@ -45,7 +45,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["A5"],
@@ -53,7 +53,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["C1"],
@@ -61,7 +61,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["C2"],
@@ -69,7 +69,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["C3"],
@@ -77,7 +77,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["C4R"],
@@ -85,7 +85,7 @@
       "value": ["6. Very Inaccurate,\n5. Moderately Inaccurate,\n4. Slightly Inaccurate,\n3. Slightly Accurate,\n2. Moderately Accurate,\n1. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["C5R"],
@@ -93,7 +93,7 @@
       "value": ["6. Very Inaccurate,\n5. Moderately Inaccurate,\n4. Slightly Inaccurate,\n3. Slightly Accurate,\n2. Moderately Accurate,\n1. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["E1R"],
@@ -101,7 +101,7 @@
       "value": ["6. Very Inaccurate,\n5. Moderately Inaccurate,\n4. Slightly Inaccurate,\n3. Slightly Accurate,\n2. Moderately Accurate,\n1. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["E2R"],
@@ -109,7 +109,7 @@
       "value": ["6. Very Inaccurate,\n5. Moderately Inaccurate,\n4. Slightly Inaccurate,\n3. Slightly Accurate,\n2. Moderately Accurate,\n1. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["E3"],
@@ -117,7 +117,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["E4"],
@@ -125,7 +125,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["E5"],
@@ -133,7 +133,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["N1R"],
@@ -141,7 +141,7 @@
       "value": ["6. Very Inaccurate,\n5. Moderately Inaccurate,\n4. Slightly Inaccurate,\n3. Slightly Accurate,\n2. Moderately Accurate,\n1. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["N2R"],
@@ -149,7 +149,7 @@
       "value": ["6. Very Inaccurate,\n5. Moderately Inaccurate,\n4. Slightly Inaccurate,\n3. Slightly Accurate,\n2. Moderately Accurate,\n1. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["N3R"],
@@ -157,7 +157,7 @@
       "value": ["6. Very Inaccurate,\n5. Moderately Inaccurate,\n4. Slightly Inaccurate,\n3. Slightly Accurate,\n2. Moderately Accurate,\n1. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["N4R"],
@@ -165,7 +165,7 @@
       "value": ["6. Very Inaccurate,\n5. Moderately Inaccurate,\n4. Slightly Inaccurate,\n3. Slightly Accurate,\n2. Moderately Accurate,\n1. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["N5R"],
@@ -173,7 +173,7 @@
       "value": ["6. Very Inaccurate,\n5. Moderately Inaccurate,\n4. Slightly Inaccurate,\n3. Slightly Accurate,\n2. Moderately Accurate,\n1. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["O1"],
@@ -181,7 +181,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["O2R"],
@@ -189,7 +189,7 @@
       "value": ["6. Very Inaccurate,\n5. Moderately Inaccurate,\n4. Slightly Inaccurate,\n3. Slightly Accurate,\n2. Moderately Accurate,\n1. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["O3"],
@@ -197,7 +197,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["O4"],
@@ -205,7 +205,7 @@
       "value": ["1. Very Inaccurate,\n2. Moderately Inaccurate,\n3. Slightly Inaccurate,\n4. Slightly Accurate,\n5. Moderately Accurate,\n6. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["O5R"],
@@ -213,7 +213,7 @@
       "value": ["6. Very Inaccurate,\n5. Moderately Inaccurate,\n4. Slightly Inaccurate,\n3. Slightly Accurate,\n2. Moderately Accurate,\n1. Very Accurate"],
       "maxValue": [6],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["gender"],
@@ -221,7 +221,7 @@
       "value": ["1. male,\n2. female"],
       "maxValue": [2],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["education"],
@@ -229,22 +229,22 @@
       "value": ["1. in high school,\n2. finished high school,\n3. some college,\n4. college graduate,\n5. graduate degree"],
       "maxValue": [5],
       "minValue": [1],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["age"],
       "description": ["age"],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["extraversion"],
       "description": ["5 E items aggregated by rowMeans"],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     },
     {
       "name": ["plasticity"],
       "description": ["10  items aggregated by rowMeans"],
-      "@type": ["propertyValue"]
+      "@type": ["PropertyValue"]
     }
   ]
 }

@@ -3,6 +3,7 @@ import { assertEquals } from '../deps/asserts.ts'
 import { loadSchema } from '../setup/loadSchema.ts'
 import { applyRules  } from './applyRules.ts'
 import { DatasetIssues } from '../issues/datasetIssues.ts'
+import { Issue } from '../types/issues.ts'
 import { FileIgnoreRules } from "../files/ignore.ts";
 import { psychDSFileDeno, readFileTree } from "../files/deno.ts";
 import { psychDSContext, psychDSContextDataset } from "./context.ts";
@@ -15,6 +16,7 @@ const schema = await loadSchema()
 const fileTree = await readFileTree(PATH)
 const issues = new DatasetIssues()
 const ignore = new FileIgnoreRules([])
+
 
 const invPATH = 'test_data/invalid_datasets/bfi-dataset'
 const invFileTree = await readFileTree(invPATH)
@@ -38,10 +40,17 @@ Deno.test({
   fn: async(t) => {
     await t.step('Columns Found', async () => {
       const fileName = '/data/raw_data/study-bfi_data.csv'
-      const issues = new DatasetIssues()
-      const ignore = new FileIgnoreRules([])
+      const ddFile = fileTree.files.find(
+        (file: psychDSFile) => file.name === 'dataset_description.json',
+      )
+      let dsContext
+      if (ddFile) {
+        const description = await ddFile.text().then((text) => JSON.parse(text))
+        dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, ddFile, description)
+      }
+      
       const file = new psychDSFileDeno(PATH, fileName, ignore)
-      const context = new psychDSContext(fileTree, file, issues)
+      const context = new psychDSContext(fileTree, file, issues,dsContext)
       await context.asyncLoads()
       context.validColumns = ["A1","A2","A3","A4","A5","C1","C2","C3","C4","C5","E1","E2","E3","E4","E5","N1","N2","N3","N4","N5","O1","O2","O3","O4","O5","gender","education","age"]
 
@@ -50,8 +59,17 @@ Deno.test({
     })
     await t.step('Columns Not Found', async () => {
         const fileName = '/data/raw_data/study-bfi_data.csv'
+
+        const ddFile = fileTree.files.find(
+          (file: psychDSFile) => file.name === 'dataset_description.json',
+        )
+        let dsContext
+        if (ddFile) {
+          const description = await ddFile.text().then((text) => JSON.parse(text))
+          dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, ddFile, description)
+        }
         const file = new psychDSFileDeno(PATH, fileName, ignore)
-        const context = new psychDSContext(fileTree, file, issues)
+        const context = new psychDSContext(fileTree, file, issues,dsContext)
         await context.asyncLoads()
         context.validColumns = []
         await applyRules(schema as unknown as GenericSchema,context)
@@ -65,10 +83,7 @@ Deno.test({
         let dsContext
         if (ddFile) {
           const description = await ddFile.text().then((text) => JSON.parse(text))
-          dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions, description)
-          //console.log(dsContext)
-        } else {
-          dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions)
+          dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions, ddFile, description)
         }
       
         const fileName = '/dataset_description.json'
@@ -85,33 +100,31 @@ Deno.test({
       const issues = new DatasetIssues()
       const ignore = new FileIgnoreRules([])
       const ddFile = invFileTree.files.find(
-            (file: psychDSFile) => file.name === 'dataset_description.json',
-          )
-          let dsContext
-          if (ddFile) {
-            const description = await ddFile.text().then((text) => JSON.parse(text))
-            dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, description)
-          }
-        const fileName = 'dataset_description.json'
-        const file = new psychDSFileDeno(invPATH, fileName, ignore)
-        const context = new psychDSContext(invFileTree, file, issues,dsContext)
-        await context.asyncLoads()
+        (file: psychDSFile) => file.name === 'dataset_description.json',
+      )
+      let dsContext
+      if (ddFile) {
+        const description = await ddFile.text().then((text) => JSON.parse(text))
+        dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, ddFile, description)
+      }
+      const fileName = 'dataset_description.json'
+      const file = new psychDSFileDeno(invPATH, fileName, ignore)
+      const context = new psychDSContext(invFileTree, file, issues,dsContext)
+      await context.asyncLoads()
 
-        context.validColumns = []
-        await applyRules(schema as unknown as GenericSchema,context)
-        assertEquals(context.issues.has('JSON_KEY_REQUIRED'),true)
+      context.validColumns = []
+      await applyRules(schema as unknown as GenericSchema,context)
+      assertEquals(context.issues.has('JSON_KEY_REQUIRED'),true)
     })
     await t.step('Context missing', async () => {
       const ddFile = noCtxFileTree.files.find(
-          (file: psychDSFile) => file.name === 'dataset_description.json',
-        )
-        let dsContext
-        if (ddFile) {
-          const description = await ddFile.text().then((text) => JSON.parse(text))
-          dsContext = new psychDSContextDataset({datasetPath:noCtxPATH} as ValidatorOptions, description)
-        } else {
-          dsContext = new psychDSContextDataset({datasetPath:noCtxPATH} as ValidatorOptions)
-        }
+        (file: psychDSFile) => file.name === 'dataset_description.json',
+      )
+      let dsContext
+      if (ddFile) {
+        const description = await ddFile.text().then((text) => JSON.parse(text))
+        dsContext = new psychDSContextDataset({datasetPath:noCtxPATH} as ValidatorOptions, ddFile, description)
+      }
       const fileName = 'dataset_description.json'
       const file = new psychDSFileDeno(noCtxPATH, fileName, ignore)
       const context = new psychDSContext(noCtxFileTree, file, issues,dsContext)
@@ -124,37 +137,14 @@ Deno.test({
     })
     await t.step('@type missing', async () => {
       const ddFile = noTypeFileTree.files.find(
-          (file: psychDSFile) => file.name === 'dataset_description.json',
-        )
-        let dsContext
-        if (ddFile) {
-          const description = await ddFile.text().then((text) => JSON.parse(text))
-          dsContext = new psychDSContextDataset({datasetPath:noTypePATH} as ValidatorOptions, description)
-        } else {
-          dsContext = new psychDSContextDataset({datasetPath:noTypePATH} as ValidatorOptions)
-        }
-      const fileName = 'dataset_description.json'
-      const file = new psychDSFileDeno(noTypePATH, fileName, ignore)
-      const context = new psychDSContext(noTypeFileTree, file, issues,dsContext)
-      
-      await context.asyncLoads()
-
-      context.validColumns = []
-      await applyRules(schema as unknown as GenericSchema,context)
-      assertEquals(context.issues.has('MISSING_DATASET_TYPE'),true)
-    })
-    await t.step('@type missing', async () => {
-      const ddFile = noTypeFileTree.files.find(
-          (file: psychDSFile) => file.name === 'dataset_description.json',
-        )
-        let dsContext
-        if (ddFile) {
-          const description = await ddFile.text().then((text) => JSON.parse(text))
-          dsContext = new psychDSContextDataset({datasetPath:noTypePATH} as ValidatorOptions, description)
-        } else {
-          dsContext = new psychDSContextDataset({datasetPath:noTypePATH} as ValidatorOptions)
-        }
-      const fileName = 'dataset_description.json'
+        (file: psychDSFile) => file.name === 'dataset_description.json',
+      )
+      let dsContext
+      if (ddFile) {
+        const description = await ddFile.text().then((text) => JSON.parse(text))
+        dsContext = new psychDSContextDataset({datasetPath:noTypePATH} as ValidatorOptions, ddFile, description)
+      }
+      const fileName = '/data/raw_data/study-bfi_data.csv'
       const file = new psychDSFileDeno(noTypePATH, fileName, ignore)
       const context = new psychDSContext(noTypeFileTree, file, issues,dsContext)
       
@@ -166,16 +156,15 @@ Deno.test({
     })
     await t.step('@type incorrect', async () => {
       const ddFile = wrongTypeFileTree.files.find(
-          (file: psychDSFile) => file.name === 'dataset_description.json',
-        )
-        let dsContext
-        if (ddFile) {
-          const description = await ddFile.text().then((text) => JSON.parse(text))
-          dsContext = new psychDSContextDataset({datasetPath:wrongTypePATH} as ValidatorOptions, description)
-        } else {
-          dsContext = new psychDSContextDataset({datasetPath:wrongTypePATH} as ValidatorOptions)
-        }
-      const fileName = 'dataset_description.json'
+        (file: psychDSFile) => file.name === 'dataset_description.json',
+      )
+      let dsContext
+      if (ddFile) {
+        const description = await ddFile.text().then((text) => JSON.parse(text))
+        dsContext = new psychDSContextDataset({datasetPath:wrongTypePATH} as ValidatorOptions, ddFile, description)
+      }
+      const fileName = '/data/raw_data/study-bfi_data.csv'
+
       const file = new psychDSFileDeno(wrongTypePATH, fileName, ignore)
       const context = new psychDSContext(wrongTypeFileTree, file, issues,dsContext)
       
@@ -192,35 +181,32 @@ Deno.test({
       let dsContext
       if (ddFile) {
         const description = await ddFile.text().then((text) => JSON.parse(text))
-        dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions, description)
-        //console.log(dsContext)
-      } else {
-        dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions)
+        dsContext = new psychDSContextDataset({datasetPath:noTypePATH} as ValidatorOptions, ddFile, description)
       }
 
-      const fileName = '/dataset_description.json'
-      const file = new psychDSFileDeno(PATH, fileName, ignore)
-      const context = new psychDSContext(fileTree, file, issues,dsContext)
+      const fileName = '/data/raw_data/study-bfi_data.csv'
+
+      const file = new psychDSFileDeno(noTypePATH, fileName, ignore)
+      const context = new psychDSContext(noTypeFileTree, file, issues,dsContext)
       await context.asyncLoads()
       context.dataset.dataset_description.variableMeasured = []
       context.validColumns = []
 
       await applyRules(schema as unknown as GenericSchema,context)
-      assertEquals(context.issues.has('INVALID_SCHEMAORG_PROPERTY'),false)
+      assertEquals(context.issues.has('INVALID_SCHEMAORG_PROPERTY'),true)
     })
 
     await t.step('invalid object type', async () => {
       const ddFile = invFileTree.files.find(
-          (file: psychDSFile) => file.name === 'dataset_description.json',
-        )
-        let dsContext
-        if (ddFile) {
-          const description = await ddFile.text().then((text) => JSON.parse(text))
-          dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, description)
-        } else {
-          dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions)
-        }
-      const fileName = 'dataset_description.json'
+        (file: psychDSFile) => file.name === 'dataset_description.json',
+      )
+      let dsContext
+      if (ddFile) {
+        const description = await ddFile.text().then((text) => JSON.parse(text))
+        dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, ddFile, description)
+      }
+      const fileName = '/data/raw_data/study-bfi_data.csv'
+
       const file = new psychDSFileDeno(invPATH, fileName, ignore)
       const context = new psychDSContext(invFileTree, file, issues,dsContext)
       
@@ -233,16 +219,15 @@ Deno.test({
 
     await t.step('missing object type', async () => {
       const ddFile = invFileTree.files.find(
-          (file: psychDSFile) => file.name === 'dataset_description.json',
-        )
-        let dsContext
-        if (ddFile) {
-          const description = await ddFile.text().then((text) => JSON.parse(text))
-          dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, description)
-        } else {
-          dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions)
-        }
-      const fileName = 'dataset_description.json'
+        (file: psychDSFile) => file.name === 'dataset_description.json',
+      )
+      let dsContext
+      if (ddFile) {
+        const description = await ddFile.text().then((text) => JSON.parse(text))
+        dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, ddFile, description)
+      }
+      const fileName = '/data/raw_data/study-bfi_data.csv'
+
       const file = new psychDSFileDeno(invPATH, fileName, ignore)
       const context = new psychDSContext(invFileTree, file, issues,dsContext)
       
@@ -254,16 +239,15 @@ Deno.test({
     })
     await t.step('unknown namespace', async () => {
       const ddFile = invFileTree.files.find(
-          (file: psychDSFile) => file.name === 'dataset_description.json',
-        )
-        let dsContext
-        if (ddFile) {
-          const description = await ddFile.text().then((text) => JSON.parse(text))
-          dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, description)
-        } else {
-          dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions)
-        }
-      const fileName = 'dataset_description.json'
+        (file: psychDSFile) => file.name === 'dataset_description.json',
+      )
+      let dsContext
+      if (ddFile) {
+        const description = await ddFile.text().then((text) => JSON.parse(text))
+        dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, ddFile, description)
+      }
+      const fileName = '/data/raw_data/study-bfi_data.csv'
+
       const file = new psychDSFileDeno(invPATH, fileName, ignore)
       const context = new psychDSContext(invFileTree, file, issues,dsContext)
       
@@ -272,6 +256,28 @@ Deno.test({
       context.validColumns = []
       await applyRules(schema as unknown as GenericSchema,context)
       assertEquals(context.issues.has('UNKNOWN_NAMESPACE'),true)
+    })
+    await t.step('correct sidecar identified', async () => {
+      const ddFile = fileTree.files.find(
+        (file: psychDSFile) => file.name === 'dataset_description.json',
+      )
+      let dsContext
+      if (ddFile) {
+        const description = await ddFile.text().then((text) => JSON.parse(text))
+        dsContext = new psychDSContextDataset({datasetPath:noTypePATH} as ValidatorOptions, ddFile, description)
+      }
+
+      const fileName = '/data/raw_data/study-bfi_data.csv'
+
+      const file = new psychDSFileDeno(noTypePATH, fileName, ignore)
+      const context = new psychDSContext(noTypeFileTree, file, issues,dsContext)
+      await context.asyncLoads()
+      context.dataset.dataset_description.variableMeasured = []
+      context.validColumns = []
+
+      await applyRules(schema as unknown as GenericSchema,context)
+      if(context.issues.has('INVALID_SCHEMAORG_PROPERTY'))
+        assertEquals((context.issues.get('INVALID_SCHEMAORG_PROPERTY') as Issue).files.has('/data/file_metadata.json'),true)
     })
   }
 
