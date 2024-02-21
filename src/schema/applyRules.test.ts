@@ -14,7 +14,7 @@ import { ValidatorOptions } from "../setup/options.ts";
 const PATH = 'test_data/valid_datasets/bfi-dataset'
 const schema = await loadSchema()
 const fileTree = await readFileTree(PATH)
-const issues = new DatasetIssues()
+const issues = new DatasetIssues(schema as unknown as GenericSchema)
 const ignore = new FileIgnoreRules([])
 
 
@@ -97,8 +97,6 @@ Deno.test({
         assertEquals(context.issues.has('JSON_KEY_REQUIRED'),false)
     })
     await t.step('Fields missing', async () => {
-      const issues = new DatasetIssues()
-      const ignore = new FileIgnoreRules([])
       const ddFile = invFileTree.files.find(
         (file: psychDSFile) => file.name === 'dataset_description.json',
       )
@@ -180,7 +178,7 @@ Deno.test({
       )
       let dsContext
       if (ddFile) {
-        const description = await ddFile.text().then((text) => JSON.parse(text))
+        const description = await ddFile.text().then((text) => JSON.parse(text)
         dsContext = new psychDSContextDataset({datasetPath:noTypePATH} as ValidatorOptions, ddFile, description)
       }
 
@@ -189,7 +187,6 @@ Deno.test({
       const file = new psychDSFileDeno(noTypePATH, fileName, ignore)
       const context = new psychDSContext(noTypeFileTree, file, issues,dsContext)
       await context.asyncLoads()
-      context.dataset.dataset_description.variableMeasured = []
       context.validColumns = []
 
       await applyRules(schema as unknown as GenericSchema,context)

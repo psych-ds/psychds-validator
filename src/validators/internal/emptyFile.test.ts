@@ -11,7 +11,7 @@ import { GenericSchema } from '../../types/schema.ts'
 const PATH = 'test_data/valid_datasets/bfi-dataset'
 const schema = await loadSchema()
 const fileTree = new FileTree(PATH, '/')
-const issues = new DatasetIssues()
+const issues = new DatasetIssues(schema as unknown as GenericSchema)
 const ignore = new FileIgnoreRules([])
 
 Deno.test("test emptyFile", async (t) => {

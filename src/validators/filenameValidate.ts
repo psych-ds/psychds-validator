@@ -61,7 +61,7 @@ export function checkRules(schema: GenericSchema, context: psychDSContext) {
     } else if (someIssues.length) {
       // What would we want to do with each rules issues? Add all?
       context.issues = ogIssues
-      context.issues.addNonSchemaIssue('ALL_FILENAME_RULES_HAVE_ISSUES', [
+      context.issues.addSchemaIssue('AllFilenameRulesHaveIssues', [
         {
           ...context.file,
           evidence: `Rules that matched with issues: ${someIssues
@@ -84,7 +84,7 @@ export function extensionMismatch(
     Array.isArray(rule.extensions) &&
     !rule.extensions.includes(context.extension)
   ) {
-    context.issues.addNonSchemaIssue('EXTENSION_MISMATCH', [
+    context.issues.addSchemaIssue('ExtensionMismatch', [
       { ...context.file, evidence: `Rule: ${path}` },
     ])
   }
@@ -112,8 +112,8 @@ export function keywordCheck(
       // If only a fraction of the filename or the whole filename is invalid according to regex
       // within the schema model, log error
       if((regexMatch && regexMatch[0] !== context.file.name) || !regexMatch){
-        context.issues.addNonSchemaIssue(
-          "KEYWORD_FORMATTING_ERROR",
+        context.issues.addSchemaIssue(
+          "KeywordFormattingError",
           [context.file]
         )
       }
@@ -121,8 +121,8 @@ export function keywordCheck(
     //if any of the keywords are not part of the official list within the schema model
     if(!Object.keys(context.keywords).every((keyword) => keyword in schema['meta.context.context.properties.keywords.properties'])){
       //will be delivered either as warning or error depending on schema model configuration.
-      context.issues.addNonSchemaIssue(
-        "UNOFFICIAL_KEYWORD_WARNING",
+      context.issues.addSchemaIssue(
+        "UnofficialKeywordWarning",
         [context.file]
       )
     }

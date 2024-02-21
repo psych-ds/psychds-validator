@@ -88,10 +88,10 @@ function findRuleMatches(schema, context) {
     context.filenameRules.length === 0 &&
     context.file.path !== '/.bidsignore'
   ) {
-    context.issues.addNonSchemaIssue('NOT_INCLUDED', [context.file])
+    context.issues.addSchemaIssue('NotIncluded', [context.file])
     if(context.file.name === "dataset_description.json"){
-      context.issues.addNonSchemaIssue(
-        "WRONG_METADATA_LOCATION",
+      context.issues.addSchemaIssue(
+        "WrongMetadataLocation",
         [context.file],
         `You have placed a file called "dataset_description.json" within the ${context.baseDir} 
         subDirectory. Such files are only valid when placed in the root directory.`

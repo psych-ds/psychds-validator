@@ -29,9 +29,10 @@ export async function validate(
   fileTree: FileTree,
   options: ValidatorOptions,
 ): Promise<ValidationResult> {
-  const issues = new DatasetIssues()
   const summary = new Summary()
   const schema = await loadSchema(options.schema)
+  const issues = new DatasetIssues(schema as unknown as GenericSchema)
+
   summary.schemaVersion = schema.schema_version
   
   /* There should be a dataset_description in root, this will tell us if we
@@ -50,7 +51,7 @@ export async function validate(
     catch(_error){
       dsContext = new psychDSContextDataset(options,ddFile)
       issues.addNonSchemaIssue(
-        'INVALID_JSON_FORMATTING',
+        'InvalidJsonFormatting',
         [ddFile]
       )
     }

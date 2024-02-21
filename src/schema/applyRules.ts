@@ -145,7 +145,7 @@ import { psychDSFile } from '../types/file.ts';
         }
     }
     if(invalidHeaders.length != 0){
-        context.issues.addNonSchemaIssue('CSV_COLUMN_MISSING', [
+        context.issues.addSchemaIssue('CsvColumnMissing', [
             {
               ...context.file,
               evidence: `Column headers: [${invalidHeaders}] do not appear in variableMeasured. ${schemaPath}`,
@@ -210,7 +210,7 @@ import { psychDSFile } from '../types/file.ts';
     }
     //once all missing fields are found, create issue
     if(issueKeys.length != 0){
-      context.issues.addNonSchemaIssue('JSON_KEY_REQUIRED', [
+      context.issues.addSchemaIssue('JsonKeyRequired', [
         {
           ...context.file,
           evidence: `metadata object missing fields: [${issueKeys}] as per ${schemaPath}. 
@@ -240,7 +240,7 @@ import { psychDSFile } from '../types/file.ts';
           issueFile = context.metadataProvenance['@type']
         else
           issueFile = context.file
-        context.issues.addNonSchemaIssue('INCORRECT_DATASET_TYPE', [
+        context.issues.addNonSchemaIssue('IncorrectDatasetType', [
           {
             ...issueFile,
             evidence: `dataset_description.json's "@type" property must have "Dataset" as its value.
@@ -252,7 +252,7 @@ import { psychDSFile } from '../types/file.ts';
       }
     }
     else{
-      context.issues.addNonSchemaIssue('MISSING_DATASET_TYPE', [
+      context.issues.addSchemaIssue('MissingDatasetType', [
         {
           ...context.file,
           evidence: `dataset_description.json must have either the "@type" or the "type" property.`,
@@ -281,7 +281,7 @@ import { psychDSFile } from '../types/file.ts';
         else
           issueFile = context.dataset.metadataFile
 
-        context.issues.addNonSchemaIssue('INVALID_SCHEMAORG_PROPERTY', [
+        context.issues.addNonSchemaIssue('InvalidSchemaorgProperty', [
           {
             ...issueFile,
             evidence: `This file contains one or more keys that use the schema.org namespace, but are not  official schema.org properties.
@@ -303,7 +303,7 @@ import { psychDSFile } from '../types/file.ts';
         else
           issueFile = context.dataset.metadataFile
 
-        context.issues.addNonSchemaIssue('INVALID_OBJECT_TYPE', [
+        context.issues.addNonSchemaIssue('InvalidObjectType', [
           {
             ...issueFile,
             evidence: `This file contains one or more objects with types that do not match the selectional constraints of their keys.
@@ -327,7 +327,7 @@ import { psychDSFile } from '../types/file.ts';
         else
           issueFile = context.dataset.metadataFile
 
-        context.issues.addNonSchemaIssue('OBJECT_TYPE_MISSING', [
+        context.issues.addNonSchemaIssue('ObjectTypeMissing', [
           {
             ...issueFile,
             evidence: `This file contains one or more objects without a @type property. Make sure that any object that you include
@@ -350,7 +350,7 @@ import { psychDSFile } from '../types/file.ts';
         else
           issueFile = context.dataset.metadataFile
 
-        context.issues.addNonSchemaIssue('UNKNOWN_NAMESPACE', [
+        context.issues.addNonSchemaIssue('UnknownNamespace', [
           {
             ...issueFile,
             evidence: `This file contains one or more references to namespaces other than http://schema.org:
@@ -359,7 +359,6 @@ import { psychDSFile } from '../types/file.ts';
         ])
         
       })
-      
     }
   }
 
