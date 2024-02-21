@@ -9,6 +9,7 @@ import { Severity } from '../types/issues.ts'
 import { psychDSContext } from './context.ts'
 import { logger } from '../utils/logger.ts'
 import { memoize } from '../utils/memoize.ts'
+import { psychDSFile } from '../types/file.ts';
   
   /**
    * Given a schema and context, evaluate which rules match and test them.
@@ -132,7 +133,7 @@ import { memoize } from '../utils/memoize.ts'
   function evalColumns(
     _rule: GenericRule,
     context: psychDSContext,
-    _schema: GenericSchema,
+    schema: GenericSchema,
     schemaPath: string,
   ): void {
     if (context.extension !== '.csv') return
@@ -151,20 +152,7 @@ import { memoize } from '../utils/memoize.ts'
             },
           ])
     }
-    
-  }
-  
-  /**
-   * For evaluating field requirements and values that should exist in a json
-   * sidecar for a file. Includes all checks for schema.org validity.
-   *
-   */
-  function evalJsonCheck(
-    rule: GenericRule,
-    context: psychDSContext,
-    schema: GenericSchema,
-    schemaPath: string,
-  ){
+
     //since the inherited structure for issues links them to "files" rather than "instances",
     //we collect each instance of the following issues in a dictionary so that they can be added all at once
     //to the issue corresponding to their file. For instance, if multiple "types" are missing in one metadata file,
@@ -176,6 +164,28 @@ import { memoize } from '../utils/memoize.ts'
       'typeIssues': [] as string[],
       'typeMissingIssues': [] as string[]
     } as SchemaOrgIssues
+    
+    //run full schema.org validity check
+    schemaCheck(
+      context,
+      schema,
+      schemaOrgIssues
+    )
+    
+  }
+  
+  /**
+   * For evaluating field requirements and values that should exist in a json
+   * sidecar for a file. Includes all checks for schema.org validity.
+   *
+   */
+  function evalJsonCheck(
+    rule: GenericRule,
+    context: psychDSContext,
+    _schema: GenericSchema,
+    schemaPath: string,
+  ){
+    
     //issue collection for missing JSON fields as required in schema
     const issueKeys: string[]  = []
     //loop through all the fields found in dataset_metadata.yaml, along with their requirement levels 
@@ -208,12 +218,7 @@ import { memoize } from '../utils/memoize.ts'
         },
       ])
     }
-    //run full schema.org validity check
-    schemaCheck(
-      context,
-      schema,
-      schemaOrgIssues
-    )
+    
   }
 
   //Wrapper function for recursive schema.org validity check. Checks type requirements for root object, 
@@ -230,9 +235,14 @@ import { memoize } from '../utils/memoize.ts'
       //TODO: Check if it's even valid JSON-LD to have more than one values assigned for type
         //if it is valid, it should be accounted for
       if ((context.expandedSidecar['@type'] as string[])[0] !== `${schemaNamespace}Dataset`){
-        context.issues.addSchemaIssue('IncorrectDatasetType', [
+        let issueFile: psychDSFile
+        if(Object.keys(context.metadataProvenance).includes('@type'))
+          issueFile = context.metadataProvenance['@type']
+        else
+          issueFile = context.file
+        context.issues.addNonSchemaIssue('IncorrectDatasetType', [
           {
-            ...context.file,
+            ...issueFile,
             evidence: `dataset_description.json's "@type" property must have "Dataset" as its value.
                       additionally, the term "Dataset" must implicitly or explicitly use the schema.org namespace.
                       The schema.org namespace can be explicitly set using the "@context" key`,
@@ -262,46 +272,93 @@ import { memoize } from '../utils/memoize.ts'
     issues: SchemaOrgIssues
   ){
     if(issues.termIssues.length != 0){
-      context.issues.addSchemaIssue('InvalidSchemaorgProperty', [
-        {
-          ...context.file,
-          evidence: `This file contains one or more keys that use the schema.org namespace, but are not  official schema.org properties.
-                    According to the psych-DS specification, this is not an error, but be advised that these terms will not be
-                    machine-interpretable and do not function as linked data elements. These are the keys in question: [${issues.termIssues}]`,
-        },
-      ])
+      issues.termIssues.forEach((issue) => {
+        const rootKey = issue.split('.')[1]
+        let issueFile: psychDSFile
+        //check to see which metadata file the key with the issue comes from
+        if(Object.keys(context.metadataProvenance).includes(rootKey))
+          issueFile = context.metadataProvenance[rootKey]
+        else
+          issueFile = context.dataset.metadataFile
+
+        context.issues.addNonSchemaIssue('InvalidSchemaorgProperty', [
+          {
+            ...issueFile,
+            evidence: `This file contains one or more keys that use the schema.org namespace, but are not  official schema.org properties.
+                      According to the psych-DS specification, this is not an error, but be advised that these terms will not be
+                      machine-interpretable and do not function as linked data elements. These are the keys in question: [${issues.termIssues}]`,
+          },
+        ])
+        
+      })
+      
     }
     if(issues.typeIssues.length != 0){
-      context.issues.addSchemaIssue('InvalidObjectType', [
-        {
-          ...context.file,
-          evidence: `This file contains one or more objects with types that do not match the selectional constraints of their keys.
-                     Each schema.org property (which take the form of keys in your metadata json) has a specific range of types
-                     that can be used as its value. Type constraints for a given property can be found by visiting their corresponding schema.org
-                     URL. All properties can take strings or URLS as objects, under the assumption that the string/URL represents a unique ID.
-                     Type selection errors occured at the following locations in your json structure: [${issues.typeIssues}]`,
-        },
-      ])
+      issues.typeIssues.forEach((issue) => {
+        const rootKey = issue.split('.')[1]
+        let issueFile: psychDSFile
+        //check to see which metadata file the key with the issue comes from
+        if(rootKey in context.metadataProvenance)
+          issueFile = context.metadataProvenance[rootKey]
+        else
+          issueFile = context.dataset.metadataFile
+
+        context.issues.addNonSchemaIssue('InvalidObjectType', [
+          {
+            ...issueFile,
+            evidence: `This file contains one or more objects with types that do not match the selectional constraints of their keys.
+                        Each schema.org property (which take the form of keys in your metadata json) has a specific range of types
+                        that can be used as its value. Type constraints for a given property can be found by visiting their corresponding schema.org
+                        URL. All properties can take strings or URLS as objects, under the assumption that the string/URL represents a unique ID.
+                        Type selection errors occured at the following locations in your json structure: [${issues.typeIssues}]`,
+          },
+        ])
+        
+      })
+      
     }
     if(issues.typeMissingIssues.length != 0){
-      context.issues.addSchemaIssue('ObjectTypeMissing', [
-        {
-          ...context.file,
-          evidence: `This file contains one or more objects without a @type property. Make sure that any object that you include
-                    as the value of a schema.org property contains a valid schema.org @type, unless it is functioning as some kind of 
-                    base type, such as Text or URL, containing a @value key. @type is optional, but not required on such objects.
-                    The following objects without @type were found: [${issues.typeMissingIssues}]`,
-        },
-      ])
+      issues.typeMissingIssues.forEach((issue) => {
+        const rootKey = issue.split('.')[1]
+        let issueFile: psychDSFile
+        //check to see which metadata file the key with the issue comes from
+        if(Object.keys(context.metadataProvenance).includes(rootKey))
+          issueFile = context.metadataProvenance[rootKey]
+        else
+          issueFile = context.dataset.metadataFile
+
+        context.issues.addNonSchemaIssue('ObjectTypeMissing', [
+          {
+            ...issueFile,
+            evidence: `This file contains one or more objects without a @type property. Make sure that any object that you include
+                      as the value of a schema.org property contains a valid schema.org @type, unless it is functioning as some kind of 
+                      base type, such as Text or URL, containing a @value key. @type is optional, but not required on such objects.
+                      The following objects without @type were found: [${issues.typeMissingIssues}]`,
+          },
+        ])
+        
+      })
+      
     }
     if(issues.unknownNamespaceIssues.length != 0){
-      context.issues.addSchemaIssue('UnknownNamespace', [
-        {
-          ...context.file,
-          evidence: `This file contains one or more references to namespaces other than http://schema.org:
-                    [${issues.unknownNamespaceIssues}].`,
-        },
-      ])
+      issues.unknownNamespaceIssues.forEach((issue) => {
+        const rootKey = issue.split('.')[0]
+        let issueFile: psychDSFile
+        //check to see which metadata file the key with the issue comes from
+        if(Object.keys(context.metadataProvenance).includes(rootKey))
+          issueFile = context.metadataProvenance[rootKey]
+        else
+          issueFile = context.dataset.metadataFile
+
+        context.issues.addNonSchemaIssue('UnknownNamespace', [
+          {
+            ...issueFile,
+            evidence: `This file contains one or more references to namespaces other than http://schema.org:
+                      [${issues.unknownNamespaceIssues}].`,
+          },
+        ])
+        
+      })
     }
   }
 
@@ -363,7 +420,7 @@ import { memoize } from '../utils/memoize.ts'
           let subKeys: string[] = []
           //if current property is not a valid slot of this object type, raise issue
           if (!(superClassSlots.includes(property))){
-            issues.termIssues.push(property)
+            issues.termIssues.push(`${objectPath}.${property}`)
           }
           else{
             //loop through all objects listed as value for this property
@@ -413,8 +470,10 @@ import { memoize } from '../utils/memoize.ts'
     if(type in schema[`schemaOrg.default.classes`]){
       //if type has a super class, append this type's slots to the result of this function for super class
       if('is_a' in schema[`schemaOrg.default.classes.${type}`]){
-        if('slots' in schema[`schemaOrg.default.classes.${type}`])
+        if('slots' in schema[`schemaOrg.default.classes.${type}`]){
           return (schema[`schemaOrg.default.classes.${type}.slots`] as unknown as string[]).concat(getSuperClassSlots(schema[`schemaOrg.default.classes.${type}.is_a`] as unknown as string,schema,nameSpace))
+
+        }
         else
           return getSuperClassSlots(schema[`schemaOrg.default.classes.${type}.is_a`] as unknown as string,schema,nameSpace)
       }
@@ -423,8 +482,7 @@ import { memoize } from '../utils/memoize.ts'
         return schema[`schemaOrg.default.classes.${type}.slots`] as unknown as string[]
 
     }
-    else
-      return []
+    return []
   }
 
   //recursive function for finding all classes that are more specific versions of a given class

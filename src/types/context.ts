@@ -1,11 +1,13 @@
 // deno-lint-ignore-file no-explicit-any
 import { ValidatorOptions } from '../setup/options.ts'
+import { psychDSFile } from './file.ts';
 
 export interface ContextDataset {
   dataset_description: Record<string, unknown>
   files: any[]
   tree: object
   ignored: any[]
+  metadataFile: psychDSFile
   options?: ValidatorOptions
 }
 export interface Context {
@@ -19,6 +21,7 @@ export interface Context {
   sidecar: object
   validColumns: object
   suggestedColumns: string[]
+  metadataProvenance: Record<string,psychDSFile>
   json: object
   
 }

@@ -16,6 +16,7 @@ import {
   
   export class psychDSContextDataset implements ContextDataset {
     dataset_description: Record<string, unknown>
+    metadataFile: psychDSFile
     options?: ValidatorOptions
     // deno-lint-ignore no-explicit-any
     files: any[]
@@ -24,9 +25,10 @@ import {
     // deno-lint-ignore no-explicit-any
     ignored: any[]
   
-    constructor(options?: ValidatorOptions, description = {}) {
+    constructor(options?: ValidatorOptions, metadataFile?: psychDSFile,description = {}) {
       this.dataset_description = description
       this.files = []
+      this.metadataFile = metadataFile as psychDSFile
       this.baseDirs = []
       this.tree = {}
       this.ignored = []
@@ -54,6 +56,7 @@ import {
     sidecar: object
     expandedSidecar: object
     columns: ColumnsMap
+    metadataProvenance: Record<string, psychDSFile>
     suggestedColumns: string[]
     validColumns: string[]
   
@@ -78,6 +81,7 @@ import {
       this.sidecar = dsContext ? dsContext.dataset_description : {}
       this.expandedSidecar = {}
       this.validColumns = []
+      this.metadataProvenance = {}
       this.columns = new ColumnsMap()
       this.suggestedColumns = []
     }
@@ -109,7 +113,6 @@ import {
     async loadSidecar(fileTree?: FileTree) {
       if (!fileTree) {
         fileTree = this.fileTree
-
       }
       const validSidecars = fileTree.files.filter((file) => {
         const { suffix, extension } = readElements(file.name)
@@ -118,7 +121,7 @@ import {
           // TODO: Possibly better to just specify that files matching any rule from the metadata.yaml file are sidecars
           (
             extension === '.json' &&
-            suffix === this.suffix &&
+            suffix === "data" &&
             file.name.split('.')[0] === this.fileName
             //TODO: decide how strictly the keyword format should be applied
             /* Object.keys(keywords).every((keyword) => {
@@ -161,6 +164,11 @@ import {
             )
           })
         this.sidecar = { ...this.sidecar, ...json }
+        //keep record of which keys in the metadata object came from which file, 
+        //so they can be properly identified when issues arise
+        Object.keys(json).forEach((key) => {
+          this.metadataProvenance[key] = validSidecars[0]
+        })
       }
       const nextDir = fileTree.directories.find((directory) => {
         return this.file.path.startsWith(directory.path)
@@ -251,7 +259,10 @@ import {
         //to all keys within the json, it also throws a variety of errors for improper JSON-LD syntax,
         //which mostly all pertain to improper usages of privileged @____ keywords
         const exp = await jsonld.expand(this.sidecar)
-        return exp[0]
+        if(!exp[0])
+          return {}
+        else
+          return exp[0]
       }
       catch(error){
         //format thrown error and pipe into validator issues
