@@ -94,7 +94,7 @@ import { psychDSFile } from '../types/file.ts';
       schemaPath: string,
     ) => boolean | void | Promise<void>
   > = {
-    columns: evalColumns,
+    columnsMatchMetadata: evalColumns,
     fields: evalJsonCheck,
   }
   
