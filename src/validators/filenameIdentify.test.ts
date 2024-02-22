@@ -21,6 +21,9 @@ const ignore = new FileIgnoreRules([])
 
 const node = {
   stem: 'dataset_description',
+  arbitraryNesting: true,
+  baseDir: "/",
+  extensions: [".json"]
 }
 
 const recurseNode = {
