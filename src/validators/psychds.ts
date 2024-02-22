@@ -50,7 +50,7 @@ export async function validate(
     }
     catch(_error){
       dsContext = new psychDSContextDataset(options,ddFile)
-      issues.addNonSchemaIssue(
+      issues.addSchemaIssue(
         'InvalidJsonFormatting',
         [ddFile]
       )

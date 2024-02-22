@@ -240,7 +240,7 @@ import { psychDSFile } from '../types/file.ts';
           issueFile = context.metadataProvenance['@type']
         else
           issueFile = context.file
-        context.issues.addNonSchemaIssue('IncorrectDatasetType', [
+        context.issues.addSchemaIssue('IncorrectDatasetType', [
           {
             ...issueFile,
             evidence: `dataset_description.json's "@type" property must have "Dataset" as its value.
@@ -281,7 +281,7 @@ import { psychDSFile } from '../types/file.ts';
         else
           issueFile = context.dataset.metadataFile
 
-        context.issues.addNonSchemaIssue('InvalidSchemaorgProperty', [
+        context.issues.addSchemaIssue('InvalidSchemaorgProperty', [
           {
             ...issueFile,
             evidence: `This file contains one or more keys that use the schema.org namespace, but are not  official schema.org properties.
@@ -303,7 +303,7 @@ import { psychDSFile } from '../types/file.ts';
         else
           issueFile = context.dataset.metadataFile
 
-        context.issues.addNonSchemaIssue('InvalidObjectType', [
+        context.issues.addSchemaIssue('InvalidObjectType', [
           {
             ...issueFile,
             evidence: `This file contains one or more objects with types that do not match the selectional constraints of their keys.
@@ -327,7 +327,7 @@ import { psychDSFile } from '../types/file.ts';
         else
           issueFile = context.dataset.metadataFile
 
-        context.issues.addNonSchemaIssue('ObjectTypeMissing', [
+        context.issues.addSchemaIssue('ObjectTypeMissing', [
           {
             ...issueFile,
             evidence: `This file contains one or more objects without a @type property. Make sure that any object that you include
@@ -350,7 +350,7 @@ import { psychDSFile } from '../types/file.ts';
         else
           issueFile = context.dataset.metadataFile
 
-        context.issues.addNonSchemaIssue('UnknownNamespace', [
+        context.issues.addSchemaIssue('UnknownNamespace', [
           {
             ...issueFile,
             evidence: `This file contains one or more references to namespaces other than http://schema.org:
