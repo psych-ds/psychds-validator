@@ -7,7 +7,6 @@ Deno.test('Deno implementation of FileIgnoreRules', async (t) => {
       '/sub-01/anat/sub-01_T1w.nii.gz',
       '/dataset_description.json',
       '/README',
-      '/CHANGES',
       '/participants.tsv',
       '/.git/HEAD',
       '/sub-01/anat/non-bidsy-file.xyz',
