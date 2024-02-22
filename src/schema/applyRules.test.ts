@@ -45,7 +45,7 @@ Deno.test({
       )
       let dsContext
       if (ddFile) {
-        const description = await ddFile.text().then((text) => JSON.parse(text))
+        const description = await ddFile.text().then((text: string) => JSON.parse(text))
         dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, ddFile, description)
       }
       
@@ -65,7 +65,7 @@ Deno.test({
         )
         let dsContext
         if (ddFile) {
-          const description = await ddFile.text().then((text) => JSON.parse(text))
+          const description = await ddFile.text().then((text: string) => JSON.parse(text))
           dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, ddFile, description)
         }
         const file = new psychDSFileDeno(PATH, fileName, ignore)
@@ -82,7 +82,7 @@ Deno.test({
         )
         let dsContext
         if (ddFile) {
-          const description = await ddFile.text().then((text) => JSON.parse(text))
+          const description = await ddFile.text().then((text: string) => JSON.parse(text))
           dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions, ddFile, description)
         }
       
@@ -102,7 +102,7 @@ Deno.test({
       )
       let dsContext
       if (ddFile) {
-        const description = await ddFile.text().then((text) => JSON.parse(text))
+        const description = await ddFile.text().then((text: string) => JSON.parse(text))
         dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, ddFile, description)
       }
       const fileName = 'dataset_description.json'
@@ -120,7 +120,7 @@ Deno.test({
       )
       let dsContext
       if (ddFile) {
-        const description = await ddFile.text().then((text) => JSON.parse(text))
+        const description = await ddFile.text().then((text: string) => JSON.parse(text))
         dsContext = new psychDSContextDataset({datasetPath:noCtxPATH} as ValidatorOptions, ddFile, description)
       }
       const fileName = 'dataset_description.json'
@@ -139,7 +139,7 @@ Deno.test({
       )
       let dsContext
       if (ddFile) {
-        const description = await ddFile.text().then((text) => JSON.parse(text))
+        const description = await ddFile.text().then((text: string) => JSON.parse(text))
         dsContext = new psychDSContextDataset({datasetPath:noTypePATH} as ValidatorOptions, ddFile, description)
       }
       const fileName = '/data/raw_data/study-bfi_data.csv'
@@ -158,7 +158,7 @@ Deno.test({
       )
       let dsContext
       if (ddFile) {
-        const description = await ddFile.text().then((text) => JSON.parse(text))
+        const description = await ddFile.text().then((text: string) => JSON.parse(text))
         dsContext = new psychDSContextDataset({datasetPath:wrongTypePATH} as ValidatorOptions, ddFile, description)
       }
       const fileName = '/data/raw_data/study-bfi_data.csv'
@@ -178,7 +178,7 @@ Deno.test({
       )
       let dsContext
       if (ddFile) {
-        const description = await ddFile.text().then((text) => JSON.parse(text)
+        const description = await ddFile.text().then((text: string) => JSON.parse(text))
         dsContext = new psychDSContextDataset({datasetPath:noTypePATH} as ValidatorOptions, ddFile, description)
       }
 
@@ -199,7 +199,7 @@ Deno.test({
       )
       let dsContext
       if (ddFile) {
-        const description = await ddFile.text().then((text) => JSON.parse(text))
+        const description = await ddFile.text().then((text: string) => JSON.parse(text))
         dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, ddFile, description)
       }
       const fileName = '/data/raw_data/study-bfi_data.csv'
@@ -220,7 +220,7 @@ Deno.test({
       )
       let dsContext
       if (ddFile) {
-        const description = await ddFile.text().then((text) => JSON.parse(text))
+        const description = await ddFile.text().then((text: string) => JSON.parse(text))
         dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, ddFile, description)
       }
       const fileName = '/data/raw_data/study-bfi_data.csv'
@@ -240,7 +240,7 @@ Deno.test({
       )
       let dsContext
       if (ddFile) {
-        const description = await ddFile.text().then((text) => JSON.parse(text))
+        const description = await ddFile.text().then((text: string) => JSON.parse(text))
         dsContext = new psychDSContextDataset({datasetPath:invPATH} as ValidatorOptions, ddFile, description)
       }
       const fileName = '/data/raw_data/study-bfi_data.csv'
@@ -260,7 +260,7 @@ Deno.test({
       )
       let dsContext
       if (ddFile) {
-        const description = await ddFile.text().then((text) => JSON.parse(text))
+        const description = await ddFile.text().then((text: string) => JSON.parse(text))
         dsContext = new psychDSContextDataset({datasetPath:noTypePATH} as ValidatorOptions, ddFile, description)
       }
 
@@ -280,8 +280,3 @@ Deno.test({
 
     
 })
-
-
-
-
-
