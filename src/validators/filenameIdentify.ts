@@ -58,12 +58,18 @@ export function findFileRules(schema,rulesRecord) {
 
 export function _findFileRules(node, path,rulesRecord) {
     if (
-      ('path' in node) ||
-      ('stem' in node) ||
-      (('baseDir' in node) &&
+      ('baseDir' in node) &&
       ('extensions' in node) &&
-      ('suffix'))
+      (('suffix' in node) || ('stem' in node))
     ) {
+      rulesRecord[path] = false
+      return
+    }
+    //recognize that some objects required or recommended by the spec are directories
+    if (
+      'path' in node &&
+      'directory' in node
+    ){
       rulesRecord[path] = false
       return
     }
@@ -88,8 +94,11 @@ function findRuleMatches(schema, context) {
     context.filenameRules.length === 0 &&
     context.file.path !== '/.bidsignore'
   ) {
+    //if no rules are found to match given file/directory, add NotIncluded warning to indicate 
+    //that the file/directory is not part of the PsychDS specification
     context.issues.addSchemaIssue('NotIncluded', [context.file])
     if(context.file.name === "dataset_description.json"){
+      //if global metadata file is located outside of root directory, issue specific warning
       context.issues.addSchemaIssue(
         "WrongMetadataLocation",
         [context.file],
@@ -101,28 +110,55 @@ function findRuleMatches(schema, context) {
   return Promise.resolve()
 }
 
+function checkFileRules(arbitraryNesting: boolean, hasSuffix: boolean, node, context){
+  let baseDirCond: boolean = null
+  let suffixStemCond: boolean = null
+
+  //if arbitraryNesting applies, then it is only required that the file is located in the correct base directory,
+  //with any number of subdirectories intervening
+  if (arbitraryNesting)
+    baseDirCond = context.baseDir === node.baseDir
+  //otherwise, the file must be located directly under the baseDir
+  else{
+    //if the baseDir is root, arbitraryNesting does not apply
+    if(context.baseDir === "/")
+      baseDirCond = context.path === `/${context.file.name}`
+    else
+      baseDirCond = context.path === `/${node.baseDir}/${context.file.name}`
+  }
+
+  //if the suffix property is present on a rule, then the file should be identified by its suffix
+  if (hasSuffix)
+    suffixStemCond = context.suffix === node.suffix
+  //otherwise, a file should be identified with its stem
+  else
+    suffixStemCond = context.file.name.startsWith(node.stem)
+
+  //files are identified by a combination of their baseDir, their extensions, and either their stem or their suffix
+  if (
+    baseDirCond &&
+    node.extensions.includes(context.extension) &&
+    suffixStemCond
+  )
+    return true
+  else
+    return false
+}
+
 /* Schema rules specifying valid filenames follow a variety of patterns.
- * 'path', 'stem' or 'suffixies' contain the most unique identifying
+ * 'baseDir', 'extensions', 'stem' or 'suffixies' contain the most unique identifying
  * information for a rule. We don't know what kind of filename the context is,
- * so if one of these three match the respective value in the context lets
+ * so if one of these  match the respective value in the context lets
  * assume that this schema rule is applicable to this file.
  */
 export function _findRuleMatches(node, path, context) {
-  //console.log(node)
-  if (
-    ('path' in node && context.file.path === node.path) ||
-    ('stem' in node && context.file.name.startsWith(node.stem)) ||
-    ((('baseDir' in node && 'arbitraryNesting' in node && node.arbitraryNesting && context.baseDir === node.baseDir) ||
-    ('baseDir' in node && 'arbitraryNesting' in node && !node.arbitraryNesting && context.path === `/${node.baseDir}/${context.file.name}`)) &&
-    ('extensions' in node && node.extensions.includes(context.extension)) &&
-    ('suffix' in node && context.suffix === node.suffix))
-  ) {
-    context.filenameRules.push(path)
-    return
+  if ('arbitraryNesting' in node){
+    if (checkFileRules(node.arbitraryNesting,'suffix' in node, node, context)){
+      context.filenameRules.push(path)
+      return
+    }
   }
-  if (
-    !('path' in node || 'stem' in node || 'baseDir' in node || 'extensions' in node || 'suffix' in node)
-  ) {
+  else {
     Object.keys(node).map((key) => {
       if(
         typeof node[key] === 'object'

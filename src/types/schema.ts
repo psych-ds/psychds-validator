@@ -68,7 +68,7 @@ export interface GenericRuleOrg {
 export interface GenericRule {
   selectors?: string[]
   checks?: string[]
-  columns?: Record<string, string>
+  columnsMatchMetadata?: boolean
   additional_columns?: string
   initial_columns?: string[]
   fields: Record<string, SchemaFields>

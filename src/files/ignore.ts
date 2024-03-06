@@ -13,6 +13,7 @@ export async function readPsychDSIgnore(file: psychDSFile) {
 
 const defaultIgnores = [
   '.git**',
+  '*.DS_Store',
   '.datalad/',
   '.reproman/',
   'sourcedata/',
@@ -21,11 +22,9 @@ const defaultIgnores = [
   'materials/',
   'results/',
   'products/',
+  'analysis/',
   'documentation/',
-  'CHANGES*',
-  'log/',
-  '**/meg/*.ds/**',
-  '**/micr/*.zarr/**',
+  'log/'
 ]
 
 /**
