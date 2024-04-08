@@ -1,6 +1,6 @@
 import { Schema } from '../types/schema.ts'
 import { objectPathHandler } from '../utils/objectPathHandler.ts'
-import * as schemaDefault from 'https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons/1.1.0/schema.json' with { type: 'json' }
+import * as schemaDefault from 'https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons/1.3.0/schema.json?v=1233' with { type: 'json' }
 
 /**
  * Load the schema from the specification
@@ -8,15 +8,15 @@ import * as schemaDefault from 'https://raw.githubusercontent.com/psych-ds/psych
  * version is ignored when the network cannot be accessed
  */
 export async function loadSchema(version = 'latest'): Promise<Schema> {
-  const versionRegex = /^v\d/
+  const versionRegex = /\d+.\d+.\d+/
   let schemaUrl = version
   const psychdsSchema =
     typeof Deno !== 'undefined' ? Deno.env.get('psychDS_SCHEMA') : undefined
-  const schemaOrgUrl = `https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/external_schemas/schemaorg/schemaorg.json?v=34${Date.now()}`
+  const schemaOrgUrl = `https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/external_schemas/schemaorg/schemaorg.json?v=${Date.now()}`
   if (psychdsSchema !== undefined) {
     schemaUrl = psychdsSchema
   } else if (version === 'latest' || versionRegex.test(version)) {
-    schemaUrl = `https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons/${version}/schema.json?v=34${Date.now()}`
+    schemaUrl = `https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons/${version}/schema.json?v=${Date.now()}`
   }
   try {
     let schemaModule = await import(schemaUrl, {

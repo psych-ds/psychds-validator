@@ -38,6 +38,7 @@ interface DatasetIssuesAddParams {
   reason: string
   // Defaults to error
   severity?: Severity
+  requires?: string[]
   // Defaults to an empty array if no files are provided
   files?: Array<IssueFile>
 }
@@ -59,6 +60,7 @@ export class DatasetIssues extends Map<string, Issue> {
     key,
     reason,
     severity = 'error',
+    requires = [],
     files = [],
   }: DatasetIssuesAddParams): Issue {
     const existingIssue = this.get(key)
@@ -73,6 +75,7 @@ export class DatasetIssues extends Map<string, Issue> {
         key,
         severity,
         reason,
+        requires,
         files,
       })
       this.set(key, newIssue)
@@ -95,8 +98,10 @@ export class DatasetIssues extends Map<string, Issue> {
         key: this.schema[`rules.errors.${key}.code`] as string,
         reason: this.schema[`rules.errors.${key}.reason`] as string,
         severity: this.schema[`rules.errors.${key}.level`] as string as Severity,
+        requires: this.schema[`rules.errors.${key}.requires`] as string[],
         files: files
       })
+      
     }
   }
 
@@ -117,6 +122,15 @@ export class DatasetIssues extends Map<string, Issue> {
    */
   getFileIssueKeys(path: string): string[] {
     return this.fileInIssues(path).map((issue) => issue.key)
+  }
+
+  //removes any issues that pertain to objects that were not founds
+  filterIssues(rulesRecord: Record<string,boolean>){
+    for (const [_, issue] of this) {
+      if(!issue.requires.every((req) => rulesRecord[req])){
+        this.delete(_)
+      }
+    }
   }
 
   /**

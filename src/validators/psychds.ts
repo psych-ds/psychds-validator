@@ -95,6 +95,9 @@ export async function validate(
   checkDirRules(schema,rulesRecord,dsContext.baseDirs)
   checkMissingRules(schema as unknown as GenericSchema,rulesRecord,issues)
 
+  //filters out issues that apply to unfound objects
+  issues.filterIssues(rulesRecord)
+
   const output: ValidationResult = {
     valid: [...issues.values()].filter(issue => issue.severity === "error").length === 0,
     issues,
