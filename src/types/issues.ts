@@ -66,22 +66,26 @@ export class Issue {
   key: string
   severity: Severity
   reason: string
+  requires: string[]
   files: Map<string, IssueFile>
 
   constructor({
     key,
     severity,
     reason,
+    requires,
     files,
   }: {
     key: string
     severity: Severity
     reason: string
+    requires: string[]
     files: Map<string, IssueFile> | IssueFile[]
   }) {
     this.key = key
     this.severity = severity
     this.reason = reason
+    this.requires = requires
     // We want to be able to easily look up by path, so turn IssueFile[] into a Map
     if (Array.isArray(files)) {
       this.files = new Map()
