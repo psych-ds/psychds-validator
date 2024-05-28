@@ -19,17 +19,23 @@ export async function loadSchema(version = 'latest'): Promise<Schema> {
     schemaUrl = `https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons/${version}/schema.json?v=${Date.now()}`
   }
   try {
-    let schemaModule = await import(schemaUrl, {
-      with: { type: 'json' },
-    })
+    let schemaModule = await fetch(schemaUrl)
+            .then(response => response.text())
+            .then(data => JSON.parse(data))
+            .catch(error => {
+                console.error('Error fetching JSON:', error);
+              });
     schemaModule = {...schemaModule}
-    const schemaOrgModule = await import(schemaOrgUrl, {
-      with: { type: 'json'},
-    })
-    schemaModule.default = {...schemaModule.default,
+    const schemaOrgModule = await fetch(schemaOrgUrl)
+            .then(response => response.text())
+            .then(data => JSON.parse(data))
+            .catch(error => {
+                console.error('Error fetching JSON:', error);
+              });
+    schemaModule = {...schemaModule,
       schemaOrg:schemaOrgModule}
     return new Proxy(
-      schemaModule.default as object,
+      schemaModule as object,
       objectPathHandler,
     ) as Schema
   } catch (error) {
