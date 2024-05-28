@@ -27,6 +27,19 @@ Deno.test({
   sanitizeResources: false,
   fn: async (t) => {
   await t.step('file sidecar overwrites directory sidecar', async() => {
+    const PATH = 'test_data/valid_datasets/bfi-dataset'
+    const absolutePath = resolve(PATH)
+    const fileTree = await readFileTree(absolutePath)
+    const issues = new DatasetIssues()
+    const ignore = new FileIgnoreRules([])
+    const ddFile = fileTree.files.find(
+      (file: psychDSFile) => file.name === 'dataset_description.json',
+    )
+    let dsContext: psychDSContextDataset = new psychDSContextDataset()
+    if (ddFile) {
+      const description = ddFile.expanded
+      dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions, ddFile,description)
+    }
     const fileName = '/data/raw_data/study-bfi_data.csv'
     const file = new psychDSFileDeno(absolutePath, fileName, ignore)
     
@@ -43,6 +56,18 @@ Deno.test({
 
   await t.step('directory sidecar overwrites dataset_description', async() => {
     const fileName = '/data/raw_data/study-other_data.csv'
+    const absolutePath = resolve(PATH)
+    const fileTree = await readFileTree(absolutePath)
+    const issues = new DatasetIssues()
+    const ignore = new FileIgnoreRules([])
+    const ddFile = fileTree.files.find(
+      (file: psychDSFile) => file.name === 'dataset_description.json',
+    )
+    let dsContext: psychDSContextDataset = new psychDSContextDataset()
+    if (ddFile) {
+      const description = ddFile.expanded
+      dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions, ddFile,description)
+    }
     const file = new psychDSFileDeno(PATH, fileName, ignore)
 
     const context = new psychDSContext(fileTree, file, issues,dsContext)
