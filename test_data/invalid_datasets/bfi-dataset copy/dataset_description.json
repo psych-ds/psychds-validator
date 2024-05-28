@@ -4,6 +4,9 @@
   "creator": [
     {
       "@type":["Dataset"],
+      "@index":{
+        "@type":["Dataset"]
+      },
       "name": "William Revelle"
     }
   ],
