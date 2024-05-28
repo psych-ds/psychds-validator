@@ -2,10 +2,11 @@
  * Deno specific implementation for reading files
  */
 import { join, basename } from '../deps/path.ts'
-import { psychDSFile } from '../types/file.ts'
+import { psychDSFile, issueInfo } from '../types/file.ts'
 import { FileTree } from '../types/filetree.ts'
 import { requestReadPermission } from '../setup/requestPermissions.ts'
 import { readPsychDSIgnore, FileIgnoreRules } from './ignore.ts'
+import jsonld from "npm:jsonld@8.3.2";
 
 /**
  * Thrown when a text file is decoded as UTF-8 but contains UTF-16 characters
@@ -24,6 +25,9 @@ export class psychDSFileDeno implements psychDSFile {
   #ignore: FileIgnoreRules
   name: string
   path: string
+  expanded: object
+  issueInfo: issueInfo[]
+  fileText: string
   #fileInfo?: Deno.FileInfo
   #datasetAbsPath: string
 
@@ -31,6 +35,9 @@ export class psychDSFileDeno implements psychDSFile {
     this.#datasetAbsPath = datasetPath
     this.path = path
     this.name = basename(path)
+    this.fileText = ''
+    this.expanded = {}
+    this.issueInfo = []
     this.#ignore = ignore
     try {
       this.#fileInfo = Deno.statSync(this._getPath())
@@ -114,6 +121,7 @@ export async function _readFileTree(
   relativePath: string,
   ignore: FileIgnoreRules,
   parent?: FileTree,
+  context?: object | null
 ): Promise<FileTree> {
   await requestReadPermission()
   const name = basename(relativePath)
@@ -126,9 +134,47 @@ export async function _readFileTree(
         join(relativePath, dirEntry.name),
         ignore,
       )
+      //store text of file for later. This was added to accommodate browser version
+      file.fileText = (await file.text())
+        .replaceAll('https://schema.org','http://schema.org')
+        .replaceAll('https://www.schema.org','http://www.schema.org')
+
       // For .psychdsignore, read in immediately and add the rules
       if (dirEntry.name === '.psychdsignore') {
-        ignore.add(await readPsychDSIgnore(file))
+        ignore.add(readPsychDSIgnore(file))
+      }
+      if (dirEntry.name.endsWith('.json')) {
+        let json = {}
+        let exp = []
+        try{
+          json = await JSON.parse(file.fileText)
+          if (!parent && dirEntry.name.endsWith('dataset_description.json') && '@context' in json){
+            context = json['@context'] as object
+          }
+          else if (context){
+            json = {
+              ...json,
+              '@context': context
+            }
+          }
+        }
+        catch(_error){
+          file.issueInfo.push({
+            key: 'InvalidJsonFormatting'
+          })
+        }
+        
+        try{
+          exp = await jsonld.expand(json)
+          if (exp.length > 0)
+            file.expanded = exp[0]
+        }
+        catch(error){
+          file.issueInfo.push({
+            key: 'InvalidJsonldSyntax',
+            evidence: `${error.message.split(';')[1]}`
+          })
+        }
       }
       tree.files.push(file)
     }
@@ -138,6 +184,7 @@ export async function _readFileTree(
         join(relativePath, dirEntry.name),
         ignore,
         tree,
+        context
       )
       tree.directories.push(dirTree)
     }
@@ -152,3 +199,5 @@ export function readFileTree(rootPath: string): Promise<FileTree> {
   const ignore = new FileIgnoreRules([])
   return _readFileTree(rootPath, '/', ignore)
 }
+
+export {FileIgnoreRules as FileIgnoreRules}
