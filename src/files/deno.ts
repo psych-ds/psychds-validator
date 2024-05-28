@@ -147,11 +147,14 @@ export async function _readFileTree(
         let json = {}
         let exp = []
         try{
+          console.log(file.name)
           json = await JSON.parse(file.fileText)
+          console.log(json)
           if (!parent && dirEntry.name.endsWith('dataset_description.json') && '@context' in json){
             context = json['@context'] as object
           }
           else if (context){
+            console.log('context found')
             json = {
               ...json,
               '@context': context
@@ -165,7 +168,9 @@ export async function _readFileTree(
         }
         
         try{
+          console.log('expanding...')
           exp = await jsonld.expand(json)
+          console.log(exp)
           if (exp.length > 0)
             file.expanded = exp[0]
         }
