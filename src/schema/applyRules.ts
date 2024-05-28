@@ -140,6 +140,7 @@ import { psychDSFile } from '../types/file.ts';
     const headers = [...Object.keys(context.columns)]
     let invalidHeaders : string[] = []
     for (const header of headers){
+      
         if(!(context.validColumns.includes(header))){
             invalidHeaders = [...invalidHeaders,header]
         }
@@ -164,7 +165,6 @@ import { psychDSFile } from '../types/file.ts';
       'typeIssues': [] as string[],
       'typeMissingIssues': [] as string[]
     } as SchemaOrgIssues
-    
     //run full schema.org validity check
     schemaCheck(
       context,
@@ -185,7 +185,7 @@ import { psychDSFile } from '../types/file.ts';
     _schema: GenericSchema,
     schemaPath: string,
   ){
-    
+
     //issue collection for missing JSON fields as required in schema
     const issueKeys: string[]  = []
     //loop through all the fields found in dataset_metadata.yaml, along with their requirement levels 
@@ -195,7 +195,7 @@ import { psychDSFile } from '../types/file.ts';
       const keyName = `${rule.namespace}${key}`
       //expandedSidecar represents the metadata object with all contexts added, e.g. the "name" field becomes the "https://schema.org/name" field.
       //we add this schema.org namespace to keyName to account for this.
-      if (severity && severity !== 'ignore' && !(keyName in context.expandedSidecar)) {
+      if (severity && severity !== 'ignore' && !(keyName in context.sidecar)) {
         if (requirement.issue?.code && requirement.issue?.message) {
           context.issues.add({
             key: requirement.issue.code,
@@ -230,16 +230,16 @@ import { psychDSFile } from '../types/file.ts';
   ){
     const schemaNamespace = 'http://schema.org/'
     //@type is required in the root object of the metadata file
-    if ("@type" in context.expandedSidecar){
+    if ("@type" in context.sidecar){
       //@type for the root object must be schema.org/Dataset
       //TODO: Check if it's even valid JSON-LD to have more than one values assigned for type
         //if it is valid, it should be accounted for
-      if ((context.expandedSidecar['@type'] as string[])[0] !== `${schemaNamespace}Dataset`){
+      if ((context.sidecar['@type'] as string[])[0] !== `${schemaNamespace}Dataset`){
         let issueFile: psychDSFile
         if(Object.keys(context.metadataProvenance).includes('@type'))
           issueFile = context.metadataProvenance['@type']
         else
-          issueFile = context.file
+          issueFile = context.dataset.metadataFile
         context.issues.addSchemaIssue('IncorrectDatasetType', [
           {
             ...issueFile,
@@ -260,9 +260,8 @@ import { psychDSFile } from '../types/file.ts';
       ])
       return
     }
-
     //collect issues recursively for all keys and values in root object
-    issues = _schemaCheck(context.expandedSidecar, context, schema, '',schemaNamespace,issues)
+    issues = _schemaCheck(context.sidecar, context, schema, '',schemaNamespace,issues)
     logSchemaIssues(context,issues)
   }
 
@@ -353,7 +352,7 @@ import { psychDSFile } from '../types/file.ts';
         context.issues.addSchemaIssue('UnknownNamespace', [
           {
             ...issueFile,
-            evidence: `This file contains one or more references to namespaces other than http://schema.org:
+            evidence: `This file contains one or more references to namespaces other than https://schema.org:
                       [${issues.unknownNamespaceIssues}].`,
           },
         ])
@@ -400,15 +399,15 @@ import { psychDSFile } from '../types/file.ts';
           const property = key.replace(nameSpace,"")
           let range: string[] = []
           //if property exists in master list of schema.org slots
-          if(property in schema[`schemaOrg.default.slots`]){
+          if(property in schema[`schemaOrg.slots`]){
             //if slot has a single range, add it to the list of ranges and then also add all types from subclasses recursively
-            if('range' in schema[`schemaOrg.default.slots.${property}`]){
-              range.push(schema[`schemaOrg.default.slots.${property}.range`] as string)
-              range = range.concat(getSubClassSlots(schema[`schemaOrg.default.slots.${property}.range`] as string,schema,nameSpace))   
+            if('range' in schema[`schemaOrg.slots.${property}`]){
+              range.push(schema[`schemaOrg.slots.${property}.range`] as string)
+              range = range.concat(getSubClassSlots(schema[`schemaOrg.slots.${property}.range`] as string,schema,nameSpace))   
             }
             //if slot has multiple valid ranges
-            if('any_of' in schema[`schemaOrg.default.slots.${property}`]){
-              for(const ran of (schema[`schemaOrg.default.slots.${property}`] as GenericRuleOrg).any_of as object[]){
+            if('any_of' in schema[`schemaOrg.slots.${property}`]){
+              for(const ran of (schema[`schemaOrg.slots.${property}`] as GenericRuleOrg).any_of as object[]){
                 if('range' in ran){
                   range.push(ran.range as string)
                   range = range.concat(getSubClassSlots(ran.range as string,schema,nameSpace))
@@ -467,19 +466,19 @@ import { psychDSFile } from '../types/file.ts';
     if(type.includes(nameSpace)){
       type = type.replace(nameSpace,"")
     }
-    if(type in schema[`schemaOrg.default.classes`]){
+    if(type in schema[`schemaOrg.classes`]){
       //if type has a super class, append this type's slots to the result of this function for super class
-      if('is_a' in schema[`schemaOrg.default.classes.${type}`]){
-        if('slots' in schema[`schemaOrg.default.classes.${type}`]){
-          return (schema[`schemaOrg.default.classes.${type}.slots`] as unknown as string[]).concat(getSuperClassSlots(schema[`schemaOrg.default.classes.${type}.is_a`] as unknown as string,schema,nameSpace))
+      if('is_a' in schema[`schemaOrg.classes.${type}`]){
+        if('slots' in schema[`schemaOrg.classes.${type}`]){
+          return (schema[`schemaOrg.classes.${type}.slots`] as unknown as string[]).concat(getSuperClassSlots(schema[`schemaOrg.classes.${type}.is_a`] as unknown as string,schema,nameSpace))
 
         }
         else
-          return getSuperClassSlots(schema[`schemaOrg.default.classes.${type}.is_a`] as unknown as string,schema,nameSpace)
+          return getSuperClassSlots(schema[`schemaOrg.classes.${type}.is_a`] as unknown as string,schema,nameSpace)
       }
       //TODO: shouldn't another if statement to check for slots presence be needed here?
       else
-        return schema[`schemaOrg.default.classes.${type}.slots`] as unknown as string[]
+        return schema[`schemaOrg.classes.${type}.slots`] as unknown as string[]
 
     }
     return []
@@ -497,10 +496,10 @@ import { psychDSFile } from '../types/file.ts';
     if(type.includes(nameSpace)){
       type = type.replace(nameSpace,"")
     }
-    if(type in schema[`schemaOrg.default.classes`]){
+    if(type in schema[`schemaOrg.classes`]){
       //loop through all classes, find those for which the given type is a superclass.
       //add to subClasses list and recurse for the class in question
-      for(const [key,value] of Object.entries(schema['schemaOrg.default.classes'])){
+      for(const [key,value] of Object.entries(schema['schemaOrg.classes'])){
           if("is_a" in value && value['is_a'] === type){
             subClasses.push(key)
             subClasses.concat(getSubClassSlots(key,schema,nameSpace))
