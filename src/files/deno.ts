@@ -127,6 +127,29 @@ export async function _readFileTree(
   const name = basename(relativePath)
   const tree = new FileTree(relativePath, name, parent)
 
+  if(!parent){
+    for await (const dirEntry of Deno.readDir(join(rootPath,relativePath))){
+      if(dirEntry.isFile && dirEntry.name === "dataset_description.json"){
+        const file = new psychDSFileDeno(
+          rootPath,
+          join(relativePath, dirEntry.name),
+          ignore,
+        )
+  
+        file.fileText = (await file.text())
+          .replaceAll('https://schema.org','http://schema.org')
+          .replaceAll('https://www.schema.org','http://www.schema.org')
+  
+        const json = await JSON.parse(file.fileText)
+  
+        if('@context' in json){
+          context = json['@context'] as object
+        }
+      }
+    }
+  }
+  
+  
   for await (const dirEntry of Deno.readDir(join(rootPath, relativePath))) {
     if (dirEntry.isFile || dirEntry.isSymlink) {
       const file = new psychDSFileDeno(
@@ -147,14 +170,8 @@ export async function _readFileTree(
         let json = {}
         let exp = []
         try{
-          console.log(file.name)
           json = await JSON.parse(file.fileText)
-          console.log(json)
-          if (!parent && dirEntry.name.endsWith('dataset_description.json') && '@context' in json){
-            context = json['@context'] as object
-          }
-          else if (context){
-            console.log('context found')
+          if (context && !dirEntry.name.endsWith('dataset_description.json')){
             json = {
               ...json,
               '@context': context
@@ -168,9 +185,7 @@ export async function _readFileTree(
         }
         
         try{
-          console.log('expanding...')
           exp = await jsonld.expand(json)
-          console.log(exp)
           if (exp.length > 0)
             file.expanded = exp[0]
         }

@@ -149,9 +149,6 @@ import {
       }
   
       if (validSidecars.length === 1) {
-        console.log('adding sidecar')
-        console.log(validSidecars[0].name)
-        console.log(validSidecars[0].expanded)
         this.sidecar = { ...this.sidecar, ...validSidecars[0].expanded }
         //keep record of which keys in the metadata object came from which file, 
         //so they can be properly identified when issues arise
