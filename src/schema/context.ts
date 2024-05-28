@@ -10,8 +10,6 @@ import {
   import { parseCSV } from '../files/csv.ts'
   import { ValidatorOptions } from '../setup/options.ts'
   import { logger } from '../utils/logger.ts'
-  import jsonld from "npm:jsonld";
-  import { IssueFile } from "../types/issues.ts";
 
   
   export class psychDSContextDataset implements ContextDataset {
@@ -88,10 +86,7 @@ import {
   
     // deno-lint-ignore no-explicit-any
     get json(): Promise<Record<string, any>> {
-      return this.file
-        .text()
-        .then((text) => JSON.parse(text))
-        .catch((_error) => {})
+      return JSON.parse(this.file.fileText)
     }
     get path(): string {
       return this.file.path
@@ -154,20 +149,12 @@ import {
       }
   
       if (validSidecars.length === 1) {
-        const json = await validSidecars[0]
-          .text()
-          .then((text) => JSON.parse(text))
-          .catch((_error) => {
-            this.issues.addSchemaIssue(
-              'InvalidJsonFormatting',
-              [validSidecars[0]]
-            )
-          })
-        this.sidecar = { ...this.sidecar, ...json }
+        this.sidecar = { ...this.sidecar, ...validSidecars[0].expanded }
         //keep record of which keys in the metadata object came from which file, 
         //so they can be properly identified when issues arise
-        Object.keys(json).forEach((key) => {
-          this.metadataProvenance[key] = validSidecars[0]
+        Object.keys(validSidecars[0].expanded).forEach((key) => {
+          const baseKey = key.split('/').at(-1) as string
+          this.metadataProvenance[baseKey] = validSidecars[0]
         })
       }
       const nextDir = fileTree.directories.find((directory) => {
@@ -180,7 +167,7 @@ import {
         //moved getExpandedSidecar to the end of loadSidecar since it is asyncronous, subsequent to 
         //the content of loadSidecar, and necessary for loadValidColumns. previous implementation had them
         //all running in parallel, which caused issues.
-        this.expandedSidecar = await this.getExpandedSidecar()
+        this.expandedSidecar = {}//await this.getExpandedSidecar()
         this.loadValidColumns()
       }
     }
@@ -194,13 +181,13 @@ import {
         //TODO:possibly redundant (could maybe be stored in one place)
         const nameSpace = "http://schema.org/"
         //if there's no variableMeasured property, then the valid column headers cannot be determined
-        if(!(`${nameSpace}variableMeasured`in this.expandedSidecar)){
+        if(!(`${nameSpace}variableMeasured`in this.sidecar)){
             return
         }
         
         let validColumns :string[] = []
 
-        for(const variable of this.expandedSidecar[`${nameSpace}variableMeasured`] as object[]){
+        for(const variable of this.sidecar[`${nameSpace}variableMeasured`] as object[]){
             //jsonld.expand turns string values in json into untyped objects with @value keys
             if('@value' in variable)
               validColumns = [...validColumns,variable['@value'] as string]
@@ -224,16 +211,17 @@ import {
       if (this.extension !== '.csv') {
         return
       }
-      const result = await this.file
-        .text()
-        .then((text) => parseCSV(text))
-        .catch((error) => {
-          logger.warning(
-            `csv file could not be opened by loadColumns '${this.file.path}'`,
-          )
-          logger.debug(error)
-          return new Map<string, string[]>() as ColumnsMap
-        })
+      let result
+      try{
+        result = await parseCSV(this.file.fileText)
+      }
+      catch(error){
+        logger.warning(
+          `csv file could not be opened by loadColumns '${this.file.path}'`,
+        )
+        logger.debug(error)
+        result = new Map<string, string[]>() as ColumnsMap
+      }
       this.columns = result['columns'] as ColumnsMap
       this.reportCSVIssues(result['issues'] as string[])
       return
@@ -248,17 +236,25 @@ import {
         )
       })
     }
-
+    /*
     async getExpandedSidecar(){
       try{
         //account for possibility of both http and https in metadata context
-        if('@context' in this.sidecar)
-          (this.sidecar['@context'] as string).replace('https','http')
+        if('@context' in this.sidecar){
+          if(typeof(this.sidecar['@context']) === 'string'){
+            if(['http://schema.org','https://schema.org','http://www.schema.org','https://www.schema.org','http://schema.org/','https://schema.org/','http://www.schema.org/','https://www.schema.org/'].includes(this.sidecar['@context'])){
+              this.sidecar['@context'] = {
+                "@vocab":"https://schema.org/"
+              }
+            }
+
+          }
+        }
         //use the jsonld library to expand metadata json and remove context.
         //in addition to adding the appropriate namespace (e.g. http://schema.org)
         //to all keys within the json, it also throws a variety of errors for improper JSON-LD syntax,
         //which mostly all pertain to improper usages of privileged @____ keywords
-        const exp = await jsonld.expand(this.sidecar)
+        const exp = [] as string[]//await jsonld.expand(this.sidecar)
         if(!exp[0])
           return {}
         else
@@ -278,7 +274,7 @@ import {
         })
         return {}
       }
-    }
+    }*/
   
     async asyncLoads() {
       await Promise.allSettled([
