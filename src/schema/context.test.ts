@@ -34,6 +34,7 @@ Deno.test({
     const context = new psychDSContext(fileTree, file, issues,dsContext)
     
     await context.loadSidecar(fileTree)
+    console.log(context.sidecar)
     if("http://schema.org/key" in context.sidecar){
       assertEquals(context.sidecar['http://schema.org/key'],[{"@value":"value"}])}
     else
