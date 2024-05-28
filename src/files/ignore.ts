@@ -1,8 +1,8 @@
 import { psychDSFile } from '../types/file.ts'
 import { ignore, Ignore } from '../deps/ignore.ts'
 
-export async function readPsychDSIgnore(file: psychDSFile) {
-  const value = await file.text()
+export function readPsychDSIgnore(file: psychDSFile) {
+  const value = file.fileText
   if (value) {
     const lines = value.split('\n')
     return lines
