@@ -7,6 +7,9 @@ import { FileTree } from '../types/filetree.ts'
 import { ValidatorOptions } from '../setup/options.ts'
 import { ValidationResult } from '../types/validation-result.ts'
 import { DatasetIssues } from '../issues/datasetIssues.ts'
+import {
+  IssueFile
+} from '../types/issues.ts'
 import { Summary } from '../summary/summary.ts'
 import { loadSchema } from '../setup/loadSchema.ts'
 import { psychDSFile } from '../types/file.ts'
@@ -45,7 +48,7 @@ export async function validate(
   let dsContext
   if (ddFile) {
     try{
-      const description = await ddFile.text().then((text) => JSON.parse(text))
+      const description = ddFile.expanded
       dsContext = new psychDSContextDataset(options, ddFile,description)
     }
     catch(_error){
@@ -66,6 +69,22 @@ export async function validate(
   findFileRules(schema,rulesRecord)
 
   for await (const context of walkFileTree(fileTree, issues, dsContext)) {
+    // json-ld processing is now done in the readFileTree stage,
+    // so there may be some issues (like json-ld grammar errors)
+    // that are discovered before the issue object is created.
+    // Check all files found for any of these issues and add them.
+    if (context.file.issueInfo.length > 0){
+      context.file.issueInfo.forEach((iss) => {
+        issues.addSchemaIssue(
+          iss.key,
+          [{
+            ...context.file,
+            evidence: iss.evidence ? iss.evidence : ''
+            } as IssueFile]
+          
+        )
+      })
+    }
     // TODO - Skip ignored files for now (some tests may reference ignored files)
     if (context.file.ignored) {
       continue

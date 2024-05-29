@@ -17,7 +17,7 @@ const ddFile = fileTree.files.find(
 )
 let dsContext: psychDSContextDataset = new psychDSContextDataset()
 if (ddFile) {
-  const description = await ddFile.text().then((text) => JSON.parse(text))
+  const description = ddFile.expanded
   dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions, ddFile,description)
 }
 
@@ -34,8 +34,8 @@ Deno.test({
     const context = new psychDSContext(fileTree, file, issues,dsContext)
     
     await context.loadSidecar(fileTree)
-    if("key" in context.sidecar){
-      assertEquals(context.sidecar.key,"value")}
+    if("http://schema.org/key" in context.sidecar){
+      assertEquals(context.sidecar['http://schema.org/key'],[{"@value":"value"}])}
     else
       assertEquals(1,2)
   })
@@ -47,8 +47,8 @@ Deno.test({
     const context = new psychDSContext(fileTree, file, issues,dsContext)
     
     await context.loadSidecar(fileTree)
-    if("key" in context.sidecar)
-      assertEquals(context.sidecar.key,"value2")
+    if("http://schema.org/key" in context.sidecar)
+      assertEquals(context.sidecar['http://schema.org/key'],[{"@value":"value2"}])
     else
       assertEquals(1,2)
   })
@@ -66,40 +66,29 @@ Deno.test({
       const context = new psychDSContext(fileTree, file, issues,dsContext)
       
       await context.loadSidecar(fileTree)
-      assertEquals("http://schema.org/name" in context.expandedSidecar,true)
+      assertEquals("http://schema.org/name" in context.sidecar,true)
     })
 
     await t.step('no context in sidecar', async() => {
-      const fileName = '/data/raw_data/study-other_data.csv'
-      const file = new psychDSFileDeno(PATH, fileName, ignore)
+      const fileName = '/data/raw_data/study-bfi_data.csv'
+      const noCtxPATH = 'test_data/invalid_datasets/bfi-dataset_nocontext'
+      const noCtxFileTree = await readFileTree(noCtxPATH)
+      const file = new psychDSFileDeno(noCtxPATH, fileName, ignore)
+      const ddFile = noCtxFileTree.files.find(
+        (file: psychDSFile) => file.name === 'dataset_description.json',
+      )
+      let dsContext: psychDSContextDataset = new psychDSContextDataset()
+      if (ddFile) {
+        const description = ddFile.expanded
+        dsContext = new psychDSContextDataset({datasetPath:noCtxPATH} as ValidatorOptions, ddFile,description)
+      }
 
-      const context = new psychDSContext(fileTree, file, issues,dsContext)
+      const context = new psychDSContext(noCtxFileTree, file, issues,dsContext)
       if("@context" in context.sidecar)
         delete context.sidecar['@context']
       
-      await context.loadSidecar(fileTree)
-      assertEquals("http://schema.org/name" in context.expandedSidecar,false)
-    })
-
-    await t.step('value in root object', async() => {
-      const fileName = '/data/raw_data/study-other_data.csv'
-      const file = new psychDSFileDeno(PATH, fileName, ignore)
-
-      const context = new psychDSContext(fileTree, file, issues,dsContext)
-      Object.assign(context.sidecar,{"@value":"test"})
-      
-      await context.loadSidecar(fileTree)
-      assertEquals("http://schema.org/name" in context.expandedSidecar,false)
-    })
-    await t.step('object as value of index', async() => {
-      const fileName = '/data/raw_data/study-other_data.csv'
-      const file = new psychDSFileDeno(PATH, fileName, ignore)
-
-      const context = new psychDSContext(fileTree, file, issues,dsContext)
-      Object.assign(context.sidecar,{"@index":{"@type":"Dataset"}})
-      
-      await context.loadSidecar(fileTree)
-      assertEquals(context.issues.has('INVALID_JSONLD_SYNTAX'),true)
+      await context.loadSidecar(noCtxFileTree)
+      assertEquals("http://schema.org/name" in context.sidecar,false)
     })
   }
 })

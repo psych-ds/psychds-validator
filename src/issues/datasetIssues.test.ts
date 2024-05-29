@@ -37,7 +37,7 @@ Deno.test('DatasetIssues management class', async (t) => {
         character: 5,
         severity: 'warning',
         reason: 'Readme borked',
-      } as IssueFile,
+      } as unknown as IssueFile,
     ]
     issues.add({ key: 'TEST_FILES_ERROR', reason: 'Test issue', files })
     assertEquals(issues.getFileIssueKeys('/README'), ['TEST_FILES_ERROR'])

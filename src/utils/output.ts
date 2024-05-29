@@ -92,17 +92,6 @@ function formatIssue(issue: Issue, options?: LoggingOptions): string {
     output.push('\t\t' + issue.files.size + ' more files with the same issue')
   }
   output.push('')
-  if (issue.helpUrl) {
-    output.push(
-      colors.cyan(
-        '\t' +
-          'Please visit ' +
-          issue.helpUrl +
-          ' for existing conversations about this issue.',
-      ),
-    )
-    output.push('')
-  }
 
   return output.join('\n')
 }

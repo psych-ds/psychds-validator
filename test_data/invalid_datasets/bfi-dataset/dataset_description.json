@@ -3,7 +3,7 @@
   "identifier": ["https://dx.doi.org/10.17605/OSF.IO/K39BG"],
   "creator": [
     {
-      "@type":["Person"],
+      "@type":["Dataset"],
       "name": "William Revelle"
     }
   ],
