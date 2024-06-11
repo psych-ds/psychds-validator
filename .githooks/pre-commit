@@ -1,0 +1,9 @@
+#!/bin/sh
+# pre-commit for bundling validate function and linting
+
+deno lint . || {
+	echo "Linting failed. Commit aborted."
+}
+
+deno bundle src/validators/psychds.ts > bundled/psychds-validator.js
+git add bundled/psychds-validator.js
