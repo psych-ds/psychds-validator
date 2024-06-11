@@ -6,3 +6,4 @@ deno lint . || {
 }
 
 deno bundle src/validators/psychds.ts > bundled/psychds-validator.js
+git add bundled/psychds-validator.js

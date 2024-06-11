@@ -2292,6 +2292,7 @@ function parseCSV(contents) {
     const columns = new ColumnsMap();
     const issues = [];
     const rows = normalizeEOL(contents).split('\n').filter(isContentfulRow).map((str)=>{
+        console.log(str);
         const matches = str.match(/".*"/);
         matches?.forEach((match)=>{
             const newMatch = match.replace(",", "[REPLACE]");
