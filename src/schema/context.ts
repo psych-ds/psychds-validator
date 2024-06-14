@@ -7,7 +7,7 @@ import {
   import { ColumnsMap } from '../types/columns.ts'
   import { readElements } from './elements.ts'
   import { DatasetIssues } from '../issues/datasetIssues.ts'
-  import { parseCSV } from '../files/csv.ts'
+  import { parseCSV,csvIssue } from '../files/csv.ts'
   import { ValidatorOptions } from '../setup/options.ts'
   import { logger } from '../utils/logger.ts'
 
@@ -223,17 +223,28 @@ import {
         result = new Map<string, string[]>() as ColumnsMap
       }
       this.columns = result['columns'] as ColumnsMap
-      this.reportCSVIssues(result['issues'] as string[])
+      this.reportCSVIssues(result['issues'] as csvIssue[])
       return
     }
     
     //multiple CSV issues are possible, so these are unpacked from the issue object
-    reportCSVIssues(issues: string[]){
+    reportCSVIssues(issues: csvIssue[]){
       issues.forEach((issue) => {
-        this.issues.addSchemaIssue(
-          issue,
-          [this.file]
-        )
+        if (issue.message){
+          this.issues.addSchemaIssue(
+            issue.issue,
+            [{...this.file,
+              evidence: issue.message as string
+            }]
+          )
+        }
+        else{
+          this.issues.addSchemaIssue(
+            issue.issue,
+            [this.file]
+          )
+        }
+        
       })
     }
     /*
