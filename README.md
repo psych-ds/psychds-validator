@@ -6,6 +6,25 @@ This version of the validator requires using your terminal to enter text command
 
 ## Quickstart
 
+### Using npm
+
+Make sure that you're using node version 18 for compatibility:
+
+```
+nvm install 18
+nvm use 18
+```
+
+Install the psychds-validator package (requires sudo in cases where Deno framework needs to be installed):
+
+`sudo npm install -g psychds-validator`
+
+Now you can use the "validate" command to run the psychds validator on your datasets, like so (with any of the optional flags, like "--showWarnings", as described below:
+
+`validate <path_to_input_directory>`
+
+### Without npm:
+
 To begin, open your terminal and clone this repository:
 
 `git clone https://github.com/psych-ds/psychds-validator.git`
