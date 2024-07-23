@@ -1,6 +1,6 @@
 import { Schema } from '../types/schema.ts'
 import { objectPathHandler } from '../utils/objectPathHandler.ts'
-import defaultSchema from '../../default_schema/schema.json' assert { type: 'json' };
+import defaultSchema from '../../default_schema/schema.json' with { type: 'json' };
 /**
  * Load the schema from the specification
  *
