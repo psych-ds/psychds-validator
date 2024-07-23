@@ -1,5 +1,6 @@
 import { Schema } from '../types/schema.ts'
 import { objectPathHandler } from '../utils/objectPathHandler.ts'
+// deno-lint-ignore no-import-assertions
 import defaultSchema from '../../default_schema/schema.json' assert { type: 'json' };
 /**
  * Load the schema from the specification
