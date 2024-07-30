@@ -1,0 +1,19 @@
+{
+  "name": "psychds-validator",
+  "version": "1.0.7",
+  "description": "Deno-based CLI validator for the Psych-DS schema ",
+  "main": "bundled/bundle.js",
+  "bin": {
+    "validate": "./npm-run.js"
+  },
+  "scripts": {
+    "preinstall": "node checkNodeVersion.js",
+    "postinstall": "node install-deno.js"
+  },
+  "dependencies": {
+    "semver":"^7.5.1"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}

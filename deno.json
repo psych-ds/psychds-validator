@@ -1,0 +1,21 @@
+{
+  "importMap": "import_map.json",
+  "tasks": {
+    "start": "deno run -A src/psychds-validator.ts",
+    "build": "deno run -A build.ts --import-map=import_map.json"
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window","ES2022"]
+  },
+  "lint": {
+    "files": {
+      "include": ["src/"]
+    }
+  },
+  "fmt": {
+    "files": {
+      "include": ["src/"]
+    }
+  }
+}

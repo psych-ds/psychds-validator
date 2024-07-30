@@ -2578,7 +2578,6 @@ var Ignore = class {
         return;
       }
       const matched = rule.regex.test(path);
-      console.log(`Path: ${path}, Rule: ${rule.pattern}, Matched: ${matched}`);
       if (matched) {
         ignored = !negative;
         unignored = negative;

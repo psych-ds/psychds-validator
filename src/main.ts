@@ -43,4 +43,5 @@ export async function main() {
           }),
         )
       }
+    Deno.exit(0)
 }
