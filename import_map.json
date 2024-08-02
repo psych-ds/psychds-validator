@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "jsonld": "npm:jsonld@8.3.2"
+  }
+}

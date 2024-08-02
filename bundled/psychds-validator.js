@@ -2220,10 +2220,6 @@ const objectPathHandler = {
         return res;
     }
 };
-const __default = JSON.parse("{\n    \"meta\": {\n        \"context\": {\n            \"context\": {\n                \"type\": \"object\",\n                \"description\": \"The context defines the vocabulary of properties that objects and rules within the schema can use.\",\n                \"properties\": {\n                    \"schema\": {\n                        \"description\": \"The psych-DS schema\",\n                        \"type\": \"object\"\n                    },\n                    \"dataset\": {\n                        \"description\": \"Properties and contents of the entire dataset\",\n                        \"type\": \"object\",\n                        \"properties\": {\n                            \"dataset_description\": {\n                                \"description\": \"Contents of /dataset_description.json\",\n                                \"type\": \"object\"\n                            },\n                            \"files\": {\n                                \"description\": \"List of all files in dataset\",\n                                \"type\": \"array\"\n                            },\n                            \"tree\": {\n                                \"description\": \"Tree view of all files in dataset\",\n                                \"type\": \"object\"\n                            },\n                            \"ignored\": {\n                                \"description\": \"Set of ignored files\",\n                                \"type\": \"array\"\n                            }\n                        }\n                    },\n                    \"path\": {\n                        \"description\": \"Full path of the current file\",\n                        \"type\": \"string\"\n                    },\n                    \"suffix\": {\n                        \"description\": \"String following the final '_' in a filename and preceding the '.' of the extension. Used to identify datafiles primarily.\",\n                        \"type\": \"string\"\n                    },\n                    \"extensions\": {\n                        \"description\": \"Extension of current file including initial dot\",\n                        \"type\": \"string\"\n                    },\n                    \"stem\": {\n                        \"type\": \"string\",\n                        \"description\": \"Portion of the filename which excludes the extension.\"\n                    },\n                    \"level\": {\n                        \"type\": \"string\",\n                        \"description\": \"Property describing the severity of a rule, which determines whether it produces an error, warning, etc.\"\n                    },\n                    \"code\": {\n                        \"type\": \"string\",\n                        \"description\": \"Unique code identifying a specific error/warning\"\n                    },\n                    \"reason\": {\n                        \"type\": \"string\",\n                        \"description\": \"Paragraph accompanying an error/warning that provides context for what may cause it.\"\n                    },\n                    \"directory\": {\n                        \"type\": \"boolean\",\n                        \"description\": \"Indicator for whether a given object is expected to be a directory or a file.\"\n                    },\n                    \"arbitraryNesting\": {\n                        \"type\": \"boolean\",\n                        \"description\": \"Indicator for whether a given file object is allowed to be nested within an arbitrary number of subdirectories.\"\n                    },\n                    \"usesKeywords\": {\n                        \"type\": \"boolean\",\n                        \"description\": \"Indicator for whether a given file object requires keyword formatting.\"\n                    },\n                    \"nonCanonicalKeywordsAllowed\": {\n                        \"type\": \"boolean\",\n                        \"description\": \"Indicator for whether a given file object is required to use only official Psych-DS keywords\"\n                    },\n                    \"fileRegex\": {\n                        \"type\": \"regular expression\",\n                        \"description\": \"Regular expression defining the legal formatting of a filename.\"\n                    },\n                    \"baseDir\": {\n                        \"type\": \"string\",\n                        \"description\": \"Name of the directory under which the file object is expected to appear.\"\n                    },\n                    \"fields\": {\n                        \"type\": \"object\",\n                        \"description\": \"Set of key/value pairs defining the fields that are expected to occur in a given file object, and whether they are required or recommended.\"\n                    },\n                    \"namespace\": {\n                        \"type\": \"string\",\n                        \"description\": \"URL identifying the required namespace to be used for required fields in the file object. Namespaces are web prefixes that point to ontologies which contain definitions of semantic vocabularies.\"\n                    },\n                    \"jsonld\": {\n                        \"type\": \"boolean\",\n                        \"description\": \"Indicator for whether the given file object is required to be a valid JSON-LD object.\"\n                    },\n                    \"containsAllColumns\": {\n                        \"type\": \"boolean\",\n                        \"description\": \"The metadata object, after all inherited sidecars are accounted for, must contain a 'variableMeasured' property listing at least all of the column headers found in the datafile at hand.\"\n                    },\n                    \"columnsMatchMetadata\": {\n                        \"type\": \"boolean\",\n                        \"description\": \"Each datafile must only use column headers that appear in the 'variableMeasured' property of the compiled metadata object that corresponds to it.\"\n                    },\n                    \"sidecar\": {\n                        \"description\": \"Sidecar metadata constructed via the inheritance principle\",\n                        \"type\": \"object\"\n                    },\n                    \"columns\": {\n                        \"description\": \"CSV columns, indexed by column header, values are arrays with column contents\",\n                        \"type\": \"object\",\n                        \"additionalProperties\": {\n                            \"type\": \"array\"\n                        }\n                    },\n                    \"json\": {\n                        \"description\": \"Contents of the current JSON file\",\n                        \"type\": \"object\"\n                    },\n                    \"keywords\": {\n                        \"description\": \"List of key-value pairings associated with the data file, derived from the filename\",\n                        \"type\": \"array\",\n                        \"properties\": {\n                            \"study\": {\n                                \"name\": \"Study\",\n                                \"description\": \"Label designating a given study\",\n                                \"type\": \"string\"\n                            },\n                            \"site\": {\n                                \"name\": \"Site\",\n                                \"description\": \"Label designating the site where the data was collected\",\n                                \"type\": \"string\"\n                            },\n                            \"subject\": {\n                                \"name\": \"Subject\",\n                                \"description\": \"Label designating the subject corresponding to the data in the file\",\n                                \"type\": \"string\"\n                            },\n                            \"session\": {\n                                \"name\": \"Session\",\n                                \"description\": \"Label designating a given session of the study\",\n                                \"type\": \"string\"\n                            },\n                            \"task\": {\n                                \"name\": \"Task\",\n                                \"description\": \"Label designating the type of task in which the data was collected\",\n                                \"type\": \"string\"\n                            },\n                            \"condition\": {\n                                \"name\": \"Condition\",\n                                \"description\": \"Label designating the condition under which the data was collected\",\n                                \"type\": \"string\"\n                            },\n                            \"trial\": {\n                                \"name\": \"Trial\",\n                                \"description\": \"Label designating the trial associated with the data\",\n                                \"type\": \"string\"\n                            },\n                            \"stimulus\": {\n                                \"name\": \"Stimulus\",\n                                \"description\": \"Label designating the stimulus item associated with the data\",\n                                \"type\": \"string\"\n                            },\n                            \"description\": {\n                                \"name\": \"Description\",\n                                \"description\": \"Label describing the data file in question\",\n                                \"type\": \"string\"\n                            }\n                        }\n                    }\n                }\n            }\n        }\n    },\n    \"objects\": {\n        \"common_principles\": {\n            \"dataset\": {\n                \"name\": \"Dataset\",\n                \"display_name\": \"Dataset\",\n                \"description\": \"A set of behavioral data acquired for the purpose of a particular study or set of studies.\\n\"\n            },\n            \"extension\": {\n                \"name\": \"File extension\",\n                \"display_name\": \"File extension\",\n                \"description\": \"A portion of the file name after the left-most period (`.`) preceded by any other alphanumeric.\\nFor example, `.gitignore` does not have a file extension,\\nbut the file extension of 'study-1_data.csv' is '.csv'.\\nNote that the left-most period is included in the file extension.\\n\"\n            },\n            \"keywords\": {\n                \"name\": \"Keywords\",\n                \"display_name\": \"Keywords\",\n                \"description\": \"A set of identifying key-value duples associated with a given data file.\\nKeys are limited to a vocabulary of:\\n  - study\\n  - site\\n  - subject\\n  - session\\n  - task\\n  - condition\\n  - trial\\n  - stimulus\\n  - description\\n\"\n            },\n            \"raw_data\": {\n                \"name\": \"Raw data\",\n                \"display_name\": \"Raw data\",\n                \"description\": \"A central principle for Psych-DS is that the earliest form of the data you have access to should always be saved, \\nshould never be modified, and should be kept separate from any additional versions created. This data could take any form,\\nsuch as physical paper and pencil surveys, digital resources such as videos, etc. At a minimum, it is assumed that a psych-DS\\ncompliant dataset will contain this original data under the /data directory.\\n\"\n            },\n            \"primary_data\": {\n                \"name\": \"Primary data\",\n                \"display_name\": \"Primary data\",\n                \"description\": \"Primary data is considered the first digitized form of the raw data. Sometimes, the primary data and the raw data are the same,\\nin the case, for instance, of tabular online survey responses. If the raw data exists in a physical format, then some digitized \\nversion must be included in the dataset.\\n\"\n            },\n            \"columns\": {\n                \"name\": \"Columns\",\n                \"display_name\": \"Columns\",\n                \"description\": \"In general, Psych-DS has minimal restraints and conventions regarding column names. \\nWe RECOMMEND that you use the controlled keywords defined elsewhere in the standard plus \\\"_id\\\"\\nas column names if referring to the relevant information in a dataset. (That is, if you record trials\\nwith the scope of a given datafile, we RECOMMEND that the name of the column identifying the trial\\nbe \\\"trial_id\\\"). This information can be redundantly stored (i.e., a file named \\\"study-MyExp_trial-1_data.csv\\\"\\ncan also have a column \\\"trial_id\\\" which has rows with the value \\\"1\\\").\\n\\nIn many cases, some combination of columns will uniquely identify every row in the dataset (for instance,\\neach participant might have several rows, but there might be exactly one row for every combination of \\nparticupant, condition, and trial.) The column or set of columns provides a unique key for every record/row in\\nyour dataset. We RECOMMEND that you include a description of which columns create a unique key for your dataset\\nin the README for your project.\\n\\nIf you have a column that uniquely identifies each single row of a dataset explicitly it SHOULD be named\\n\\\"row_id\\\". A column named \\\"row_id\\\" MUST contain unique values in every row.\\n\"\n            },\n            \"inheritance\": {\n                \"name\": \"Inheritance\",\n                \"display_name\": \"Inheritance\",\n                \"description\": \"In addition to the mandatory \\\"dataset_description.json\\\" file at the root of the dataset,\\nPsych-DS allows for the inclusion of additional metadata files, whose fields apply to \\nspecific subsets of the data. There are two types of inherited metadata:\\n\\n1. Sidecar files, which contain metadata that pertains to one specific datafile. These sidecars\\nmust have the exact same name as their corresponding datafile, with the \\\".json\\\" extension instead \\nof the \\\".csv\\\" extension. Sidecars must occupy the same directory as their datafile.\\n2. Directory metadata, which always takes the form \\\"file_metadata.json\\\". The metadata contained in\\nsuch files apply to all datafiles within its directory and all subdirectories thereof.\\n\\nMetadata key/value pairs found in higher-level JSON files are inherited by all lower levels unless they are explicitly \\noverridden by a file at the lower level.\\n\\nFor example, suppose we have the following project structure:\\n\\ndata/\\n  file_metadata.json\\n  subject-1/\\n    file_metadata.json\\n    subject-1_condition-A_data.csv\\n    subject-1_condition-B_data.json\\n    subject-1_condition-B_data.csv\\n  subject-2/\\n    subject-2_condition-A_data.json\\n    subject-2_condition-A_data.csv\\n    subject-2_condition-B_data.csv\\n\\nThere are 4 datafiles within the data/ hierarchy; let's consider which metadata files apply to each one, and in what order \\nthe metadata files should be processed/inherited:\\n - data/subject-1/subject-1_condition-A_data.csv: There is no JSON sidecar for this file. \\n   However, there is a file_metadata.json file in the same directory as the data file, \\n   as well as in one above it. The consolidated metadata object would start with the \\n   contents of the higher-level file (data/file_metadata.json), and then update it with \\n   the contents of the lower-level file (data/subject-1/file_metadata.json).\\n - data/subject-1/subject-1_condition-B_data.csv: The same process unfolds as for the previous \\n   file; however, the consolidated object is now further updated with the contents of the target \\n   data file\\u2019s JSON sidecar (i.e., subject-1_condition-B_data.json).\\n - data/subject-2/subject-2_condition-A_data.csv: The contents of data/file_metadata.json \\n   are read, and then updated with the contents of data/subject-2/subject-2_condition-A_data.json.\\n - data/subject-2/subject-2_condition-B_data.csv: There is only a single applicable metadata \\n   file (data/file_metadata.json), from which all metadata is read.\\n\\nNote that any inherited key/value pair from a metadata file replaces the value for the key wholesale,\\nand there is no merging processed involved. For instance, if the root metadata file contains a \\\"variableMeasured\\\"\\nproperty with 10 elements, and a lower level metadata file contains a \\\"variableMeasured\\\" property with\\n5 elements, the resulting inherited object will only contain the 5 \\\"variableMeasured\\\" elements\\nfrom the inherited metadata. The lists are not combined in any way, but replaced.\"\n            }\n        },\n        \"metadata\": {\n            \"name\": {\n                \"name\": \"name\",\n                \"display_name\": \"Name\",\n                \"description\": \"Name of the dataset.\\n\",\n                \"type\": \"string\"\n            },\n            \"schemaVersion\": {\n                \"name\": \"schemaVersion\",\n                \"display_name\": \"Schema Version\",\n                \"description\": \"The version of the data specification that this dataset conforms to.\\n\",\n                \"type\": \"string\"\n            },\n            \"description\": {\n                \"name\": \"description\",\n                \"display_name\": \"Description\",\n                \"description\": \"Detailed description of the dataset.\\n\",\n                \"type\": \"string\"\n            },\n            \"variableMeasured\": {\n                \"name\": \"variableMeasured\",\n                \"display_name\": \"Variable Measured\",\n                \"description\": \"List of the column names that appear in the data files.\\n\",\n                \"type\": \"array\"\n            },\n            \"author\": {\n                \"name\": \"author\",\n                \"display_name\": \"Author\",\n                \"description\": \"List of individuals who contributed to the creation/curation of the dataset.\\n\",\n                \"type\": \"array\",\n                \"items\": {\n                    \"type\": \"string\"\n                }\n            },\n            \"citation\": {\n                \"name\": \"citation\",\n                \"display_name\": \"Citation\",\n                \"description\": \"Citation data for referencing the dataset, or URL/path for structured citation file.\\n\",\n                \"type\": \"string\"\n            },\n            \"license\": {\n                \"name\": \"license\",\n                \"display_name\": \"Kucebse\",\n                \"description\": \"Author-assigned 'license' for data/material use. While this can be a string of text, \\na URL pointing to a specific license file (online or in the project directory) is preferred.\\n\",\n                \"type\": \"string\"\n            },\n            \"funder\": {\n                \"name\": \"funder\",\n                \"display_name\": \"Funder\",\n                \"description\": \"List of sources of funding (grant numbers).\\n\",\n                \"type\": \"string\"\n            },\n            \"url\": {\n                \"name\": \"url\",\n                \"display_name\": \"URL\",\n                \"description\": \"Canonical source for the dataset.\\n\",\n                \"type\": \"string\"\n            },\n            \"identifier\": {\n                \"name\": \"identifier\",\n                \"display_name\": \"Identifier\",\n                \"description\": \"Identifier that uniquely distinguishes the dataset.\\n\",\n                \"type\": \"string\"\n            },\n            \"usageInfo\": {\n                \"name\": \"usageInfo\",\n                \"display_name\": \"Privacy Policy\",\n                \"description\": \"A string to indicate whether any of the values in the dataset are desired to be shareable.\\nThis does not guarantee that the dataset HAS been shared or HAS been de identified,.\\n\",\n                \"type\": \"string\"\n            },\n            \"keywords\": {\n                \"name\": \"keywords\",\n                \"display_name\": \"Keywords\",\n                \"description\": \"Keywords with which to tag the dataset for reference.\\n\",\n                \"type\": \"array\"\n            }\n        },\n        \"extensions\": {\n            \"json\": {\n                \"value\": \".json\",\n                \"display_name\": \"JavaScript Object Notation\",\n                \"description\": \"A JSON file.\\n\\nTop-level and collated metadata files are all stored in the JSON format in psych-DS.\\n\"\n            },\n            \"csv\": {\n                \"value\": \".csv\",\n                \"display_name\": \"Comma-Separated Values\",\n                \"description\": \"A CSV file with a header row of column names spanning all filled columns. In Psych-DS,\\nCSV files have the following rules related to their formatting:\\n- Each CSV file MUST start with a header line listing the names of all columns. Names MUST be separated with commas.\\n- String values containing commas MUST be escaped using double quotes\\n- UTF-8 encoding MUST be used\\n- using . rather than , for decimals is RECOMMENDED\"\n            }\n        },\n        \"files\": {\n            \"CHANGES\": {\n                \"display_name\": \"Changelog\",\n                \"file_type\": \"regular\",\n                \"description\": \"Version history of the dataset \\\\(describing changes, updates and corrections\\\\) MAY be provided in the form of a 'CHANGES' text file. \\\\(.txt or .md\\\\).\"\n            },\n            \"README\": {\n                \"display_name\": \"README\",\n                \"file_type\": \"regular\",\n                \"description\": \"Human-readable file describing the project and dataset in detail. This is an OPTIONAL file, and only one README file should appear in dataset.\"\n            },\n            \"dataset_description\": {\n                \"display_name\": \"Dataset Description\",\n                \"file_type\": \"regular\",\n                \"description\": \"The metadata file 'dataset_description.json' is a JSON file describing the dataset.\"\n            },\n            \"Datafile\": {\n                \"display_name\": \"CSV Datafile\",\n                \"file_type\": \"regular\",\n                \"description\": \"A CSV file under the /data directory in which the official psych-DS compliant data from the dataset is stored. Datafiles must follow Psych-DS file naming conventions, which includes the use of keyword formatting, the '_data' suffix, and the '.csv' extension. An example of a valid datafile might be 'study-123_site-lab4_data.csv'. In the future, more official suffices and extensions may be made available. A controlled list of official keywords is provided, but the use of unofficial keywords is permitted, so long as they are clearly defined and used consistently within a research community.\"\n            },\n            \"data\": {\n                \"display_name\": \"Data\",\n                \"file_type\": \"directory\",\n                \"description\": \"The directory in which to store all datafiles from the dataset.\"\n            },\n            \"primary_data\": {\n                \"display_name\": \"Primary data\",\n                \"file_type\": \"directory\",\n                \"description\": \"A subfolder holding the primary data, which may be either Psych-DS compliant CSV or some other file type\"\n            },\n            \"analysis\": {\n                \"display_name\": \"Analysis\",\n                \"file_type\": \"directory\",\n                \"description\": \"A directory to store code or other tools used to analyze the data/ files in order to describe and interpret the dataset. Any intermediate data files created during analysis SHOULD be output to a new file in data/ \\\\(i.e. primary_data/ files SHOULD NOT be modified.\\\\)\"\n            },\n            \"results\": {\n                \"display_name\": \"Results\",\n                \"file_type\": \"directory\",\n                \"description\": \"A directory in which to store any results generated using the data in /data.\"\n            },\n            \"materials\": {\n                \"display_name\": \"Materials\",\n                \"file_type\": \"directory\",\n                \"description\": \"A directory in which to store any materials used to conduct the study.\"\n            },\n            \"documentation\": {\n                \"display_name\": \"Documentation\",\n                \"file_type\": \"directory\",\n                \"description\": \"A directory in which to store any project-related documentation that is used for conducting the study \\\\(e.g. consent forms\\\\)\"\n            },\n            \"products\": {\n                \"display_name\": \"Products\",\n                \"file_type\": \"directory\",\n                \"description\": \"A directory in which to store any Any relevant products resulting from the project \\\\(e.g., publications, posters, software descriptions, presentations, etc.\\\\)\"\n            },\n            \"DirectoryMetadata\": {\n                \"display_name\": \"Directory Metadata\",\n                \"file_type\": \"regular\",\n                \"description\": \"A json file in which to store metadata that applies to all datafiles within the containing directory or within any nested subdirectories. Fields from the file replace the values of the global dataset_description object.\"\n            },\n            \"SidecarMetadata\": {\n                \"display_name\": \"Sidecar Metadata\",\n                \"file_type\": \"regular\",\n                \"description\": \"A json file in which to store metadata that applies to a specific datafile within the containing directory. Fields from the file replace the values of the global dataset_description object, and overwrite any fields shared with the directory metadata.\"\n            },\n            \"CompiledMetadata\": {\n                \"display_name\": \"Compiled Metadata\",\n                \"file_type\": \"composite\",\n                \"description\": \"The metadata object that results from the combination of global metadata and directory- and file-level metadata files according to the rules of inheritance.\"\n            }\n        }\n    },\n    \"rules\": {\n        \"files\": {\n            \"tabular_data\": {\n                \"data\": {\n                    \"Datafile\": {\n                        \"requires\": \"data\",\n                        \"suffix\": \"data\",\n                        \"extensions\": [\n                            \".csv\"\n                        ],\n                        \"baseDir\": \"data\",\n                        \"arbitraryNesting\": true,\n                        \"columnsMatchMetadata\": true,\n                        \"usesKeywords\": true,\n                        \"nonCanonicalKeywordsAllowed\": true,\n                        \"fileRegex\": \"([a-z]+-[a-zA-Z0-9]+)(_[a-z]+-[a-zA-Z0-9]+)*_data\\\\.csv\",\n                        \"code\": \"MISSING_DATAFILE\",\n                        \"level\": \"error\",\n                        \"reason\": \"It is required to include at least one valid csv datafile under the data subdirectory \"\n                    }\n                }\n            },\n            \"common\": {\n                \"core\": {\n                    \"dataset_description\": {\n                        \"level\": \"error\",\n                        \"baseDir\": \"/\",\n                        \"stem\": \"dataset_description\",\n                        \"arbitraryNesting\": false,\n                        \"extensions\": [\n                            \".json\"\n                        ],\n                        \"code\": \"MISSING_DATASET_DESCRIPTION\",\n                        \"reason\": \"It is required to include a 'dataset_description.json' in the base directory\"\n                    },\n                    \"README\": {\n                        \"level\": \"warning\",\n                        \"baseDir\": \"/\",\n                        \"stem\": \"README\",\n                        \"arbitraryNesting\": false,\n                        \"extensions\": [\n                            \".md\",\n                            \".txt\"\n                        ],\n                        \"code\": \"MISSING_README_DOC\",\n                        \"reason\": \"It is recommended to include a 'README.md' or 'README.txt' file in the base directory\"\n                    },\n                    \"CHANGES\": {\n                        \"level\": \"ignore\",\n                        \"baseDir\": \"/\",\n                        \"stem\": \"CHANGES\",\n                        \"arbitraryNesting\": false,\n                        \"extensions\": [\n                            \".md\",\n                            \".txt\"\n                        ],\n                        \"code\": \"MISSING_CHANGES_DOC\",\n                        \"reason\": \"It is recommended to include a 'CHANGES.md' or 'CHANGES.txt' file in the base directory\"\n                    },\n                    \"data\": {\n                        \"level\": \"error\",\n                        \"path\": \"/data\",\n                        \"directory\": true,\n                        \"requires\": \"dataset_description\",\n                        \"code\": \"MISSING_DATA_DIRECTORY\",\n                        \"reason\": \"It is required to include a subdirectory named 'data' in the base directory\"\n                    },\n                    \"analysis\": {\n                        \"level\": \"ignore\",\n                        \"path\": \"/analysis\",\n                        \"directory\": true,\n                        \"code\": \"MISSING_ANALYSIS_DIRECTORY\",\n                        \"reason\": \"It is recommended to include subdirectory named 'analysis' in the base directory\"\n                    },\n                    \"results\": {\n                        \"level\": \"ignore\",\n                        \"path\": \"/results\",\n                        \"directory\": true,\n                        \"code\": \"MISSING_RESULTS_DIRECTORY\",\n                        \"reason\": \"It is recommended to include subdirectory named 'results' in the base directory\"\n                    },\n                    \"materials\": {\n                        \"level\": \"ignore\",\n                        \"path\": \"/materials\",\n                        \"directory\": true,\n                        \"code\": \"MISSING_MATERIALS_DIRECTORY\",\n                        \"reason\": \"It is recommended to include subdirectory named 'materials' in the base directory\"\n                    },\n                    \"documentation\": {\n                        \"level\": \"ignore\",\n                        \"path\": \"/documentation\",\n                        \"directory\": true,\n                        \"code\": \"MISSING_DOCUMENTATION_DIRECTORY\",\n                        \"reason\": \"It is recommended to include subdirectory named 'documentation' in the base directory\"\n                    }\n                }\n            },\n            \"metadata\": {\n                \"DirectoryMetadata\": {\n                    \"stem\": \"file_metadata\",\n                    \"extensions\": [\n                        \".json\"\n                    ],\n                    \"baseDir\": \"data\",\n                    \"arbitraryNesting\": true,\n                    \"level\": \"warning\",\n                    \"code\": \"MISSING_DIRECTORY_METADATA\",\n                    \"reason\": \"It is optional to include a json metadata file within a data subdirectory that \\napplies to all files within the current directory and its subdirectories\\n\"\n                },\n                \"SidecarMetadata\": {\n                    \"baseDir\": \"data\",\n                    \"arbitraryNesting\": true,\n                    \"suffix\": \"data\",\n                    \"level\": \"warning\",\n                    \"extensions\": [\n                        \".json\"\n                    ],\n                    \"code\": \"MISSING_SIDECAR_METADATA\",\n                    \"reason\": \"It is optional to include a json metadata file within a data subdirectory\\nthat applies to a specific csv datafile within the current directory\"\n                }\n            }\n        },\n        \"errors\": {\n            \"JsonInvalid\": {\n                \"code\": \"JSON_INVALID\",\n                \"reason\": \"Not a valid JSON file.\\n\",\n                \"level\": \"error\",\n                \"selectors\": [\n                    \"extension == \\\".json\\\"\"\n                ],\n                \"requires\": []\n            },\n            \"FileRead\": {\n                \"code\": \"FILE_READ\",\n                \"reason\": \"We were unable to read this file.\\nMake sure it contains data (file size > 0 kB) and is not corrupted,\\nincorrectly named, or incorrectly symlinked.\\n\",\n                \"level\": \"error\",\n                \"requires\": []\n            },\n            \"EmptyFile\": {\n                \"code\": \"EMPTY_FILE\",\n                \"level\": \"error\",\n                \"reason\": \"empty files not allowed.\",\n                \"requires\": []\n            },\n            \"InvalidJsonEncoding\": {\n                \"code\": \"INVALID_JSON_ENCODING\",\n                \"reason\": \"JSON files must be valid utf-8.\\n\",\n                \"level\": \"error\",\n                \"selectors\": [\n                    \"extension == \\\".json\\\"\"\n                ],\n                \"requires\": [\n                    \"rules.files.common.dataset_description\"\n                ]\n            },\n            \"JsonKeyRequired\": {\n                \"code\": \"JSON_KEY_REQUIRED\",\n                \"level\": \"error\",\n                \"reason\": \"The metadata object is missing a key listed as required.\",\n                \"requires\": [\n                    \"rules.files.common.dataset_description\",\n                    \"rules.files.tabular_data.data.Datafile\"\n                ]\n            },\n            \"JsonKeyRecommended\": {\n                \"code\": \"JSON_KEY_RECOMMENDED\",\n                \"level\": \"warning,\",\n                \"reason\": \"The metadata object is missing a key listed as recommended.\",\n                \"requires\": [\n                    \"rules.files.common.dataset_description\",\n                    \"rules.files.tabular_data.data.Datafile\"\n                ]\n            },\n            \"CsvColumnMissing\": {\n                \"code\": \"CSV_COLUMN_MISSING\",\n                \"level\": \"error\",\n                \"reason\": \"A required column is missing\",\n                \"requires\": [\n                    \"rules.files.common.dataset_description\",\n                    \"rules.files.tabular_data.data.Datafile\"\n                ]\n            },\n            \"NotIncluded\": {\n                \"code\": \"NOT_INCLUDED\",\n                \"level\": \"warning\",\n                \"reason\": \"Files with such naming scheme are not part of psych-DS specification.\\nUnder the rules of psych-DS, non-specified files are allowed to be included,\\nbut if you would like to avoid receiving this warning moving forward, you can include\\nin your \\\".psychdsignore\\\" file\\n\",\n                \"requires\": []\n            },\n            \"MissingRequiredElement\": {\n                \"code\": \"MISSING_REQUIRED_ELEMENT\",\n                \"level\": \"error\",\n                \"reason\": \"Your dataset is missing an element that is required under the psych-DS specification.\",\n                \"requires\": []\n            },\n            \"NoHeader\": {\n                \"code\": \"NO_HEADER\",\n                \"level\": \"error\",\n                \"reason\": \"CSV data files must contain a valid header with at least one column.\",\n                \"requires\": [\n                    \"rules.files.tabular_data.data.Datafile\"\n                ]\n            },\n            \"HeaderRowMismatch\": {\n                \"code\": \"HEADER_ROW_MISMATCH\",\n                \"level\": \"error\",\n                \"reason\": \"The header and all rows for CSV data files must contain the same number of columns.\",\n                \"requires\": [\n                    \"rules.files.tabular_data.data.Datafile\"\n                ]\n            },\n            \"RowidValuesNotUnique\": {\n                \"code\": \"ROWID_VALUES_NOT_UNIQUE\",\n                \"level\": \"error\",\n                \"reason\": \"Columns within CSV data files with the header \\\"row_id\\\" must contain unique values in every row.\",\n                \"requires\": [\n                    \"rules.files.tabular_data.data.Datafile\"\n                ]\n            },\n            \"WrongMetadataLocation\": {\n                \"code\": \"WRONG_METADATA_LOCATION\",\n                \"level\": \"warning\",\n                \"reason\": \"The main metadata file must be located within the root directory\",\n                \"requires\": []\n            },\n            \"KeywordFormattingError\": {\n                \"code\": \"KEYWORD_FORMATTING_ERROR\",\n                \"level\": \"error\",\n                \"reason\": \"All datafiles must use psych-DS keyword formatting. That is, datafile names must consist of\\na series of keyword-value pairs, separated by underscores, with keywords using only lowercase\\nalphabetic characters and values using any alphanumeric characters of either case. The file must\\nend with '_data.csv'. In other words, files must follow this regex: \\n/([a-z]+-[a-zA-Z0-9]+)(_[a-z]+-[a-zA-Z0-9]+)*_data\\\\.csv/\\n\",\n                \"requires\": []\n            },\n            \"UnofficialKeywordWarning\": {\n                \"code\": \"UNOFFICIAL_KEYWORD_WARNING\",\n                \"level\": \"warning\",\n                \"reason\": \"Although it is not recommended, datafiles are permitted to use keywords other than those provided\\nin the official psych-DS specification. If you do choose to use unofficial keywords, please ensure\\nthat they are clearly defined within your research community and used consistently across relevant datasets.\\n\",\n                \"requires\": []\n            },\n            \"UnofficialKeywordError\": {\n                \"code\": \"UNOFFICIAL_KEYWORD_ERROR\",\n                \"level\": \"error\",\n                \"reason\": \"Names for data files must not include keywords other than those listed in the psych-DS schema.\",\n                \"requires\": []\n            },\n            \"InvalidJsonFormatting\": {\n                \"code\": \"INVALID_JSON_FORMATTING\",\n                \"level\": \"error\",\n                \"reason\": \"One of your metadata files in not in valid JSON format.\",\n                \"requires\": [\n                    \"rules.files.common.dataset_description\"\n                ]\n            },\n            \"IncorrectDatasetType\": {\n                \"code\": \"INCORRECT_DATASET_TYPE\",\n                \"level\": \"error\",\n                \"reason\": \"Your metadata is missing the required schema.org \\\"Dataset\\\" type\",\n                \"requires\": [\n                    \"rules.files.common.dataset_description\",\n                    \"rules.files.tabular_data.data.Datafile\"\n                ]\n            },\n            \"MissingDatasetType\": {\n                \"code\": \"MISSING_DATASET_TYPE\",\n                \"level\": \"error\",\n                \"reason\": \"Your metadata is missing the \\\"@type/type\\\" property, which is required.\",\n                \"requires\": [\n                    \"rules.files.common.dataset_description\",\n                    \"rules.files.tabular_data.data.Datafile\"\n                ]\n            },\n            \"UnknownNamespace\": {\n                \"code\": \"UNKNOWN_NAMESPACE\",\n                \"level\": \"warning\",\n                \"reason\": \"The psych-DS validator only has access to one external vocabulary, \\\"http://schema.org\\\";\\nany other reference to an external schema is permitted, but the validity of the terms used\\ncannot be confirmed.\\n\",\n                \"requires\": [\n                    \"rules.files.common.dataset_description\",\n                    \"rules.files.tabular_data.data.Datafile\"\n                ]\n            },\n            \"ObjectTypeMissing\": {\n                \"code\": \"OBJECT_TYPE_MISSING\",\n                \"level\": \"warning\",\n                \"reason\": \"For compliance with the schema.org ontology, all objects within the metadata (with a few exceptions)\\nthat appear as the value of a schema.org key/property must contain a \\\"@type\\\" key with a valid schema.org type \\nas its value.\\n\",\n                \"requires\": [\n                    \"rules.files.common.dataset_description\",\n                    \"rules.files.tabular_data.data.Datafile\"\n                ]\n            },\n            \"InvalidSchemaorgProperty\": {\n                \"code\": \"INVALID_SCHEMAORG_PROPERTY\",\n                \"level\": \"warning\",\n                \"reason\": \"The schema.org ontology contains a fixed set of legal properties which can be applied to objects within the metadata.\\n If schema.org is used as the only @context within your metadata, then all properties will be interpreted as schema.org properties.\\n Using an invalid schema.org property is not considered an error in the psych-DS specification, but it should be understood\\n that such usages result in the property in question not being interpretable by machines.\\n\",\n                \"requires\": [\n                    \"rules.files.common.dataset_description\",\n                    \"rules.files.tabular_data.data.Datafile\"\n                ]\n            },\n            \"InvalidObjectType\": {\n                \"code\": \"INVALID_OBJECT_TYPE\",\n                \"level\": \"warning\",\n                \"reason\": \"Properties in the schema.org ontology have selective restrictions on which types of objects can be used for their values.\\nincluding an object with a @type that does not match the selective restrictions of its property is not an error in psych-DS,\\nbut it will result in the object in question not being interpretable by machines.\\n\",\n                \"requires\": [\n                    \"rules.files.common.dataset_description\",\n                    \"rules.files.tabular_data.data.Datafile\"\n                ]\n            },\n            \"ExtensionMismatch\": {\n                \"code\": \"EXTENSION_MISMATCH\",\n                \"level\": \"error\",\n                \"reason\": \"Extension used by file does not match allowed extensions for its suffix.\\n\",\n                \"requires\": []\n            }\n        },\n        \"common_principles\": [\n            \"dataset\",\n            \"extension\",\n            \"keywords\"\n        ],\n        \"csv_data\": {\n            \"Datafile\": {\n                \"selectors\": [\n                    \"extension == \\\".csv\\\"\",\n                    \"suffix == \\\"data\\\"\",\n                    \"baseDir == \\\"data\\\"\"\n                ],\n                \"columnsMatchMetadata\": true\n            }\n        },\n        \"compiled_metadata\": {\n            \"CompiledMetadata\": {\n                \"selectors\": [\n                    \"suffix == \\\"data\\\"\",\n                    \"extension == \\\".csv\\\"\",\n                    \"baseDir == \\\"data\\\"\"\n                ],\n                \"fields\": {\n                    \"name\": \"required\",\n                    \"description\": \"required\",\n                    \"variableMeasured\": \"required\",\n                    \"author\": \"recommended\",\n                    \"citation\": \"recommended\",\n                    \"license\": \"recommended\",\n                    \"funder\": \"recommended\",\n                    \"url\": \"recommended\",\n                    \"identifier\": \"recommended\",\n                    \"privacyPolicy\": \"recommended\",\n                    \"keywords\": \"recommended\"\n                },\n                \"namespace\": \"http://schema.org/\",\n                \"jsonld\": true,\n                \"containsAllColumns\": true\n            }\n        }\n    }\n}");
-const mod2 = {
-    default: __default
-};
 async function loadSchema(version = 'latest') {
     const versionRegex = /\d+.\d+.\d+/;
     let schemaUrl = version;
@@ -2252,7 +2248,7 @@ async function loadSchema(version = 'latest') {
     } catch (error) {
         console.error(error);
         console.error(`Warning, could not load schema from ${schemaUrl}, falling back to internal version`);
-        return new Proxy(mod2, objectPathHandler);
+        return new Proxy({}, objectPathHandler);
     }
 }
 class ColumnsMap extends Map {
@@ -2286,37 +2282,304 @@ function _readElements(filename) {
     };
 }
 const readElements = memoize(_readElements);
+class DenoStdInternalError1 extends Error {
+    constructor(message){
+        super(message);
+        this.name = "DenoStdInternalError";
+    }
+}
+function assert1(expr, msg = "") {
+    if (!expr) {
+        throw new DenoStdInternalError1(msg);
+    }
+}
+class ParseError extends SyntaxError {
+    startLine;
+    line;
+    column;
+    constructor(start, line, column, message){
+        super();
+        this.startLine = start;
+        this.column = column;
+        this.line = line;
+        if (message === ERR_FIELD_COUNT) {
+            this.message = `record on line ${line}: ${message}`;
+        } else if (start !== line) {
+            this.message = `record on line ${start}; parse error on line ${line}, column ${column}: ${message}`;
+        } else {
+            this.message = `parse error on line ${line}, column ${column}: ${message}`;
+        }
+    }
+}
+const ERR_BARE_QUOTE = 'bare " in non-quoted-field';
+const ERR_QUOTE = 'extraneous or missing " in quoted-field';
+const ERR_INVALID_DELIM = "Invalid Delimiter";
+const ERR_FIELD_COUNT = "wrong number of fields";
+function convertRowToObject(row, headers, index) {
+    if (row.length !== headers.length) {
+        throw new Error(`Error number of fields line: ${index}\nNumber of fields found: ${headers.length}\nExpected number of fields: ${row.length}`);
+    }
+    const out = {};
+    for(let i = 0; i < row.length; i++){
+        out[headers[i]] = row[i];
+    }
+    return out;
+}
+const BYTE_ORDER_MARK = "\ufeff";
+class Parser {
+    #input = "";
+    #cursor = 0;
+    #options;
+    constructor({ separator = ",", trimLeadingSpace = false, comment, lazyQuotes, fieldsPerRecord } = {}){
+        this.#options = {
+            separator,
+            trimLeadingSpace,
+            comment,
+            lazyQuotes,
+            fieldsPerRecord
+        };
+    }
+    #readLine() {
+        if (this.#isEOF()) return null;
+        if (!this.#input.startsWith("\r\n", this.#cursor) || !this.#input.startsWith("\n", this.#cursor)) {
+            let buffer = "";
+            let hadNewline = false;
+            while(this.#cursor < this.#input.length){
+                if (this.#input.startsWith("\r\n", this.#cursor)) {
+                    hadNewline = true;
+                    this.#cursor += 2;
+                    break;
+                }
+                if (this.#input.startsWith("\n", this.#cursor)) {
+                    hadNewline = true;
+                    this.#cursor += 1;
+                    break;
+                }
+                buffer += this.#input[this.#cursor];
+                this.#cursor += 1;
+            }
+            if (!hadNewline && buffer.endsWith("\r")) {
+                buffer = buffer.slice(0, -1);
+            }
+            return buffer;
+        }
+        return null;
+    }
+    #isEOF() {
+        return this.#cursor >= this.#input.length;
+    }
+    #parseRecord(startLine) {
+        let line = this.#readLine();
+        if (line === null) return null;
+        if (line.length === 0) {
+            return [];
+        }
+        function runeCount(s) {
+            return Array.from(s).length;
+        }
+        let lineIndex = startLine + 1;
+        if (this.#options.comment && line[0] === this.#options.comment) {
+            return [];
+        }
+        assert1(this.#options.separator != null);
+        let fullLine = line;
+        let quoteError = null;
+        const quote = '"';
+        const quoteLen = quote.length;
+        const separatorLen = this.#options.separator.length;
+        let recordBuffer = "";
+        const fieldIndexes = [];
+        parseField: for(;;){
+            if (this.#options.trimLeadingSpace) {
+                line = line.trimStart();
+            }
+            if (line.length === 0 || !line.startsWith(quote)) {
+                const i = line.indexOf(this.#options.separator);
+                let field = line;
+                if (i >= 0) {
+                    field = field.substring(0, i);
+                }
+                if (!this.#options.lazyQuotes) {
+                    const j = field.indexOf(quote);
+                    if (j >= 0) {
+                        const col = runeCount(fullLine.slice(0, fullLine.length - line.slice(j).length));
+                        quoteError = new ParseError(startLine + 1, lineIndex, col, ERR_BARE_QUOTE);
+                        break parseField;
+                    }
+                }
+                recordBuffer += field;
+                fieldIndexes.push(recordBuffer.length);
+                if (i >= 0) {
+                    line = line.substring(i + separatorLen);
+                    continue parseField;
+                }
+                break parseField;
+            } else {
+                line = line.substring(quoteLen);
+                for(;;){
+                    const i = line.indexOf(quote);
+                    if (i >= 0) {
+                        recordBuffer += line.substring(0, i);
+                        line = line.substring(i + quoteLen);
+                        if (line.startsWith(quote)) {
+                            recordBuffer += quote;
+                            line = line.substring(quoteLen);
+                        } else if (line.startsWith(this.#options.separator)) {
+                            line = line.substring(separatorLen);
+                            fieldIndexes.push(recordBuffer.length);
+                            continue parseField;
+                        } else if (0 === line.length) {
+                            fieldIndexes.push(recordBuffer.length);
+                            break parseField;
+                        } else if (this.#options.lazyQuotes) {
+                            recordBuffer += quote;
+                        } else {
+                            const col = runeCount(fullLine.slice(0, fullLine.length - line.length - quoteLen));
+                            quoteError = new ParseError(startLine + 1, lineIndex, col, ERR_QUOTE);
+                            break parseField;
+                        }
+                    } else if (line.length > 0 || !this.#isEOF()) {
+                        recordBuffer += line;
+                        const r = this.#readLine();
+                        lineIndex++;
+                        line = r ?? "";
+                        fullLine = line;
+                        if (r === null) {
+                            if (!this.#options.lazyQuotes) {
+                                const col = runeCount(fullLine);
+                                quoteError = new ParseError(startLine + 1, lineIndex, col, ERR_QUOTE);
+                                break parseField;
+                            }
+                            fieldIndexes.push(recordBuffer.length);
+                            break parseField;
+                        }
+                        recordBuffer += "\n";
+                    } else {
+                        if (!this.#options.lazyQuotes) {
+                            const col = runeCount(fullLine);
+                            quoteError = new ParseError(startLine + 1, lineIndex, col, ERR_QUOTE);
+                            break parseField;
+                        }
+                        fieldIndexes.push(recordBuffer.length);
+                        break parseField;
+                    }
+                }
+            }
+        }
+        if (quoteError) {
+            throw quoteError;
+        }
+        const result = [];
+        let preIdx = 0;
+        for (const i of fieldIndexes){
+            result.push(recordBuffer.slice(preIdx, i));
+            preIdx = i;
+        }
+        return result;
+    }
+    parse(input) {
+        this.#input = input.startsWith(BYTE_ORDER_MARK) ? input.slice(1) : input;
+        this.#cursor = 0;
+        const result = [];
+        let _nbFields;
+        let lineResult;
+        let first = true;
+        let lineIndex = 0;
+        const INVALID_RUNE = [
+            "\r",
+            "\n",
+            '"'
+        ];
+        const options = this.#options;
+        if (INVALID_RUNE.includes(options.separator) || typeof options.comment === "string" && INVALID_RUNE.includes(options.comment) || options.separator === options.comment) {
+            throw new Error(ERR_INVALID_DELIM);
+        }
+        for(;;){
+            const r = this.#parseRecord(lineIndex);
+            if (r === null) break;
+            lineResult = r;
+            lineIndex++;
+            if (first) {
+                first = false;
+                if (options.fieldsPerRecord !== undefined) {
+                    if (options.fieldsPerRecord === 0) {
+                        _nbFields = lineResult.length;
+                    } else {
+                        _nbFields = options.fieldsPerRecord;
+                    }
+                }
+            }
+            if (lineResult.length > 0) {
+                if (_nbFields && _nbFields !== lineResult.length) {
+                    throw new ParseError(lineIndex, lineIndex, null, ERR_FIELD_COUNT);
+                }
+                result.push(lineResult);
+            }
+        }
+        return result;
+    }
+}
+function parse3(input, opt = {
+    skipFirstRow: false
+}) {
+    const parser = new Parser(opt);
+    const r = parser.parse(input);
+    if (opt.skipFirstRow || opt.columns) {
+        let headers = [];
+        if (opt.skipFirstRow) {
+            const head = r.shift();
+            assert1(head != null);
+            headers = head;
+        }
+        if (opt.columns) {
+            headers = opt.columns;
+        }
+        const firstLineIndex = opt.skipFirstRow ? 1 : 0;
+        return r.map((row, i)=>{
+            return convertRowToObject(row, headers, firstLineIndex + i);
+        });
+    }
+    return r;
+}
 const normalizeEOL = (str)=>str.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-const isContentfulRow = (row)=>!!(row && !/^\s*$/.test(row));
 function parseCSV(contents) {
     const columns = new ColumnsMap();
     const issues = [];
-    const rows = normalizeEOL(contents).split('\n').filter(isContentfulRow).map((str)=>{
-        console.log(str);
-        const matches = str.match(/".*"/);
-        matches?.forEach((match)=>{
-            const newMatch = match.replace(",", "[REPLACE]");
-            str = str.replace(match, newMatch);
+    const normalizedStr = normalizeEOL(contents);
+    try {
+        const rows = parse3(normalizedStr);
+        const headers = rows.length ? rows[0] : [];
+        if (headers.length === 0) issues.push({
+            'issue': 'NoHeader',
+            'message': null
         });
-        return str.split(',').map((x)=>x.replace("[REPLACE]", ","));
-    });
-    const headers = rows.length ? rows[0] : [];
-    if (headers.length === 0) issues.push('NoHeader');
-    else {
-        if (!rows.slice(1).every((row)=>row.length === headers.length)) issues.push("HeaderRowMismatch");
-    }
-    headers.map((x)=>{
-        columns[x] = [];
-    });
-    for(let i = 1; i < rows.length; i++){
-        for(let j = 0; j < headers.length; j++){
-            const col = columns[headers[j]];
-            col.push(rows[i][j]);
+        else {
+            if (!rows.slice(1).every((row)=>row.length === headers.length)) issues.push({
+                'issue': 'HeaderRowMismatch',
+                'message': null
+            });
         }
+        headers.map((x)=>{
+            columns[x] = [];
+        });
+        for(let i = 1; i < rows.length; i++){
+            for(let j = 0; j < headers.length; j++){
+                const col = columns[headers[j]];
+                col.push(rows[i][j]);
+            }
+        }
+        if (Object.keys(columns).includes("row_id") && [
+            ...new Set(columns["row_id"])
+        ].length !== columns["row_id"].length) issues.push({
+            'issue': 'RowidValuesNotUnique',
+            'message': null
+        });
+    } catch (error) {
+        issues.push({
+            'issue': 'CSVFormattingError',
+            'message': error.message
+        });
     }
-    if (Object.keys(columns).includes("row_id") && [
-        ...new Set(columns["row_id"])
-    ].length !== columns["row_id"].length) issues.push("RowidValuesNotUnique");
     const response = {
         'columns': columns,
         'issues': issues
@@ -2472,9 +2735,18 @@ class psychDSContext {
     }
     reportCSVIssues(issues) {
         issues.forEach((issue)=>{
-            this.issues.addSchemaIssue(issue, [
-                this.file
-            ]);
+            if (issue.message) {
+                this.issues.addSchemaIssue(issue.issue, [
+                    {
+                        ...this.file,
+                        evidence: issue.message
+                    }
+                ]);
+            } else {
+                this.issues.addSchemaIssue(issue.issue, [
+                    this.file
+                ]);
+            }
         });
     }
     async asyncLoads() {

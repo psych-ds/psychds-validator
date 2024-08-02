@@ -1,7 +1,7 @@
 import { Schema } from '../types/schema.ts'
 import { objectPathHandler } from '../utils/objectPathHandler.ts'
-import * as schemaDefault from 'https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons/1.3.0/schema.json?v=1233' with { type: 'json' }
-
+// deno-lint-ignore no-import-assertions
+import defaultSchema from '../../default_schema/schema.json' assert { type: 'json' };
 /**
  * Load the schema from the specification
  *
@@ -45,7 +45,7 @@ export async function loadSchema(version = 'latest'): Promise<Schema> {
       `Warning, could not load schema from ${schemaUrl}, falling back to internal version`,
     )
     return new Proxy(
-      schemaDefault as object,
+      defaultSchema as object,
       objectPathHandler,
     ) as Schema
   }

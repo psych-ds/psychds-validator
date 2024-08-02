@@ -6,7 +6,56 @@ import { psychDSFile, issueInfo } from '../types/file.ts'
 import { FileTree } from '../types/filetree.ts'
 import { requestReadPermission } from '../setup/requestPermissions.ts'
 import { readPsychDSIgnore, FileIgnoreRules } from './ignore.ts'
-import jsonld from "npm:jsonld@8.3.2";
+import jsonld from "jsonld";
+
+/**
+ * Custom document loader for JSON-LD contexts.
+ * 
+ * This function fetches JSON-LD context documents from a given URL. It includes
+ * special handling for schema.org URLs, redirecting them to the specific JSON-LD
+ * context URL. The function performs content type checking to ensure the response
+ * is valid JSON-LD or JSON.
+ *
+ * @param {string} url - The URL of the JSON-LD context document to load.
+ * @returns {Promise<{contextUrl: null, documentUrl: string, document: any}>} 
+ *          A promise that resolves to an object containing:
+ *          - contextUrl: Always null in this implementation.
+ *          - documentUrl: The final URL of the fetched document.
+ *          - document: The parsed JSON-LD context.
+ * @throws {Error} If the content type of the response is not application/ld+json or application/json.
+ */
+const customDocumentLoader = async (url: string) => {
+  // Special handling for schema.org URLs
+  if (url === "https://schema.org/" || url === "http://schema.org/") {
+    // Redirect to the specific JSON-LD context URL for schema.org
+    url = "https://schema.org/docs/jsonldcontext.json";
+  }
+
+  // Fetch the document with appropriate headers
+  const response = await fetch(url, {
+    headers: {
+      'Accept': 'application/ld+json, application/json'
+    },
+    redirect: 'follow' // Allow redirects
+  });
+
+  // Check the content type of the response
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !(contentType.includes('application/ld+json') || contentType.includes('application/json'))) {
+    throw new Error(`Unexpected content type: ${contentType}`);
+  }
+
+  // Parse the JSON response
+  const document = await response.json();
+
+  // Return the document in the format expected by JSON-LD processors
+  return {
+    contextUrl: null, // Not used in this implementation
+    documentUrl: url, // The final URL after any redirects
+    document: document // The parsed JSON-LD context
+  };
+};
+
 
 /**
  * Thrown when a text file is decoded as UTF-8 but contains UTF-16 characters
@@ -137,8 +186,8 @@ export async function _readFileTree(
         )
   
         file.fileText = (await file.text())
-          .replaceAll('https://schema.org','http://schema.org')
-          .replaceAll('https://www.schema.org','http://www.schema.org')
+          .replaceAll('http://schema.org','https://schema.org')
+          .replaceAll('http://www.schema.org','https://www.schema.org')
   
         const json = await JSON.parse(file.fileText)
   
@@ -159,8 +208,8 @@ export async function _readFileTree(
       )
       //store text of file for later. This was added to accommodate browser version
       file.fileText = (await file.text())
-        .replaceAll('https://schema.org','http://schema.org')
-        .replaceAll('https://www.schema.org','http://www.schema.org')
+        .replaceAll('http://schema.org','https://schema.org')
+        .replaceAll('http://www.schema.org','https://www.schema.org')
 
       // For .psychdsignore, read in immediately and add the rules
       if (dirEntry.name === '.psychdsignore') {
@@ -185,7 +234,9 @@ export async function _readFileTree(
         }
         
         try{
-          exp = await jsonld.expand(json)
+          exp = await jsonld.expand(json, {
+            documentLoader: customDocumentLoader
+        })
           if (exp.length > 0)
             file.expanded = exp[0]
         }
