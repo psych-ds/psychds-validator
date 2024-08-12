@@ -6,7 +6,7 @@ import { psychDSFile, issueInfo } from '../types/file.ts'
 import { FileTree } from '../types/filetree.ts'
 import { requestReadPermission } from '../setup/requestPermissions.ts'
 import { readPsychDSIgnore, FileIgnoreRules } from './ignore.ts'
-import jsonld from "npm:jsonld@8.3.2";
+import jsonld from "jsonld";
 
 /**
  * Thrown when a text file is decoded as UTF-8 but contains UTF-16 characters
