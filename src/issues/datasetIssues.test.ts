@@ -1,4 +1,4 @@
-import { assertEquals, assertObjectMatch } from '../deps/asserts.ts'
+import { assertEquals, assertTrue} from '../deps/asserts.ts'
 import { psychDSFile } from '../types/file.ts'
 import { IssueFile } from '../types/issues.ts'
 import { DatasetIssues } from './datasetIssues.ts'
@@ -35,19 +35,30 @@ Deno.test('DatasetIssues management class', async (t) => {
         stream: testStream,
         line: 1,
         character: 5,
-        severity: 'warning',
-        reason: 'Readme borked',
       } as unknown as IssueFile,
     ]
     issues.add({ key: 'TEST_FILES_ERROR', reason: 'Test issue', files })
     assertEquals(issues.getFileIssueKeys('/README'), ['TEST_FILES_ERROR'])
+    
     for (const [_, issue] of issues) {
-      assertObjectMatch(issue, { key: 'TEST_FILES_ERROR' })
-      for (const f of issue.files.values()) {
-        // Checking all files for the key assures they are in IssueFile format
-        assertObjectMatch(f, {
-          stream: Promise.resolve(testStream),
-        })
+      // Switch to checking properties of object individually to accommodate deep object check
+      assertEquals(issue.key, 'TEST_FILES_ERROR')
+      assertEquals(issue.reason, 'Test issue')
+      assertEquals(issue.files.size, 2)
+      
+      for (const [path, file] of issue.files) {
+        assertTrue(file.stream instanceof ReadableStream)
+        assertEquals(typeof file.text, 'function')
+        
+        if (path === '/README') {
+          assertEquals(file.name, 'README')
+          assertEquals(file.line, 1)
+          assertEquals(file.character, 5)
+        } else if (path === '/dataset_description.json') {
+          assertEquals(file.name, 'dataset_description.json')
+          assertEquals(file.size, 500)
+          assertEquals(file.ignored, false)
+        }
       }
     }
   })

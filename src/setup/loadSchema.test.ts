@@ -1,4 +1,4 @@
-import { assert, assertObjectMatch } from '../deps/asserts.ts'
+import { assert, assertEquals } from '../deps/asserts.ts'
 import { loadSchema } from './loadSchema.ts'
 
 Deno.test('schema yaml loader', async (t) => {
@@ -16,23 +16,27 @@ Deno.test('schema yaml loader', async (t) => {
       >
       // deno-lint-ignore no-prototype-builtins
       if (top_level.hasOwnProperty('README')) {
-        assertObjectMatch(top_level.README, {
-          level: 'warning',
-          stem: 'README',
-          extensions: ['.md', '.txt'],
-        })
+        const readme = top_level.README
+        assertEquals(readme.level, 'warning')
+        assertEquals(readme.stem, 'README')
+        assertEquals(readme.extensions, ['.md', '.txt'])
+        
+        // Check if other properties exist without asserting their values
+        assert('arbitraryNesting' in readme)
+        assert('baseDir' in readme)
+        assert('code' in readme)
+        assert('reason' in readme)
+      } else {
+        assert(false, 'README property not found in top_level')
       }
     } else {
       assert(false, 'failed to test schema defs')
     }
   })
+
   await t.step('loads all schema files', async () => {
     const schemaDefs = await loadSchema()
-    if (
-      !(typeof schemaDefs.objects === 'object') ||
-      !(typeof schemaDefs.rules === 'object')
-    ) {
-      assert(false, 'failed to load objects/rules')
-    }
+    assert(typeof schemaDefs.objects === 'object', 'objects should be an object')
+    assert(typeof schemaDefs.rules === 'object', 'rules should be an object')
   })
 })
