@@ -4,16 +4,17 @@ import { psychDSFileDeno, UnicodeDecodeError, readFileTree } from './deno.ts'
 import { requestReadPermission } from '../setup/requestPermissions.ts'
 import { FileIgnoreRules } from './ignore.ts'
 
-await requestReadPermission()
-
-// Use this file for testing file behavior
-const testUrl = import.meta.url
-const testPath = testUrl.slice('file://'.length)
-const testDir = path.dirname(testPath)
-const testFilename = path.basename(testPath)
-const ignore = new FileIgnoreRules([])
-
 Deno.test('Deno implementation of BIDSFile', async (t) => {
+  // Move initial declarations inside test function to avoid top-level await
+  await requestReadPermission()
+
+  // Use this file for testing file behavior
+  const testUrl = import.meta.url
+  const testPath = testUrl.slice('file://'.length)
+  const testDir = path.dirname(testPath)
+  const testFilename = path.basename(testPath)
+  const ignore = new FileIgnoreRules([])
+
   await t.step('implements basic file properties', () => {
     const file = new psychDSFileDeno(testDir, testFilename, ignore)
     assertEquals(path.join(testDir, file.path), testPath)
@@ -68,12 +69,9 @@ Deno.test('Deno implementation of BIDSFile', async (t) => {
       assertEquals(text, '{\n  "example": "JSON for test suite"\n}\n')
     },
   )
-})
-
-Deno.test('Test readFileTree', async (t) => {
-    await t.step('fileTree exists', async() => {
-      const fileTree = await readFileTree(testDir)
-      assertEquals(fileTree.files.length,6)
-    })
-
+  // Moved all test steps within main Deno test
+  await t.step('fileTree exists', async() => {
+    const fileTree = await readFileTree(testDir)
+    assertEquals(fileTree.files.length,6)
   })
+})
