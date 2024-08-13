@@ -8,7 +8,7 @@ import { psychDSContext, psychDSContextDataset } from "./context.ts";
 import { GenericSchema } from "../types/schema.ts";
 import { psychDSFile } from "../types/file.ts";
 import { ValidatorOptions } from "../setup/options.ts";
-import jsonld from 'npm:jsonld';
+import jsonld from 'jsonld';
 
 // Define constants for file paths to improve maintainability
 const BASE_PATH = 'test_data/valid_datasets/bfi-dataset';
