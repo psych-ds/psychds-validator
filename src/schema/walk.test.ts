@@ -2,11 +2,11 @@ import { assert, assertEquals } from '../deps/asserts.ts'
 import { psychDSContext } from './context.ts'
 import { walkFileTree } from './walk.ts'
 import { DatasetIssues } from '../issues/datasetIssues.ts'
-import { resolve } from "../deps/path.ts";
+import path from 'node:path';
 import { readFileTree } from "../files/deno.ts";
 
 const PATH = 'test_data/valid_datasets/bfi-dataset'
-const absolutePath = resolve(PATH)
+const absolutePath = path.resolve(PATH)
 const fileTree = await readFileTree(absolutePath)
 
 Deno.test('file tree walking', async (t) => {

@@ -11,7 +11,7 @@ import { FileIgnoreRules } from '../files/ignore.ts'
 import { loadSchema } from '../setup/loadSchema.ts'
 import { validate } from './psychds.ts';
 import { ValidatorOptions } from '../setup/options.ts';
-import { resolve } from '../deps/path.ts';
+import path from 'node:path';
 
 const PATH = 'test_data/valid_datasets/bfi-dataset'
 const schema = await loadSchema()
@@ -93,7 +93,7 @@ Deno.test('test findFileRules', async (t) => {
     sanitizeResources: false,
     fn: async (t) => {
       await t.step('misplaced metadata', async () => {
-        const absolutePath = resolve('test_data/valid_datasets/nih-reviews')
+        const absolutePath = path.resolve('test_data/valid_datasets/nih-reviews')
         const tree = await readFileTree(absolutePath)
         const schemaResult = await validate(tree, {} as ValidatorOptions)
         assertEquals(schemaResult.issues.has('WRONG_METADATA_LOCATION'),true)

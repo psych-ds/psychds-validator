@@ -20,14 +20,14 @@ Deno.test('options parsing', async (t) => {
       '--json',
       '--schema', '1.0.0',
       '--verbose',
-      '--debug', 'INFO',
+      '--debug', 'info',
       '--showWarnings'
     ]);
     assertEquals(options, {
       datasetPath: 'my_dataset',
       json: true,
       schema: '1.0.0',
-      debug: 'INFO',
+      debug: 'info',
       verbose: true,
       showWarnings: true
     })

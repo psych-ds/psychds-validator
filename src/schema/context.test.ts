@@ -5,10 +5,10 @@ import { FileIgnoreRules } from "../files/ignore.ts";
 import { psychDSFileDeno, readFileTree } from "../files/deno.ts";
 import { psychDSFile } from "../types/file.ts";
 import { ValidatorOptions } from "../setup/options.ts";
-import { resolve } from '../deps/path.ts'
+import path from 'node:path';
 
 const PATH = 'test_data/valid_datasets/bfi-dataset'
-const absolutePath = resolve(PATH)
+const absolutePath = path.resolve(PATH)
 const fileTree = await readFileTree(absolutePath)
 const issues = new DatasetIssues()
 const ignore = new FileIgnoreRules([])

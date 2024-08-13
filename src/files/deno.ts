@@ -1,7 +1,7 @@
 /**
  * Deno specific implementation for reading files
  */
-import { join, basename } from '../deps/path.ts'
+import path from 'node:path';
 import { psychDSFile, issueInfo } from '../types/file.ts'
 import { FileTree } from '../types/filetree.ts'
 import { requestReadPermission } from '../setup/requestPermissions.ts'
@@ -31,10 +31,10 @@ export class psychDSFileDeno implements psychDSFile {
   #fileInfo?: Deno.FileInfo
   #datasetAbsPath: string
 
-  constructor(datasetPath: string, path: string, ignore: FileIgnoreRules) {
+  constructor(datasetPath: string, filePath: string, ignore: FileIgnoreRules) {
     this.#datasetAbsPath = datasetPath
-    this.path = path
-    this.name = basename(path)
+    this.path = filePath
+    this.name = path.basename(filePath)
     this.fileText = ''
     this.expanded = {}
     this.issueInfo = []
@@ -49,7 +49,7 @@ export class psychDSFileDeno implements psychDSFile {
   }
 
   private _getPath(): string {
-    return join(this.#datasetAbsPath, this.path)
+    return path.join(this.#datasetAbsPath, this.path)
   }
 
   get size(): number {
@@ -124,15 +124,15 @@ export async function _readFileTree(
   context?: object | null
 ): Promise<FileTree> {
   await requestReadPermission()
-  const name = basename(relativePath)
+  const name = path.basename(relativePath)
   const tree = new FileTree(relativePath, name, parent)
 
   if(!parent){
-    for await (const dirEntry of Deno.readDir(join(rootPath,relativePath))){
+    for await (const dirEntry of Deno.readDir(path.join(rootPath,relativePath))){
       if(dirEntry.isFile && dirEntry.name === "dataset_description.json"){
         const file = new psychDSFileDeno(
           rootPath,
-          join(relativePath, dirEntry.name),
+          path.join(relativePath, dirEntry.name),
           ignore,
         )
   
@@ -150,11 +150,11 @@ export async function _readFileTree(
   }
   
   
-  for await (const dirEntry of Deno.readDir(join(rootPath, relativePath))) {
+  for await (const dirEntry of Deno.readDir(path.join(rootPath, relativePath))) {
     if (dirEntry.isFile || dirEntry.isSymlink) {
       const file = new psychDSFileDeno(
         rootPath,
-        join(relativePath, dirEntry.name),
+        path.join(relativePath, dirEntry.name),
         ignore,
       )
       //store text of file for later. This was added to accommodate browser version
@@ -201,7 +201,7 @@ export async function _readFileTree(
     if (dirEntry.isDirectory) {
       const dirTree = await _readFileTree(
         rootPath,
-        join(relativePath, dirEntry.name),
+        path.join(relativePath, dirEntry.name),
         ignore,
         tree,
         context

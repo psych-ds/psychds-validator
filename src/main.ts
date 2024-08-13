@@ -1,6 +1,6 @@
 import { parseOptions } from './setup/options.ts'
 import { setupLogging } from './utils/logger.ts'
-import { resolve } from './deps/path.ts'
+import path from 'node:path';
 import { validate } from './validators/psychds.ts'
 import { consoleFormat } from './utils/output.ts'
 import { readFileTree } from './files/deno.ts'
@@ -20,7 +20,7 @@ import { readFileTree } from './files/deno.ts'
 export async function main() {
     const options = await parseOptions(Deno.args)
     setupLogging(options.debug)
-    const absolutePath = resolve(options.datasetPath)
+    const absolutePath = path.resolve(options.datasetPath)
     const tree = await readFileTree(absolutePath)
     
     const schemaResult = await validate(tree, options)
