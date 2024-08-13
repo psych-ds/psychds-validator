@@ -17,8 +17,15 @@ import { readFileTree } from './files/deno.ts'
  * --schema: specify schema version
  * 
 */
-export async function main() {
-    const options = await parseOptions(Deno.args)
+export async function main(args: string[] = Deno.args) {
+    let options;
+    try {
+        options = parseOptions(args);
+    } catch (error) {
+        console.error('Error parsing options:', error.message);
+        Deno.exit(1);
+    }
+
     setupLogging(options.debug)
     const absolutePath = path.resolve(options.datasetPath)
     const tree = await readFileTree(absolutePath)
