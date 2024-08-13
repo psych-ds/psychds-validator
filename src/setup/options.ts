@@ -1,4 +1,4 @@
-import { LevelName, LogLevelNames } from '../deps/logger.ts'
+import { LevelName, LogLevels } from '../utils/logger.ts'
 import { Command, Option } from 'npm:commander';
 
 export type ValidatorOptions = {
@@ -29,7 +29,7 @@ export function parseOptions(
         .option('--json', 'Output machine readable JSON')
         .option('-s, --schema <type>', 'Specify a schema version to use for validation', 'latest')
         .option('-v, --verbose', 'Log more extensive information about issues')
-        .addOption(new Option('--debug <level>', 'Enable debug output').choices(Object.values(LogLevelNames)).default('ERROR'))
+        .addOption(new Option('--debug <level>', 'Enable debug output').choices(Object.values(LogLevels)).default('ERROR'))
         .option('-w, --showWarnings', 'Include warnings and suggestions in addition to errors');
 
     program.parse(args, { from: 'user' });
