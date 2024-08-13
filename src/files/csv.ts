@@ -4,8 +4,10 @@
  */
 
 import { ColumnsMap } from '../types/columns.ts'
-import { parse } from "jsr:@std/csv";
+// Changed from Deno std library to npm package for better cross-platform compatibility
+import { parse } from 'npm:csv-parse/sync'
 
+// Helper function to normalize line endings
 const normalizeEOL = (str: string): string =>
   str.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
 
@@ -14,47 +16,57 @@ export interface csvIssue {
   message: string | null
 }
 
-// gets columns from CSV
+// Function to parse CSV contents
 export function parseCSV(contents: string) {
-  const columns = new ColumnsMap()
-  const issues: csvIssue[] = []
-  const normalizedStr = normalizeEOL(contents)
-  try{
-    const rows : string[][] = parse(normalizedStr)
-    const headers = rows.length ? rows[0] : []
+  const columns = new ColumnsMap();
+  const issues: csvIssue[] = [];
+  const normalizedStr = normalizeEOL(contents);
   
-    //if no header is present, log error
-    if (headers.length === 0)
-      issues.push({'issue':'NoHeader','message':null})
-    else{
-      //if any row in CSV contains different number of cells than the header, log error
-      if(!rows.slice(1).every((row) => row.length === headers.length))
-        issues.push({'issue':'HeaderRowMismatch','message':null})
-    }
+  try {
+    // Use the new csv-parse library with more flexible options
+    const rows: string[][] = parse(normalizedStr, {
+      skip_empty_lines: false,
+      relax_column_count: true, // Allow rows with inconsistent column counts for better error handling
+    });
+    
+    const headers = rows.length ? rows[0] : [];
 
-    headers.map((x) => {
-      columns[x] = []
-    })
-    for (let i = 1; i < rows.length; i++) {
-      for (let j = 0; j < headers.length; j++) {
-        const col = columns[headers[j]] as string[]
-        col.push(rows[i][j])
+    if (headers.length === 0) {
+      issues.push({'issue':'NoHeader','message':null});
+    } else {
+      // Initialize columns based on headers
+      headers.forEach((x) => {
+        columns[x] = [];
+      });
+      
+      // Process each row, checking for mismatches and populating columns
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i].length !== headers.length) {
+          // Improved error reporting: specify which row has a mismatch and how many columns it has
+          issues.push({'issue':'HeaderRowMismatch','message':`Row ${i + 1} has ${rows[i].length} columns, expected ${headers.length}`});
+        } else {
+          for (let j = 0; j < headers.length; j++) {
+            const col = columns[headers[j]] as string[];
+            col.push(rows[i][j]);
+          }
+        }
+      }
+      
+      // Check for row_id uniqueness
+      if (columns["row_id"] && Array.isArray(columns["row_id"])) {
+        const rowIdSet = new Set(columns["row_id"]);
+        if (rowIdSet.size !== columns["row_id"].length) {
+          issues.push({'issue':'RowidValuesNotUnique','message':null});
+        }
       }
     }
-    //if header called "row_id" is present, assert that all cells are unique values
-    if (Object.keys(columns).includes("row_id") && [...new Set(columns["row_id"] as string[])].length !== (columns["row_id"] as string[]).length)
-      issues.push({'issue':'RowidValuesNotUnique','message':null})
+  } catch(error) {
+    issues.push({'issue':'CSVFormattingError','message':error.message});
   }
-  catch(error){
-    issues.push({'issue':'CSVFormattingError','message':error.message})
-  }
-  
 
-  //response has been modified to return columns object as well as issues object, 
-  //to account for the fact that multiple types of issues are now possible
-  const response = {
-    'columns':columns as ColumnsMap,
-    'issues':issues as csvIssue[]
-  }
-  return response
+  // Return both columns and issues
+  return {
+    'columns': columns as ColumnsMap,
+    'issues': issues as csvIssue[]
+  };
 }

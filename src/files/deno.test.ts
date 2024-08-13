@@ -73,7 +73,7 @@ Deno.test('Deno implementation of BIDSFile', async (t) => {
 Deno.test('Test readFileTree', async (t) => {
     await t.step('fileTree exists', async() => {
       const fileTree = await readFileTree(testDir)
-      assertEquals(fileTree.files.length,6)
+      assertEquals(fileTree.files.length,7)
     })
 
   })
