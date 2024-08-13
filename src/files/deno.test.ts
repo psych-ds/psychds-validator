@@ -1,5 +1,4 @@
 import { assertEquals, assertRejects } from '../deps/asserts.ts'
-import { readAll, readerFromStreamReader } from '../deps/stream.ts'
 import path from 'node:path';
 import { psychDSFileDeno, UnicodeDecodeError, readFileTree } from './deno.ts'
 import { requestReadPermission } from '../setup/requestPermissions.ts'
@@ -27,9 +26,20 @@ Deno.test('Deno implementation of BIDSFile', async (t) => {
   await t.step('can be read as ReadableStream', async () => {
     const file = new psychDSFileDeno(testDir, testFilename, ignore)
     const stream = file.stream
-    const streamReader = stream.getReader()
-    const denoReader = readerFromStreamReader(streamReader)
-    const fileBuffer = await readAll(denoReader)
+    const chunks: Uint8Array[] = [];
+    // Read the stream chunk by chunk
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+    // Create a single Uint8Array from all chunks
+    // This approach is compatible with both Deno and Node.js
+    const fileBuffer = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+    let offset = 0;
+    for (const chunk of chunks) {
+      fileBuffer.set(chunk, offset);
+      offset += chunk.length;
+    }
+    // Verify that the total size matches the file size
     assertEquals(await file.size, fileBuffer.length)
   })
   await t.step('can be read with .text() method', async () => {

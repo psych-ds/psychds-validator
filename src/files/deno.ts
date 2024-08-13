@@ -69,28 +69,25 @@ export class psychDSFileDeno implements psychDSFile {
    * Read the entire file and decode as utf-8 text
    */
   async text(): Promise<string> {
-    const streamReader = this.stream
-      .pipeThrough(new TextDecoderStream('utf-8'))
-      .getReader()
+    const stream = this.stream
+    const decoder = new TextDecoder('utf-8')
     let data = ''
     try {
-      // Read once to check for unicode issues
-      const { done, value } = await streamReader.read()
-      // Check for UTF-16 BOM
-      if (value && value.startsWith('\uFFFD')) {
-        throw new UnicodeDecodeError('This file appears to be UTF-16')
-      }
-      if (done) return data
-      data += value
-      // Continue reading the rest of the file if no unicode issues were found
-      while (true) {
-        const { done, value } = await streamReader.read()
-        if (done) return data
+      // Read the stream chunk by chunk and decode
+      for await (const chunk of stream) {
+        const value = decoder.decode(chunk, { stream: true })
+        // Check for UTF-16 BOM at the start of the file
+        if (data.length === 0 && value.startsWith('\uFFFD')) {
+          throw new UnicodeDecodeError('This file appears to be UTF-16')
+        }
         data += value
       }
     } finally {
-      streamReader.releaseLock()
+      // Ensure the decoder is flushed even if an error occurs
+      // This prevents resource leaks and ensures all data is processed
+      data += decoder.decode()
     }
+    return data
   }
 
   /**
