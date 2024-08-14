@@ -5,11 +5,11 @@ import { loadSchema } from './loadSchema.ts'
 const originalFetch = globalThis.fetch;
 
 // Mock fetch function to simulate API responses without making actual network requests
-globalThis.fetch = async (input: string | URL | Request): Promise<Response> => {
+globalThis.fetch = (input: string | URL | Request): Promise<Response> => {
   if (typeof input === 'string') {
     // Simulate response for schema.json
     if (input.includes('schema.json')) {
-      return new Response(JSON.stringify({
+      return Promise.resolve(new Response(JSON.stringify({
         rules: {
           files: {
             common: {
@@ -29,15 +29,15 @@ globalThis.fetch = async (input: string | URL | Request): Promise<Response> => {
         },
         objects: {},
         schemaOrg: {}
-      }));
+      })));
     } 
     // Simulate response for schemaorg.json
     else if (input.includes('schemaorg.json')) {
-      return new Response(JSON.stringify({}));
+      return Promise.resolve(new Response(JSON.stringify({})));
     }
   }
   // Return 404 for any other requests
-  return new Response(null, { status: 404 });
+  return Promise.resolve(new Response(null, { status: 404 }));
 };
 
 // Main test suite for LoadSidecar functionality
@@ -52,9 +52,9 @@ Deno.test({
         typeof schemaDefs.rules.files.common === 'object' &&
         schemaDefs.rules.files.common.core !== null
       ) {
-        const top_level = schemaDefs.rules.files.common.core as Record<string, any>
-        if (top_level.hasOwnProperty('README')) {
-          const readme = top_level.README
+        const top_level = schemaDefs.rules.files.common.core as Record<string, unknown>
+        if (Object.prototype.hasOwnProperty.call(top_level, 'README')) {
+          const readme = top_level.README as Record<string, unknown>
           // Assert specific properties of the README object
           assertEquals(readme.level, 'warning')
           assertEquals(readme.stem, 'README')
