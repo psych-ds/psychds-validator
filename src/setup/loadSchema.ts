@@ -3,16 +3,7 @@ import { objectPathHandler } from '../utils/objectPathHandler.ts'
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { RequestInfo, RequestInit, Response } from 'npm:node-fetch';
 
-/**
- * Dynamically import and use node-fetch for making HTTP requests.
- * This approach allows for better compatibility across different JavaScript environments.
- */
-const fetch = async (...args: [RequestInfo, RequestInit?]): Promise<Response> => {
-  const { default: nodeFetch } = await import('npm:node-fetch');
-  return nodeFetch(...args);
-};
 
 /**
  * Determines the directory name of the current module.
