@@ -1,12 +1,23 @@
 {
-    "importMap": "import_map.json",
-    "tasks": {
-      "test": "deno test -A"
-    },
-    "lint": {
-        "exclude": ["custom_test_runner.js","npm/"]
-      },
-    "test": {
-        "exclude": ["npm/"]
-    }
+  "tasks": {
+    "test": "deno test -A"
+  },
+  "lint": {
+    "exclude": ["npm/"]
+  },
+  "test": {
+    "exclude": ["npm/"]
+  },
+  "imports": {
+    "@deno/dnt": "jsr:@deno/dnt@^0.41.3",
+    "jsonld": "npm:jsonld@8.3.2",
+    "/": "./src/",
+    "./": "./",
+    "../": "./src/",
+    "canonicalize": "npm:canonicalize@1.0.8",
+    "npm:csv-parse/sync": "https://esm.sh/csv-parse@5.5.2/sync",
+    "npm:commander": "https://esm.sh/commander@9.4.0",
+    "chalk": "https://esm.sh/chalk@5.0.1",
+    "cli-table3": "https://esm.sh/cli-table3@0.6.3"
   }
+}
