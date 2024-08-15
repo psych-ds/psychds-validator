@@ -29,7 +29,7 @@ export function parseOptions(
         .option('--json', 'Output machine readable JSON')
         .option('-s, --schema <type>', 'Specify a schema version to use for validation', 'latest')
         .option('-v, --verbose', 'Log more extensive information about issues')
-        .addOption(new Option('--debug <level>', 'Enable debug output').choices(Object.values(LogLevels)).default('ERROR'))
+        .addOption(new Option('--debug <level>', 'Enable debug output').choices(Object.values(LogLevels)).default('error'))
         .option('-w, --showWarnings', 'Include warnings and suggestions in addition to errors');
 
     program.parse(args, { from: 'user' });
