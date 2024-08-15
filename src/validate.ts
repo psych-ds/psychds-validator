@@ -15,32 +15,36 @@ import path from 'node:path';
  */
 export async function validate(fileTreeOrPath: FileTree | string, options?: Partial<ValidatorOptions>): Promise<ValidationResult> {
     let fileTree: FileTree;
-    let fullOptions: ValidatorOptions;
+
+    // Determine if fileTreeOrPath is a string (path) or a FileTree object
+    const isPathString = typeof fileTreeOrPath === 'string';
+
+    // Prepare arguments for parseOptions
+    const args: string[] = isPathString ? [fileTreeOrPath] : [];
 
     if (options) {
         // Convert options object to array of CLI-style arguments
-        const args: string[] = [];
-        if (options.datasetPath) args.push(options.datasetPath);
+        if (options.datasetPath && !isPathString) args.push(options.datasetPath);
         if (options.schema) args.push('--schema', options.schema);
         if (options.json) args.push('--json');
         if (options.verbose) args.push('--verbose');
         if (options.showWarnings) args.push('--showWarnings');
         if (options.debug) args.push('--debug', options.debug);
-
-        fullOptions = parseOptions(args);
-    } else {
-        fullOptions = parseOptions([]);
     }
 
-    if (typeof fileTreeOrPath === 'string') {
+    // Parse options with the prepared arguments
+    const fullOptions: ValidatorOptions = parseOptions(args);
+
+    if (isPathString) {
         // If a string path is provided, read the file tree
-        const absolutePath = path.resolve(fileTreeOrPath);
+        const absolutePath = path.resolve(fileTreeOrPath as string);
         fileTree = await readFileTree(absolutePath);
         fullOptions.datasetPath = absolutePath;
     } else {
         // If a FileTree object is provided, use it directly
-        fileTree = fileTreeOrPath;
+        fileTree = fileTreeOrPath as FileTree;
     }
+
 
     // Perform the internal validation
     return validateInternal(fileTree, fullOptions);
