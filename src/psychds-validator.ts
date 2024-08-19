@@ -1,49 +1,53 @@
-import { validate } from './validators/psychds.ts';
-import { parseOptions } from './setup/options.ts';
-import { readFileTree } from './files/deno.ts';
-import path from 'node:path';
-import { consoleFormat } from './utils/output.ts';
+import { validate } from "./validators/psychds.ts";
+import { parseOptions } from "./setup/options.ts";
+import { readFileTree } from "./files/deno.ts";
+import path from "node:path";
+import { consoleFormat } from "./utils/output.ts";
 
 /**
  * Main function to run the validator in a Deno environment.
  * This function is specifically designed for use with Deno.
- * 
+ *
  * @param {string[]} args - Command line arguments. Defaults to Deno.args.
  */
 export async function run(args: string[] = Deno.args) {
-    try {
-        // Parse command line options
-        const options = parseOptions(args);
-        
-        // Convert relative path to absolute
-        const absolutePath = path.resolve(options.datasetPath);
-        
-        // Read the file tree from the specified path
-        const fileTree = await readFileTree(absolutePath);
-        
-        // Perform validation
-        const result = await validate(fileTree, options);
+  try {
+    // Parse command line options
+    const options = parseOptions(args);
 
-        // Output results based on specified format
-        if (options.json) {
-            // Convert Map to Array for JSON serialization
-            console.log(JSON.stringify(result, (_, value) => 
-                value instanceof Map ? Array.from(value.values()) : value
-            ));
-        } else {
-            // Format output for console
-            console.log(consoleFormat(result, {
-                verbose: options.verbose ?? false,
-                showWarnings: options.showWarnings ?? false
-            }));
-        }
-    } catch (error) {
-        console.error('An error occurred:', error);
-        Deno.exit(1);
+    // Convert relative path to absolute
+    const absolutePath = path.resolve(options.datasetPath);
+
+    // Read the file tree from the specified path
+    const fileTree = await readFileTree(absolutePath);
+
+    // Perform validation
+    const result = await validate(fileTree, options);
+
+    // Output results based on specified format
+    if (options.json) {
+      // Convert Map to Array for JSON serialization
+      console.log(
+        JSON.stringify(
+          result,
+          (_, value) =>
+            value instanceof Map ? Array.from(value.values()) : value,
+        ),
+      );
+    } else {
+      // Format output for console
+      console.log(consoleFormat(result, {
+        verbose: options.verbose ?? false,
+        showWarnings: options.showWarnings ?? false,
+      }));
     }
+  } catch (error) {
+    console.error("An error occurred:", error);
+    Deno.exit(1);
+  }
 }
 
 // Run the validator if this is the main module
 if (import.meta.main) {
-    run();
+  run();
 }

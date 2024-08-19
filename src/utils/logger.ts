@@ -1,28 +1,30 @@
 // logger.ts, re-written to accommodate winston rather than Deno logger
-import winston from 'npm:winston';
+import winston from "npm:winston";
 
 const { createLogger, format, transports } = winston;
 
 /**
  * Defines the valid log levels for the application.
  */
-export type LevelName = 'error' | 'warn' | 'info' | 'debug';
+export type LevelName = "error" | "warn" | "info" | "debug";
 
 /**
  * Create a Winston logger instance with custom formatting.
  * The logger outputs to the console with timestamp, level, and message.
  */
 const logger = createLogger({
-  level: 'info',
+  level: "info",
   format: format.combine(
     format.timestamp(),
     format.printf(({ timestamp, level, message, ...rest }) => {
-      return `${timestamp} [${level.toUpperCase()}]: ${message} ${Object.keys(rest).length ? JSON.stringify(rest) : ''}`;
-    })
+      return `${timestamp} [${level.toUpperCase()}]: ${message} ${
+        Object.keys(rest).length ? JSON.stringify(rest) : ""
+      }`;
+    }),
   ),
   transports: [
-    new transports.Console()
-  ]
+    new transports.Console(),
+  ],
 });
 
 /**
@@ -39,10 +41,10 @@ export function setupLogging(level: LevelName) {
  * @returns The caller's location or an empty string if not found
  */
 export function parseStack(stack: string) {
-  const lines = stack.split('\n');
-  const caller = lines[2]?.trim() ?? '';
-  const token = caller.split('at ');
-  return token[1] ?? '';
+  const lines = stack.split("\n");
+  const caller = lines[2]?.trim() ?? "";
+  const token = caller.split("at ");
+  return token[1] ?? "";
 }
 
 /**
@@ -74,9 +76,9 @@ const loggerProxyHandler: ProxyHandler<winston.Logger> = {
         const callerLocation = parseStack(stack);
         logger.debug(`Logger invoked at "${callerLocation}"`);
       }
-      
+
       // Call the appropriate logging method or default to warning
-      if (typeof prop === 'string' && prop in logger) {
+      if (typeof prop === "string" && prop in logger) {
         (logger[prop as keyof typeof logger] as LogMethod)(...args);
       } else {
         logger.warn(...args); // Default to warning if the method doesn't exist
@@ -100,10 +102,10 @@ export { proxyLogger as logger };
  * Exported to maintain compatibility with existing code.
  */
 export const LogLevels = {
-  ERROR: 'error',
-  WARN: 'warn',
-  INFO: 'info',
-  DEBUG: 'debug'
+  ERROR: "error",
+  WARN: "warn",
+  INFO: "info",
+  DEBUG: "debug",
 };
 
 /**

@@ -1,9 +1,8 @@
-import { Schema, GenericSchema } from '../types/schema.ts'
-import { objectPathHandler } from '../utils/objectPathHandler.ts'
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
+import { GenericSchema, Schema } from "../types/schema.ts";
+import { objectPathHandler } from "../utils/objectPathHandler.ts";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 /**
  * Determines the directory name of the current module.
@@ -11,7 +10,7 @@ import { fileURLToPath } from 'node:url';
  * @returns {string} The directory name of the current module.
  */
 function getDirname(): string {
-  if (typeof __dirname !== 'undefined') {
+  if (typeof __dirname !== "undefined") {
     // CommonJS environment
     return __dirname;
   } else {
@@ -19,8 +18,8 @@ function getDirname(): string {
     try {
       return path.dirname(fileURLToPath(import.meta.url));
     } catch (error) {
-      console.warn('Unable to determine directory:', error);
-      return '';
+      console.warn("Unable to determine directory:", error);
+      return "";
     }
   }
 }
@@ -28,8 +27,10 @@ function getDirname(): string {
 const dirname = getDirname();
 
 // Base URLs for fetching schemas
-const SCHEMA_BASE_URL = 'https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons';
-const SCHEMA_ORG_URL = 'https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/external_schemas/schemaorg/schemaorg.json';
+const SCHEMA_BASE_URL =
+  "https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons";
+const SCHEMA_ORG_URL =
+  "https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/external_schemas/schemaorg/schemaorg.json";
 
 // Default schemas to be used as fallbacks
 let defaultSchema: GenericSchema = {};
@@ -41,10 +42,14 @@ let defaultSchemaOrg: GenericSchema = {};
  */
 function loadDefaultSchemas(): void {
   try {
-    defaultSchema = JSON.parse(fs.readFileSync(path.join(dirname, 'defaultSchema.json'), 'utf-8'));
-    defaultSchemaOrg = JSON.parse(fs.readFileSync(path.join(dirname, 'defaultSchemaOrg.json'), 'utf-8'));
+    defaultSchema = JSON.parse(
+      fs.readFileSync(path.join(dirname, "defaultSchema.json"), "utf-8"),
+    );
+    defaultSchemaOrg = JSON.parse(
+      fs.readFileSync(path.join(dirname, "defaultSchemaOrg.json"), "utf-8"),
+    );
   } catch (error) {
-    console.error('Error loading default schemas:', error);
+    console.error("Error loading default schemas:", error);
     defaultSchema = {};
     defaultSchemaOrg = {};
   }
@@ -74,14 +79,17 @@ async function fetchJSON(url: string): Promise<GenericSchema | null> {
  * - It now uses a more robust version checking mechanism.
  * - It implements better error handling and fallback mechanisms.
  * - It separates concerns by using helper functions (fetchJSON, loadDefaultSchemas).
- * 
+ *
  * @param {string} [version='latest'] - The version of the schema to load.
  * @returns {Promise<Schema>} A Promise that resolves to the loaded Schema.
  * @throws {Error} If the version format is invalid.
  */
-export async function loadSchema(version = 'latest'): Promise<Schema> {
+export async function loadSchema(version = "latest"): Promise<Schema> {
   // Ensure default schemas are loaded
-  if (Object.keys(defaultSchema).length === 0 || Object.keys(defaultSchemaOrg).length === 0) {
+  if (
+    Object.keys(defaultSchema).length === 0 ||
+    Object.keys(defaultSchemaOrg).length === 0
+  ) {
     loadDefaultSchemas();
   }
 
@@ -89,10 +97,12 @@ export async function loadSchema(version = 'latest'): Promise<Schema> {
   const versionRegex = /^\d+\.\d+\.\d+$/;
 
   // Validate version format
-  if (version !== 'latest' && !versionRegex.test(version)) {
-    throw new Error(`Invalid version format. Please use 'latest' or 'X.Y.Z' format (e.g., '1.0.0').`);
+  if (version !== "latest" && !versionRegex.test(version)) {
+    throw new Error(
+      `Invalid version format. Please use 'latest' or 'X.Y.Z' format (e.g., '1.0.0').`,
+    );
   }
-  
+
   const schemaUrl = `${SCHEMA_BASE_URL}/${version}/schema.json`;
 
   let schemaModule: GenericSchema | null;
@@ -105,7 +115,9 @@ export async function loadSchema(version = 'latest'): Promise<Schema> {
 
     // Fall back to default schemas if fetches fail
     if (!schemaModule) {
-      console.warn(`Failed to fetch schema from ${schemaUrl}, using default schema`);
+      console.warn(
+        `Failed to fetch schema from ${schemaUrl}, using default schema`,
+      );
       schemaModule = defaultSchema;
     }
 
@@ -115,14 +127,20 @@ export async function loadSchema(version = 'latest'): Promise<Schema> {
     }
 
     // Combine the schemas
-    const combinedSchema: GenericSchema = { ...schemaModule, schemaOrg: schemaOrgModule };
+    const combinedSchema: GenericSchema = {
+      ...schemaModule,
+      schemaOrg: schemaOrgModule,
+    };
 
     // Return the combined schema wrapped in a Proxy for dynamic property access
     return new Proxy(combinedSchema, objectPathHandler) as Schema;
   } catch (error) {
     console.error(`Error loading schema: ${error}`);
-    console.warn('Falling back to default schema');
+    console.warn("Falling back to default schema");
     // If all else fails, use the default schemas
-    return new Proxy({ ...defaultSchema, schemaOrg: defaultSchemaOrg }, objectPathHandler) as Schema;
+    return new Proxy(
+      { ...defaultSchema, schemaOrg: defaultSchemaOrg },
+      objectPathHandler,
+    ) as Schema;
   }
 }

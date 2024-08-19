@@ -1,34 +1,32 @@
-import { SummaryOutput } from '../types/validation-result.ts'
-import { psychDSContext } from '../schema/context.ts'
-
+import { SummaryOutput } from "../types/validation-result.ts";
+import { psychDSContext } from "../schema/context.ts";
 
 export class Summary {
-  totalFiles: number
-  size: number
-  dataProcessed: boolean
-  dataTypes: Set<string>
-  schemaVersion: string
-  suggestedColumns: string[]
+  totalFiles: number;
+  size: number;
+  dataProcessed: boolean;
+  dataTypes: Set<string>;
+  schemaVersion: string;
+  suggestedColumns: string[];
   constructor() {
-    this.dataProcessed = false
-    this.totalFiles = -1
-    this.size = 0
-    this.dataTypes = new Set()
-    this.schemaVersion = ''
-    this.suggestedColumns = []
+    this.dataProcessed = false;
+    this.totalFiles = -1;
+    this.size = 0;
+    this.dataTypes = new Set();
+    this.schemaVersion = "";
+    this.suggestedColumns = [];
   }
   async update(context: psychDSContext): Promise<void> {
-    if (context.file.path.startsWith('/derivatives') && !this.dataProcessed) {
-      return
+    if (context.file.path.startsWith("/derivatives") && !this.dataProcessed) {
+      return;
     }
 
-    this.totalFiles++
-    this.size += await context.file.size
+    this.totalFiles++;
+    this.size += await context.file.size;
 
     if (context.datatype.length) {
-      this.dataTypes.add(context.datatype)
+      this.dataTypes.add(context.datatype);
     }
-
   }
 
   formatOutput(): SummaryOutput {
@@ -38,7 +36,7 @@ export class Summary {
       dataProcessed: this.dataProcessed,
       dataTypes: Array.from(this.dataTypes),
       schemaVersion: this.schemaVersion,
-      suggestedColumns: this.suggestedColumns
-    }
+      suggestedColumns: this.suggestedColumns,
+    };
   }
 }

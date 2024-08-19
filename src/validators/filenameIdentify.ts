@@ -12,137 +12,145 @@
  * object in the schema for reference.
  */
 // @ts-nocheck: untyped functions
-import { GenericSchema } from '../types/schema.ts'
-import { CheckFunction } from '../types/check.ts'
+import { GenericSchema } from "../types/schema.ts";
+import { CheckFunction } from "../types/check.ts";
 
 const CHECKS: CheckFunction[] = [
-  findRuleMatches
-]
+  findRuleMatches,
+];
 
 export async function filenameIdentify(schema, context) {
   for (const check of CHECKS) {
-    await check(schema as unknown as GenericSchema, context)
+    await check(schema as unknown as GenericSchema, context);
   }
 }
 
-export function checkDirRules(schema,rulesRecord,baseDirs) {
-    Object.keys(rulesRecord)
+export function checkDirRules(schema, rulesRecord, baseDirs) {
+  Object.keys(rulesRecord)
     .filter((key) => {
-        return (key.startsWith('rules.files.common.core') &&
-        !rulesRecord[key])
+      return (key.startsWith("rules.files.common.core") &&
+        !rulesRecord[key]);
     })
     .map((key) => {
-        const node = schema[key]
-        if (node.directory === true && 
-            baseDirs.includes(node.path)
-            )
-            rulesRecord[key] = true
-            
-      })
+      const node = schema[key];
+      if (
+        node.directory === true &&
+        baseDirs.includes(node.path)
+      ) {
+        rulesRecord[key] = true;
+      }
+    });
 }
 
 /* In order to check for the abscence of files in addition to their validity, we
- * need to keep a persistent rulesRecord object that contains all the file rules 
+ * need to keep a persistent rulesRecord object that contains all the file rules
  * from the schema, so we can record which rules were satisfied by a file and which weren't
  */
-export function findFileRules(schema,rulesRecord) {
-    const schemaPath = 'rules.files'
-    
-    Object.keys(schema[schemaPath]).map((key) => {
-        const path = `${schemaPath}.${key}`
-        _findFileRules(schema[path], path,rulesRecord)
-      })
-      
-    return Promise.resolve()
+export function findFileRules(schema, rulesRecord) {
+  const schemaPath = "rules.files";
+
+  Object.keys(schema[schemaPath]).map((key) => {
+    const path = `${schemaPath}.${key}`;
+    _findFileRules(schema[path], path, rulesRecord);
+  });
+
+  return Promise.resolve();
 }
 
-export function _findFileRules(node, path,rulesRecord) {
-    if (
-      ('baseDir' in node) &&
-      ('extensions' in node) &&
-      (('suffix' in node) || ('stem' in node))
-    ) {
-      rulesRecord[path] = false
-      return
-    }
-    //recognize that some objects required or recommended by the spec are directories
-    if (
-      'path' in node &&
-      'directory' in node
-    ){
-      rulesRecord[path] = false
-      return
-    }
-    else {
-      Object.keys(node).map((key) => {
-        if(
-          typeof node[key] === 'object'
-        ){
-          _findFileRules(node[key], `${path}.${key}`, rulesRecord)
-        }
-      })
-    }
+export function _findFileRules(node, path, rulesRecord) {
+  if (
+    ("baseDir" in node) &&
+    ("extensions" in node) &&
+    (("suffix" in node) || ("stem" in node))
+  ) {
+    rulesRecord[path] = false;
+    return;
   }
+  //recognize that some objects required or recommended by the spec are directories
+  if (
+    "path" in node &&
+    "directory" in node
+  ) {
+    rulesRecord[path] = false;
+    return;
+  } else {
+    Object.keys(node).map((key) => {
+      if (
+        typeof node[key] === "object"
+      ) {
+        _findFileRules(node[key], `${path}.${key}`, rulesRecord);
+      }
+    });
+  }
+}
 
 function findRuleMatches(schema, context) {
-  const schemaPath = 'rules.files'
+  const schemaPath = "rules.files";
   Object.keys(schema[schemaPath]).map((key) => {
-    const path = `${schemaPath}.${key}`
-    _findRuleMatches(schema[path], path, context)
-  })
+    const path = `${schemaPath}.${key}`;
+    _findRuleMatches(schema[path], path, context);
+  });
   if (
     context.filenameRules.length === 0 &&
-    context.file.path !== '/.bidsignore'
+    context.file.path !== "/.bidsignore"
   ) {
-    //if no rules are found to match given file/directory, add NotIncluded warning to indicate 
+    //if no rules are found to match given file/directory, add NotIncluded warning to indicate
     //that the file/directory is not part of the PsychDS specification
-    context.issues.addSchemaIssue('NotIncluded', [context.file])
-    if(context.file.name === "dataset_description.json"){
+    context.issues.addSchemaIssue("NotIncluded", [context.file]);
+    if (context.file.name === "dataset_description.json") {
       //if global metadata file is located outside of root directory, issue specific warning
       context.issues.addSchemaIssue(
         "WrongMetadataLocation",
         [context.file],
         `You have placed a file called "dataset_description.json" within the ${context.baseDir} 
-        subDirectory. Such files are only valid when placed in the root directory.`
-      )
+        subDirectory. Such files are only valid when placed in the root directory.`,
+      );
     }
   }
-  return Promise.resolve()
+  return Promise.resolve();
 }
 
-function checkFileRules(arbitraryNesting: boolean, hasSuffix: boolean, node, context){
-  let baseDirCond: boolean = null
-  let suffixStemCond: boolean = null
+function checkFileRules(
+  arbitraryNesting: boolean,
+  hasSuffix: boolean,
+  node,
+  context,
+) {
+  let baseDirCond: boolean = null;
+  let suffixStemCond: boolean = null;
 
   //if arbitraryNesting applies, then it is only required that the file is located in the correct base directory,
   //with any number of subdirectories intervening
-  if (arbitraryNesting)
-    baseDirCond = context.baseDir === node.baseDir
-  //otherwise, the file must be located directly under the baseDir
-  else{
+  if (arbitraryNesting) {
+    baseDirCond = context.baseDir === node.baseDir;
+  } //otherwise, the file must be located directly under the baseDir
+  else {
     //if the baseDir is root, arbitraryNesting does not apply
-    if(context.baseDir === "/")
-      baseDirCond = context.path === `/${context.file.name}`
-    else
-      baseDirCond = context.path === `/${node.baseDir}/${context.file.name}`
+    if (context.baseDir === "/") {
+      baseDirCond = context.path === `/${context.file.name}`;
+    } else {
+      baseDirCond = context.path === `/${node.baseDir}/${context.file.name}`;
+    }
   }
 
   //if the suffix property is present on a rule, then the file should be identified by its suffix
-  if (hasSuffix)
-    suffixStemCond = context.suffix === node.suffix
-  //otherwise, a file should be identified with its stem
-  else
-    suffixStemCond = context.file.name.startsWith(node.stem)
+  if (hasSuffix) {
+    suffixStemCond = context.suffix === node.suffix;
+  } //otherwise, a file should be identified with its stem
+  else {
+    suffixStemCond = context.file.name.startsWith(node.stem);
+  }
 
   //files are identified by a combination of their baseDir, their extensions, and either their stem or their suffix
   if (
     baseDirCond &&
     node.extensions.includes(context.extension) &&
     suffixStemCond
-  )
-    return true
-  else
-    return false
+  ) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 /* Schema rules specifying valid filenames follow a variety of patterns.
@@ -152,19 +160,20 @@ function checkFileRules(arbitraryNesting: boolean, hasSuffix: boolean, node, con
  * assume that this schema rule is applicable to this file.
  */
 export function _findRuleMatches(node, path, context) {
-  if ('arbitraryNesting' in node){
-    if (checkFileRules(node.arbitraryNesting,'suffix' in node, node, context)){
-      context.filenameRules.push(path)
-      return
+  if ("arbitraryNesting" in node) {
+    if (
+      checkFileRules(node.arbitraryNesting, "suffix" in node, node, context)
+    ) {
+      context.filenameRules.push(path);
+      return;
     }
-  }
-  else {
+  } else {
     Object.keys(node).map((key) => {
-      if(
-        typeof node[key] === 'object'
-      ){
-        _findRuleMatches(node[key], `${path}.${key}`, context)
+      if (
+        typeof node[key] === "object"
+      ) {
+        _findRuleMatches(node[key], `${path}.${key}`, context);
       }
-    })
+    });
   }
 }
