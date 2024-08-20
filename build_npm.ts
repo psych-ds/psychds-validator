@@ -48,7 +48,7 @@ try {
         shims: {
             // Provide Deno-specific APIs in Node.js environment
             deno: true,
-            jsonld: "npm:jsonld"
+            jsonld: "npm:jsonld",
             // Custom shim for ReadableStream
             custom: [
                 {

@@ -1,0 +1,14 @@
+{
+  "last-release-sha": "de0f519",
+  "release-type": "node",
+  "packages": {
+    ".": {
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "node",
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": false,
+      "draft": false,
+      "prerelease": false
+    }
+  }
+}
