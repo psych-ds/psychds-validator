@@ -21,6 +21,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   build-test:
+    needs: release-please
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -64,7 +65,7 @@ jobs:
         with:
           name: npm-package
           path: npm
-          
+
       - uses: actions/checkout@v2
       
       - name: Setup Node
