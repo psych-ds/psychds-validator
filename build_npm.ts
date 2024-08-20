@@ -48,6 +48,7 @@ try {
         shims: {
             // Provide Deno-specific APIs in Node.js environment
             deno: true,
+            jsonld: "npm:jsonld",
             // Custom shim for ReadableStream
             custom: [
                 {
@@ -110,4 +111,5 @@ try {
     if (error.stack) {
         console.error("Stack trace:", error.stack);
     }
+    Deno.exit(1)
 }
