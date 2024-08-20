@@ -1,42 +1,65 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-# This workflow will install Deno then run `deno lint` and `deno test`.
-# For more information see: https://github.com/denoland/setup-deno
-
-name: Deno
+name: Build, Test, and Publish
 
 on:
   push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
-
-permissions:
-  contents: read
+    branches: [test-release-please]
 
 jobs:
-  test:
+  release-please:
     runs-on: ubuntu-latest
-
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      version: ${{ steps.release.outputs.version }}
     steps:
-      - name: Setup repo
-        uses: actions/checkout@v3
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          release-type: node
+          package-name: your-package-name
+          path: .
+          token: ${{ secrets.GITHUB_TOKEN }}
 
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
       - name: Setup Deno
-        # uses: denoland/setup-deno@v1
-        uses: denoland/setup-deno@61fe2df320078202e33d7d5ad347e7dcfa0e8f31  # v1.1.2
+        uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
+      
+      - name: Cache Dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.deno
+          key: ${{ runner.OS }}-deno-${{ hashFiles('**/deno.json', 'src/deps/*.ts') }}
+      
+      - name: Run Deno Tests
+        run: deno test --allow-all
+      
+      - name: Run Type Check
+        run: deno check **/*.ts
+      
+      - name: Build NPM Package
+        run: deno run -A build_npm.ts ${{ needs.release-please.outputs.version || 'PR-BUILD' }}
 
-      # Uncomment this step to verify the use of 'deno fmt' on each commit.
-      # - name: Verify formatting
-      #   run: deno fmt --check
-
-      - name: Run linter
-        run: deno lint
-
-      - name: Run tests
-        run: deno test -A
+  publish:
+    needs: [release-please, build-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: ./npm
+      
+      - name: Run NPM Tests
+        run: npm test
+        working-directory: ./npm
