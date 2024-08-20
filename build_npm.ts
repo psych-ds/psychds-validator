@@ -111,4 +111,5 @@ try {
     if (error.stack) {
         console.error("Stack trace:", error.stack);
     }
+    Deno.exit(1);
 }

@@ -41,6 +41,9 @@ jobs:
       
       - name: Run Type Check
         run: deno check **/*.ts
+
+      - name: Install dependencies
+        run: npm install jsonld @types/jsonld
       
       - name: Build NPM Package
         run: |
