@@ -42,7 +42,9 @@ jobs:
         run: deno check **/*.ts
       
       - name: Build NPM Package
-        run: deno run -A build_npm.ts ${{ needs.release-please.outputs.version || 'PR-BUILD' }}
+        run: |
+          set -e
+          deno run -A build_npm.ts ${{ needs.release-please.outputs.version || 'PR-BUILD' }}
 
   publish:
     needs: [release-please, build-test]
