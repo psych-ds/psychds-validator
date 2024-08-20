@@ -49,11 +49,22 @@ jobs:
         run: |
           set -e
           deno run -A build_npm.ts ${{ needs.release-please.outputs.version || 'PR-BUILD' }}
+      - name: Upload npm directory
+        uses: actions/upload-artifact@v2
+        with:
+          name: npm-package
+          path: npm
 
   publish:
     needs: [release-please, build-test]
     runs-on: ubuntu-latest
     steps:
+      - name: Download npm directory
+        uses: actions/download-artifact@v2
+        with:
+          name: npm-package
+          path: npm
+          
       - uses: actions/checkout@v2
       
       - name: Setup Node
