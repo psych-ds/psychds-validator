@@ -191,11 +191,10 @@ import { psychDSFile } from '../types/file.ts';
     //loop through all the fields found in dataset_metadata.yaml, along with their requirement levels 
     for (const [key, requirement] of Object.entries(rule.fields)) {
       const severity = getFieldSeverity(requirement, context)
-      //@ts-expect-error: metadata presence assumed
-      const keyName = `${rule.namespace}${key}`
+      const keyName = `https://schema.org/${key}`
       //expandedSidecar represents the metadata object with all contexts added, e.g. the "name" field becomes the "https://schema.org/name" field.
       //we add this schema.org namespace to keyName to account for this.
-      if (severity && severity !== 'ignore' && !(keyName in context.sidecar)) {
+      if (severity && severity !== 'ignore' && !(keyName in context.expandedSidecar)) {
         if (requirement.issue?.code && requirement.issue?.message) {
           context.issues.add({
             key: requirement.issue.code,
@@ -228,13 +227,13 @@ import { psychDSFile } from '../types/file.ts';
     schema: GenericSchema,
     issues: SchemaOrgIssues
   ){
-    const schemaNamespace = 'http://schema.org/'
+    const schemaNamespace = 'https://schema.org/'
     //@type is required in the root object of the metadata file
-    if ("@type" in context.sidecar){
+    if ("@type" in context.expandedSidecar){
       //@type for the root object must be schema.org/Dataset
       //TODO: Check if it's even valid JSON-LD to have more than one values assigned for type
         //if it is valid, it should be accounted for
-      if ((context.sidecar['@type'] as string[])[0] !== `${schemaNamespace}Dataset`){
+      if ((context.expandedSidecar['@type'] as string[])[0] !== `${schemaNamespace}Dataset`){
         let issueFile: psychDSFile
         if(Object.keys(context.metadataProvenance).includes('@type'))
           issueFile = context.metadataProvenance['@type']
@@ -261,7 +260,7 @@ import { psychDSFile } from '../types/file.ts';
       return
     }
     //collect issues recursively for all keys and values in root object
-    issues = _schemaCheck(context.sidecar, context, schema, '',schemaNamespace,issues)
+    issues = _schemaCheck(context.expandedSidecar, context, schema, '',schemaNamespace,issues)
     logSchemaIssues(context,issues)
   }
 

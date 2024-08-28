@@ -2,6 +2,7 @@ import {
     Context,
     ContextDataset
   } from '../types/context.ts'
+  import { IssueFile } from '../types/issues.ts'
   import { psychDSFile } from '../types/file.ts'
   import { FileTree } from '../types/filetree.ts'
   import { ColumnsMap } from '../types/columns.ts'
@@ -10,6 +11,7 @@ import {
   import { parseCSV,csvIssue } from '../files/csv.ts'
   import { ValidatorOptions } from '../setup/options.ts'
   import { logger } from '../utils/logger.ts'
+  import jsonld from 'jsonld'
 
   
   export class psychDSContextDataset implements ContextDataset {
@@ -84,10 +86,6 @@ import {
       this.suggestedColumns = []
     }
   
-    // deno-lint-ignore no-explicit-any
-    get json(): Promise<Record<string, any>> {
-      return JSON.parse(this.file.fileText)
-    }
     get path(): string {
       return this.file.path
     }
@@ -149,10 +147,12 @@ import {
       }
   
       if (validSidecars.length === 1) {
-        this.sidecar = { ...this.sidecar, ...validSidecars[0].expanded }
+        const validSidecarJson = await validSidecars[0].text()
+          .then(JSON.parse)
+        this.sidecar = { ...this.sidecar, ...validSidecarJson }
         //keep record of which keys in the metadata object came from which file, 
         //so they can be properly identified when issues arise
-        Object.keys(validSidecars[0].expanded).forEach((key) => {
+        Object.keys(validSidecarJson).forEach((key) => {
           const baseKey = key.split('/').at(-1) as string
           this.metadataProvenance[baseKey] = validSidecars[0]
         })
@@ -167,7 +167,7 @@ import {
         //moved getExpandedSidecar to the end of loadSidecar since it is asyncronous, subsequent to 
         //the content of loadSidecar, and necessary for loadValidColumns. previous implementation had them
         //all running in parallel, which caused issues.
-        this.expandedSidecar = {}//await this.getExpandedSidecar()
+        this.expandedSidecar = await this.getExpandedSidecar()
         this.loadValidColumns()
       }
     }
@@ -179,15 +179,15 @@ import {
             return
           }
         //TODO:possibly redundant (could maybe be stored in one place)
-        const nameSpace = "http://schema.org/"
+        const nameSpace = "https://schema.org/"
         //if there's no variableMeasured property, then the valid column headers cannot be determined
-        if(!(`${nameSpace}variableMeasured`in this.sidecar)){
+        if(!(`${nameSpace}variableMeasured`in this.expandedSidecar)){
             return
         }
         
         let validColumns :string[] = []
 
-        for(const variable of this.sidecar[`${nameSpace}variableMeasured`] as object[]){
+        for(const variable of this.expandedSidecar[`${nameSpace}variableMeasured`] as object[]){
             //jsonld.expand turns string values in json into untyped objects with @value keys
             if('@value' in variable)
               validColumns = [...validColumns,variable['@value'] as string]
@@ -213,7 +213,7 @@ import {
       }
       let result
       try{
-        result = await parseCSV(this.file.fileText)
+        result = await parseCSV(await this.file.text())
       }
       catch(error){
         logger.warning(
@@ -247,7 +247,7 @@ import {
         
       })
     }
-    /*
+    
     async getExpandedSidecar(){
       try{
         //account for possibility of both http and https in metadata context
@@ -265,7 +265,7 @@ import {
         //in addition to adding the appropriate namespace (e.g. http://schema.org)
         //to all keys within the json, it also throws a variety of errors for improper JSON-LD syntax,
         //which mostly all pertain to improper usages of privileged @____ keywords
-        const exp = [] as string[]//await jsonld.expand(this.sidecar)
+        const exp = await jsonld.expand(this.sidecar)
         if(!exp[0])
           return {}
         else
@@ -285,7 +285,7 @@ import {
         })
         return {}
       }
-    }*/
+    }
   
     async asyncLoads() {
       await Promise.allSettled([
