@@ -138,15 +138,15 @@ export class ValidationProgressTracker {
      * Sets up listeners for all steps and substeps.
      */
     private setupListeners() {
-      this.steps.forEach((superStep, index) => {
+      this.steps.forEach((superStep) => {
         if (superStep.subSteps.length === 0) {
           this.emitter.once(superStep.key, (data: { success: boolean, issue?: Issue }) => {
-            this.updateStepStatus(superStep.key, index, data);
+            this.updateStepStatus(superStep.key, data);
           });
         } else {
           superStep.subSteps.forEach(subStep => {
             this.emitter.once(subStep.key, (data: { success: boolean, issue?: Issue }) => {
-              this.updateStepStatus(subStep.key, index, data, superStep);
+              this.updateStepStatus(subStep.key, data, superStep);
             });
           });
         }
@@ -258,7 +258,7 @@ export class ValidationProgressTracker {
      */
     public waitForCompletion(): Promise<void> {
       if (this.result) {
-        return;
+        return Promise.resolve();
       }
   
       return new Promise((resolve) => {
