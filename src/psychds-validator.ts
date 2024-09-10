@@ -24,12 +24,13 @@ export async function run(args: string[] = Deno.args) {
         const fileTree = await readFileTree(absolutePath);
 
         if(options.useEvents){
+            // Create event emitter
             const emitter = new EventEmitter();
+            // Start progress tracker
             const progressTracker = new ValidationProgressTracker(emitter);
 
-            const resultPromise = validate(fileTree, { ...options, useEvents: true, emitter });
-
-            const result = await resultPromise;
+            // Validate
+            const _resultPromise = await validate(fileTree, { ...options, useEvents: true, emitter });
 
             await progressTracker.waitForCompletion();
 

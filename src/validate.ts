@@ -5,6 +5,8 @@ import { ValidationResult } from './types/validation-result.ts';
 import { readFileTree } from './files/deno.ts';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
+import {ValidationProgressTracker} from './utils/validationProgressTracker.ts'
+
 
 /**
  * Validate a file tree or a path to a dataset.
@@ -14,7 +16,7 @@ import { EventEmitter } from 'node:events';
  * @param {Partial<ValidatorOptions>} [options] - Optional validator options.
  * @returns {Promise<ValidationResult>} A promise that resolves to the validation result.
  */
-export async function validate(fileTreeOrPath: FileTree | string, options?: Partial<ValidatorOptions> & { useEvents?: boolean }): Promise<ValidationResult | { result: Promise<ValidationResult>; emitter: EventEmitter }> {
+export async function validate(fileTreeOrPath: FileTree | string, options?: ValidatorOptions & { emitter?: EventEmitter }): Promise<ValidationResult> {
     let fileTree: FileTree;
 
     // Determine if fileTreeOrPath is a string (path) or a FileTree object
@@ -31,6 +33,7 @@ export async function validate(fileTreeOrPath: FileTree | string, options?: Part
         if (options.verbose) args.push('--verbose');
         if (options.showWarnings) args.push('--showWarnings');
         if (options.debug) args.push('--debug', options.debug);
+        if (options.useEvents) args.push('--useEvents')
     }
 
     // Parse options with the prepared arguments
@@ -46,6 +49,22 @@ export async function validate(fileTreeOrPath: FileTree | string, options?: Part
         fileTree = fileTreeOrPath as FileTree;
     }
 
-    return validateInternal(fileTree, fullOptions);
+    if (options && options.useEvents){
+        const emitter = new EventEmitter();
+        const progressTracker = new ValidationProgressTracker(emitter);
+
+        const resultPromise = validateInternal(fileTree, { ...fullOptions, emitter });
+
+        const result = await resultPromise;
+        await progressTracker.waitForCompletion();
+
+        return result
+
+    }
+    else{
+        return validateInternal(fileTree, fullOptions);
+
+    }
+
 
 }
