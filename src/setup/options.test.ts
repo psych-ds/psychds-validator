@@ -10,6 +10,7 @@ Deno.test('options parsing', async (t) => {
       schema: 'latest',
       debug: 'error',
       verbose: undefined,
+      useEvents: undefined,
       showWarnings: undefined
     })
   })
@@ -29,6 +30,7 @@ Deno.test('options parsing', async (t) => {
       schema: '1.0.0',
       debug: 'info',
       verbose: true,
+      useEvents: undefined,
       showWarnings: true
     })
   })

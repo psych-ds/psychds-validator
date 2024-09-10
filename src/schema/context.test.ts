@@ -35,8 +35,8 @@ Deno.test({
       const context = new psychDSContext(fileTree, file, issues,dsContext)
       
       await context.loadSidecar(fileTree)
-      if("https://schema.org/key" in context.expandedSidecar){
-        assertEquals(context.expandedSidecar['https://schema.org/key'],[{"@value":"value"}])}
+      if("http://schema.org/key" in context.expandedSidecar){
+        assertEquals(context.expandedSidecar['http://schema.org/key'],[{"@value":"value"}])}
       else
         assertEquals(1,2)
     })
@@ -48,8 +48,8 @@ Deno.test({
       const context = new psychDSContext(fileTree, file, issues,dsContext)
       
       await context.loadSidecar(fileTree)
-      if("https://schema.org/key" in context.expandedSidecar)
-        assertEquals(context.expandedSidecar['https://schema.org/key'],[{"@value":"value2"}])
+      if("http://schema.org/key" in context.expandedSidecar)
+        assertEquals(context.expandedSidecar['http://schema.org/key'],[{"@value":"value2"}])
       else
         assertEquals(1,2)
     })
@@ -61,7 +61,7 @@ Deno.test({
       const context = new psychDSContext(fileTree, file, issues,dsContext)
       
       await context.loadSidecar(fileTree)
-      assertEquals("https://schema.org/name" in context.expandedSidecar,true)
+      assertEquals("http://schema.org/name" in context.expandedSidecar,true)
     })
 
     await t.step('no context in sidecar', async() => {
@@ -83,6 +83,6 @@ Deno.test({
         delete context.expandedSidecar['@context']
       
       await context.loadSidecar(noCtxFileTree)
-      assertEquals("https://schema.org/name" in context.expandedSidecar,false)
+      assertEquals("http://schema.org/name" in context.expandedSidecar,false)
     })
 }})
