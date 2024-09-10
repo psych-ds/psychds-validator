@@ -9,6 +9,7 @@ export type ValidatorOptions = {
     verbose?: boolean
     showWarnings?: boolean
     debug: LevelName
+    useEvents?: boolean
   }
 
 /**
