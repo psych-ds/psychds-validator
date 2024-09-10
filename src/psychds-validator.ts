@@ -3,6 +3,8 @@ import { parseOptions } from './setup/options.ts';
 import { readFileTree } from './files/deno.ts';
 import path from 'node:path';
 import { consoleFormat } from './utils/output.ts';
+import {ValidationProgressTracker} from './utils/validationProgressTracker.ts'
+import { EventEmitter } from 'node:events';
 
 /**
  * Main function to run the validator in a Deno environment.
@@ -20,6 +22,19 @@ export async function run(args: string[] = Deno.args) {
         
         // Read the file tree from the specified path
         const fileTree = await readFileTree(absolutePath);
+
+        if(options.useEvents){
+            const emitter = new EventEmitter();
+            const progressTracker = new ValidationProgressTracker(emitter);
+
+            const resultPromise = validate(fileTree, { ...options, useEvents: true, emitter });
+
+            const result = await resultPromise;
+
+            await progressTracker.waitForCompletion();
+
+            Deno.exit(0);
+        }
         
         // Perform validation
         const result = await validate(fileTree, options);

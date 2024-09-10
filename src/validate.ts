@@ -4,6 +4,7 @@ import { FileTree } from './types/filetree.ts';
 import { ValidationResult } from './types/validation-result.ts';
 import { readFileTree } from './files/deno.ts';
 import path from 'node:path';
+import { EventEmitter } from 'node:events';
 
 /**
  * Validate a file tree or a path to a dataset.
@@ -13,7 +14,7 @@ import path from 'node:path';
  * @param {Partial<ValidatorOptions>} [options] - Optional validator options.
  * @returns {Promise<ValidationResult>} A promise that resolves to the validation result.
  */
-export async function validate(fileTreeOrPath: FileTree | string, options?: Partial<ValidatorOptions>): Promise<ValidationResult> {
+export async function validate(fileTreeOrPath: FileTree | string, options?: Partial<ValidatorOptions> & { useEvents?: boolean }): Promise<ValidationResult | { result: Promise<ValidationResult>; emitter: EventEmitter }> {
     let fileTree: FileTree;
 
     // Determine if fileTreeOrPath is a string (path) or a FileTree object
@@ -45,7 +46,6 @@ export async function validate(fileTreeOrPath: FileTree | string, options?: Part
         fileTree = fileTreeOrPath as FileTree;
     }
 
-
-    // Perform the internal validation
     return validateInternal(fileTree, fullOptions);
+
 }

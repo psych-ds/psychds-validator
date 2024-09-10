@@ -8,7 +8,8 @@ import { ValidatorOptions } from '../setup/options.ts'
 import { ValidationResult } from '../types/validation-result.ts'
 import { DatasetIssues } from '../issues/datasetIssues.ts'
 import {
-  IssueFile
+  IssueFile,
+  Issue
 } from '../types/issues.ts'
 import { Summary } from '../summary/summary.ts'
 import { loadSchema } from '../setup/loadSchema.ts'
@@ -16,6 +17,7 @@ import { psychDSFile } from '../types/file.ts'
 import { psychDSContextDataset } from '../schema/context.ts'
 import { walkFileTree } from '../schema/walk.ts'
 import { GenericSchema } from '../types/schema.ts'
+import { EventEmitter } from 'node:events';
 
 
 const CHECKS: CheckFunction[] = [
@@ -30,11 +32,17 @@ const CHECKS: CheckFunction[] = [
  */
 export async function validate(
   fileTree: FileTree,
-  options: ValidatorOptions,
+  options: ValidatorOptions & { emitter?: EventEmitter },
 ): Promise<ValidationResult> {
+
+  options.emitter?.emit('start', { success: true })
+
   const summary = new Summary()
   const schema = await loadSchema(options.schema)
   const issues = new DatasetIssues(schema as unknown as GenericSchema)
+
+  options.emitter?.emit('build-tree', { success: true })
+
 
   summary.schemaVersion = schema.schema_version
   
@@ -50,6 +58,8 @@ export async function validate(
     try{
       const description = await ddFile.text()
         .then(JSON.parse)
+      options.emitter?.emit('find-metadata', { success: true } )
+      
       dsContext = new psychDSContextDataset(options, ddFile,description)
     }
     catch(_error){

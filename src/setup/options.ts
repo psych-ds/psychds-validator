@@ -26,6 +26,7 @@ export function parseOptions(
         .description('This tool checks if a dataset in a given directory is compatible with the psych-DS specification. To learn more about psych-DS visit https://psych-ds.github.io/')
         .argument('<dataset_directory>', 'Path to the dataset directory')
         .version('alpha')
+        .option('--useEvents', 'Display validation progress sequentially')
         .option('--json', 'Output machine readable JSON')
         .option('-s, --schema <type>', 'Specify a schema version to use for validation', 'latest')
         .option('-v, --verbose', 'Log more extensive information about issues')
@@ -40,6 +41,7 @@ export function parseOptions(
     return {
       datasetPath: parsedArgs[0],
       schema: options.schema,
+      useEvents: options.useEvents,
       json: options.json,
       verbose: options.verbose,
       showWarnings: options.showWarnings,

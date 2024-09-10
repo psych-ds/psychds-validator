@@ -22,6 +22,13 @@ export async function run(args: string[] = []) {
         
         // Read the file tree from the specified path
         const fileTree = await readFileTree(absolutePath);
+
+        if(options.useEvents){
+            const { result, emitter } = await validate(fileTree, { ...options, useEvents: true }) as { result: Promise<ValidationResult>; emitter: EventEmitter };
+        
+            const progressTracker = new ValidationProgressTracker(emitter);
+            const validationResult = await progressTracker.waitForCompletion();
+        }
         
         // Perform validation
         const result = await validate(fileTree, options);
