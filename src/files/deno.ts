@@ -6,7 +6,6 @@ import { psychDSFile, issueInfo } from '../types/file.ts'
 import { FileTree } from '../types/filetree.ts'
 import { requestReadPermission } from '../setup/requestPermissions.ts'
 import { readPsychDSIgnore, FileIgnoreRules } from './ignore.ts'
-import jsonld from "jsonld";
 
 /**
  * Thrown when a text file is decoded as UTF-8 but contains UTF-16 characters
@@ -27,7 +26,6 @@ export class psychDSFileDeno implements psychDSFile {
   path: string
   expanded: object
   issueInfo: issueInfo[]
-  fileText: string
   #fileInfo?: Deno.FileInfo
   #datasetAbsPath: string
 
@@ -35,7 +33,6 @@ export class psychDSFileDeno implements psychDSFile {
     this.#datasetAbsPath = datasetPath
     this.path = filePath
     this.name = path.basename(filePath)
-    this.fileText = ''
     this.expanded = {}
     this.issueInfo = []
     this.#ignore = ignore
@@ -124,27 +121,7 @@ export async function _readFileTree(
   const name = path.basename(relativePath)
   const tree = new FileTree(relativePath, name, parent)
 
-  if(!parent){
-    for await (const dirEntry of Deno.readDir(path.join(rootPath,relativePath))){
-      if(dirEntry.isFile && dirEntry.name === "dataset_description.json"){
-        const file = new psychDSFileDeno(
-          rootPath,
-          path.join(relativePath, dirEntry.name),
-          ignore,
-        )
   
-        file.fileText = (await file.text())
-          .replaceAll('https://schema.org','http://schema.org')
-          .replaceAll('https://www.schema.org','http://www.schema.org')
-  
-        const json = await JSON.parse(file.fileText)
-  
-        if('@context' in json){
-          context = json['@context'] as object
-        }
-      }
-    }
-  }
   
   
   for await (const dirEntry of Deno.readDir(path.join(rootPath, relativePath))) {
@@ -154,45 +131,12 @@ export async function _readFileTree(
         path.join(relativePath, dirEntry.name),
         ignore,
       )
-      //store text of file for later. This was added to accommodate browser version
-      file.fileText = (await file.text())
-        .replaceAll('https://schema.org','http://schema.org')
-        .replaceAll('https://www.schema.org','http://www.schema.org')
 
       // For .psychdsignore, read in immediately and add the rules
       if (dirEntry.name === '.psychdsignore') {
-        ignore.add(readPsychDSIgnore(file))
+        ignore.add(await readPsychDSIgnore(file))
       }
-      if (dirEntry.name.endsWith('.json')) {
-        let json = {}
-        let exp = []
-        try{
-          json = await JSON.parse(file.fileText)
-          if (context && !dirEntry.name.endsWith('dataset_description.json')){
-            json = {
-              ...json,
-              '@context': context
-            }
-          }
-        }
-        catch(_error){
-          file.issueInfo.push({
-            key: 'InvalidJsonFormatting'
-          })
-        }
-        
-        try{
-          exp = await jsonld.expand(json)
-          if (exp.length > 0)
-            file.expanded = exp[0]
-        }
-        catch(error){
-          file.issueInfo.push({
-            key: 'InvalidJsonldSyntax',
-            evidence: `${error.message.split(';')[1]}`
-          })
-        }
-      }
+      
       tree.files.push(file)
     }
     if (dirEntry.isDirectory) {

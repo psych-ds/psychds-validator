@@ -23,7 +23,8 @@ Deno.test({
     )
     let dsContext: psychDSContextDataset = new psychDSContextDataset()
     if (ddFile) {
-      const description = ddFile.expanded
+      const description = await ddFile.text()
+        .then(JSON.parse)
       dsContext = new psychDSContextDataset({datasetPath:PATH} as ValidatorOptions, ddFile,description)
     }
     await t.step('file sidecar overwrites directory sidecar', async() => {
@@ -34,8 +35,8 @@ Deno.test({
       const context = new psychDSContext(fileTree, file, issues,dsContext)
       
       await context.loadSidecar(fileTree)
-      if("http://schema.org/key" in context.sidecar){
-        assertEquals(context.sidecar['http://schema.org/key'],[{"@value":"value"}])}
+      if("https://schema.org/key" in context.expandedSidecar){
+        assertEquals(context.expandedSidecar['https://schema.org/key'],[{"@value":"value"}])}
       else
         assertEquals(1,2)
     })
@@ -47,8 +48,8 @@ Deno.test({
       const context = new psychDSContext(fileTree, file, issues,dsContext)
       
       await context.loadSidecar(fileTree)
-      if("http://schema.org/key" in context.sidecar)
-        assertEquals(context.sidecar['http://schema.org/key'],[{"@value":"value2"}])
+      if("https://schema.org/key" in context.expandedSidecar)
+        assertEquals(context.expandedSidecar['https://schema.org/key'],[{"@value":"value2"}])
       else
         assertEquals(1,2)
     })
@@ -60,7 +61,7 @@ Deno.test({
       const context = new psychDSContext(fileTree, file, issues,dsContext)
       
       await context.loadSidecar(fileTree)
-      assertEquals("http://schema.org/name" in context.sidecar,true)
+      assertEquals("https://schema.org/name" in context.expandedSidecar,true)
     })
 
     await t.step('no context in sidecar', async() => {
@@ -78,10 +79,10 @@ Deno.test({
       }
 
       const context = new psychDSContext(noCtxFileTree, file, issues,dsContext)
-      if("@context" in context.sidecar)
-        delete context.sidecar['@context']
+      if("@context" in context.expandedSidecar)
+        delete context.expandedSidecar['@context']
       
       await context.loadSidecar(noCtxFileTree)
-      assertEquals("http://schema.org/name" in context.sidecar,false)
+      assertEquals("https://schema.org/name" in context.expandedSidecar,false)
     })
 }})

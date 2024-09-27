@@ -48,7 +48,8 @@ export async function validate(
   let dsContext
   if (ddFile) {
     try{
-      const description = ddFile.expanded
+      const description = await ddFile.text()
+        .then(JSON.parse)
       dsContext = new psychDSContextDataset(options, ddFile,description)
     }
     catch(_error){

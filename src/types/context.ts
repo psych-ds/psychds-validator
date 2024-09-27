@@ -22,6 +22,5 @@ export interface Context {
   validColumns: object
   suggestedColumns: string[]
   metadataProvenance: Record<string,psychDSFile>
-  json: object
   
 }
