@@ -1,12 +1,12 @@
 /**
  * Deno specific implementation for reading files
  */
-import { join, basename } from '../deps/path.ts'
+import path from 'node:path';
 import { psychDSFile, issueInfo } from '../types/file.ts'
 import { FileTree } from '../types/filetree.ts'
 import { requestReadPermission } from '../setup/requestPermissions.ts'
 import { readPsychDSIgnore, FileIgnoreRules } from './ignore.ts'
-import jsonld from "npm:jsonld@8.3.2";
+import jsonld from "jsonld";
 
 /**
  * Thrown when a text file is decoded as UTF-8 but contains UTF-16 characters
@@ -31,10 +31,10 @@ export class psychDSFileDeno implements psychDSFile {
   #fileInfo?: Deno.FileInfo
   #datasetAbsPath: string
 
-  constructor(datasetPath: string, path: string, ignore: FileIgnoreRules) {
+  constructor(datasetPath: string, filePath: string, ignore: FileIgnoreRules) {
     this.#datasetAbsPath = datasetPath
-    this.path = path
-    this.name = basename(path)
+    this.path = filePath
+    this.name = path.basename(filePath)
     this.fileText = ''
     this.expanded = {}
     this.issueInfo = []
@@ -49,7 +49,7 @@ export class psychDSFileDeno implements psychDSFile {
   }
 
   private _getPath(): string {
-    return join(this.#datasetAbsPath, this.path)
+    return path.join(this.#datasetAbsPath, this.path)
   }
 
   get size(): number {
@@ -69,28 +69,25 @@ export class psychDSFileDeno implements psychDSFile {
    * Read the entire file and decode as utf-8 text
    */
   async text(): Promise<string> {
-    const streamReader = this.stream
-      .pipeThrough(new TextDecoderStream('utf-8'))
-      .getReader()
+    const stream = this.stream
+    const decoder = new TextDecoder('utf-8')
     let data = ''
     try {
-      // Read once to check for unicode issues
-      const { done, value } = await streamReader.read()
-      // Check for UTF-16 BOM
-      if (value && value.startsWith('\uFFFD')) {
-        throw new UnicodeDecodeError('This file appears to be UTF-16')
-      }
-      if (done) return data
-      data += value
-      // Continue reading the rest of the file if no unicode issues were found
-      while (true) {
-        const { done, value } = await streamReader.read()
-        if (done) return data
+      // Read the stream chunk by chunk and decode
+      for await (const chunk of stream) {
+        const value = decoder.decode(chunk, { stream: true })
+        // Check for UTF-16 BOM at the start of the file
+        if (data.length === 0 && value.startsWith('\uFFFD')) {
+          throw new UnicodeDecodeError('This file appears to be UTF-16')
+        }
         data += value
       }
     } finally {
-      streamReader.releaseLock()
+      // Ensure the decoder is flushed even if an error occurs
+      // This prevents resource leaks and ensures all data is processed
+      data += decoder.decode()
     }
+    return data
   }
 
   /**
@@ -124,15 +121,15 @@ export async function _readFileTree(
   context?: object | null
 ): Promise<FileTree> {
   await requestReadPermission()
-  const name = basename(relativePath)
+  const name = path.basename(relativePath)
   const tree = new FileTree(relativePath, name, parent)
 
   if(!parent){
-    for await (const dirEntry of Deno.readDir(join(rootPath,relativePath))){
+    for await (const dirEntry of Deno.readDir(path.join(rootPath,relativePath))){
       if(dirEntry.isFile && dirEntry.name === "dataset_description.json"){
         const file = new psychDSFileDeno(
           rootPath,
-          join(relativePath, dirEntry.name),
+          path.join(relativePath, dirEntry.name),
           ignore,
         )
   
@@ -150,11 +147,11 @@ export async function _readFileTree(
   }
   
   
-  for await (const dirEntry of Deno.readDir(join(rootPath, relativePath))) {
+  for await (const dirEntry of Deno.readDir(path.join(rootPath, relativePath))) {
     if (dirEntry.isFile || dirEntry.isSymlink) {
       const file = new psychDSFileDeno(
         rootPath,
-        join(relativePath, dirEntry.name),
+        path.join(relativePath, dirEntry.name),
         ignore,
       )
       //store text of file for later. This was added to accommodate browser version
@@ -201,7 +198,7 @@ export async function _readFileTree(
     if (dirEntry.isDirectory) {
       const dirTree = await _readFileTree(
         rootPath,
-        join(relativePath, dirEntry.name),
+        path.join(relativePath, dirEntry.name),
         ignore,
         tree,
         context

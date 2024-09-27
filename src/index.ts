@@ -1,16 +1,18 @@
-import { validate } from './validators/psychds.ts';
-import { parseOptions } from './setup/options.ts';
-import { readFileTree } from './files/deno.ts';
-import path from 'node:path';
+import { validate } from './validate.ts';
 import { consoleFormat } from './utils/output.ts';
+import { parseOptions } from './setup/options.ts';
+import path from 'node:path';
+import { readFileTree } from './files/deno.ts';
+
+export { validate };
 
 /**
- * Main function to run the validator in a Deno environment.
- * This function is specifically designed for use with Deno.
+ * Main function to run the validator in a Node.js environment.
+ * This function is designed to work with both ESM and CJS in npm.
  * 
- * @param {string[]} args - Command line arguments. Defaults to Deno.args.
+ * @param {string[]} args - Command line arguments.
  */
-export async function run(args: string[] = Deno.args) {
+export async function run(args: string[] = []) {
     try {
         // Parse command line options
         const options = parseOptions(args);
@@ -39,11 +41,10 @@ export async function run(args: string[] = Deno.args) {
         }
     } catch (error) {
         console.error('An error occurred:', error);
-        Deno.exit(1);
     }
 }
 
 // Run the validator if this is the main module
 if (import.meta.main) {
-    run();
+    run(Deno.args);
 }

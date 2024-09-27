@@ -1,15 +1,22 @@
 /**
  * Utilities for formatting human readable output (CLI or other UIs)
  */
-import { prettyBytes } from '../deps/prettyBytes.ts'
-import { Table } from '../deps/cliffy.ts'
-import { colors } from '../deps/fmt.ts'
+import chalk from 'npm:chalk';
+import Table from 'npm:cli-table3';
 import { ValidationResult, SummaryOutput } from '../types/validation-result.ts'
 import { Issue } from '../types/issues.ts'
 
 interface LoggingOptions {
   verbose: boolean
   showWarnings: boolean
+}
+
+// Simple prettyBytes function to replace prettyBytes dependency
+function prettyBytes(bytes: number): string {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  if (bytes === 0) return '0 B';
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + units[i];
 }
 
 /**
@@ -26,7 +33,7 @@ export function consoleFormat(
   const warnings = [...result.issues.values()].filter(issue => issue.severity === "warning")
   const csv_issue = [...result.issues.values()].filter(issue => issue.key === "CSV_COLUMN_MISSING").length === 1
   if (errors.length === 0) {
-    output.push(colors.green(`
+    output.push(chalk.green(`
         **********************************************
         This dataset appears to be psych-DS compatible
         **********************************************\n`))
@@ -34,7 +41,7 @@ export function consoleFormat(
         warnings.forEach((issue) => output.push(formatIssue(issue, options)))
     }
   } else {
-    output.push(colors.red(`
+    output.push(chalk.red(`
         ******************************************************
         This dataset does not appear to be psych-DS compatible
         ******************************************************\n`))
@@ -60,11 +67,11 @@ export function consoleFormat(
  */
 function formatIssue(issue: Issue, options?: LoggingOptions): string {
   const severity = issue.severity
-  const color = severity === 'error' ? 'red' : 'yellow'
+  const color = severity === 'error' ? chalk.red : chalk.yellow;
   const output = []
   output.push(
     '\t' +
-      colors[color](
+      color(
         `[${severity.toUpperCase()}] ${issue.reason} (${issue.key})`,
       ),
   )
@@ -102,41 +109,20 @@ function formatIssue(issue: Issue, options?: LoggingOptions): string {
 function formatSummary(summary: SummaryOutput): string {
   const output = []
 
-  // data
-  const column1 = [
-      summary.totalFiles + ' ' + 'Files' + ', ' + prettyBytes(summary.size)]
-  const pad = '       '
+  const table = new Table({
+    chars: { 'top': '' , 'top-mid': '' , 'top-left': '' , 'top-right': ''
+           , 'bottom': '' , 'bottom-mid': '' , 'bottom-left': '' , 'bottom-right': ''
+           , 'left': '' , 'left-mid': '' , 'mid': '' , 'mid-mid': ''
+           , 'right': '' , 'right-mid': '' , 'middle': ' ' },
+    style: { 'padding-left': 2, 'padding-right': 2 }
+  });      
 
-  // headers
-  const headers = [
-    pad,
-    colors.magenta('Summary:') + pad
-  ]
+  table.push(
+    [chalk.magenta('Summary:'), `${summary.totalFiles} Files, ${prettyBytes(summary.size)}`]
+  );
 
-  // rows
-  const rows = []
-  for (let i = 0; i < column1.length; i++) {
-    const val1 = column1[i] ? column1[i] + pad : ''
-    rows.push([pad, val1])
-  }
-  const table = new Table()
-    .header(headers)
-    .body(rows)
-    .border(false)
-    .padding(1)
-    .indent(2)
-    .toString()
-
-  output.push(table)
-
+  output.push(table.toString());
   output.push('')
-
-  //Neurostars message
-  output.push(
-    colors.cyan(
-      '\tIf you have any questions, please post on https://neurostars.org/tags/bids.',
-    ),
-  )
 
   return output.join('\n')
 }

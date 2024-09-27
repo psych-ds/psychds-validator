@@ -2,7 +2,7 @@ import { CheckFunction, RuleCheckFunction } from '../types/check.ts'
 import { DatasetIssues } from '../issues/datasetIssues.ts'
 import { psychDSContext } from '../schema/context.ts'
 import { GenericRule, GenericSchema } from '../types/schema.ts'
-import { SEP } from '../deps/path.ts'
+import { sep } from 'node:path';
 import { Severity } from '../types/issues.ts'
 
 const CHECKS: CheckFunction[] = [
@@ -20,7 +20,7 @@ export async function filenameValidate(
 }
 
 export function isAtRoot(context: psychDSContext) {
-  if (context.file.path.split(SEP).length !== 2) {
+  if (context.file.path.split(sep).length !== 2) {
     return false
   }
   return true
