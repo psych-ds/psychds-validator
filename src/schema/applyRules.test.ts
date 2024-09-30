@@ -34,12 +34,12 @@ async function setupTest(path: string, fileName: string) {
   
   let dsContext;
   if (ddFile) {
-    const description = ddFile.expanded;
+    const description = await ddFile.text()
+      .then(JSON.parse)
     dsContext = new psychDSContextDataset({datasetPath: path} as ValidatorOptions, ddFile, description);
   }
 
   const file = new psychDSFileDeno(path, fileName, ignore);
-  file.fileText = await file.text();
   
   const context = new psychDSContext(fileTree, file, issues, dsContext);
   await context.asyncLoads();

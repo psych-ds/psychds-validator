@@ -17,8 +17,6 @@ export interface psychDSFile {
     ignored: boolean
     // ReadableStream to file raw contents
     stream: ReadableStream<Uint8Array>
-    // string storage of file contents
-    fileText: string
     // object for temporarily storing issues with jsonld before issue object is created in validate()
     issueInfo: issueInfo[]
     // slot to hold expanded version of jsonld
