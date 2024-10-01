@@ -3,6 +3,8 @@ import { consoleFormat } from './utils/output.ts';
 import { parseOptions } from './setup/options.ts';
 import path from 'node:path';
 import { readFileTree } from './files/deno.ts';
+import {ValidationProgressTracker} from './utils/validationProgressTracker.ts'
+import { EventEmitter } from 'node:events';
 
 export { validate };
 
@@ -22,6 +24,19 @@ export async function run(args: string[] = []) {
         
         // Read the file tree from the specified path
         const fileTree = await readFileTree(absolutePath);
+
+        if(options.useEvents){
+            // Create event emitter
+            const emitter = new EventEmitter();
+            // Start progress tracker
+            const progressTracker = new ValidationProgressTracker(emitter);
+            // Validate
+            const _resultPromise = await validate(fileTree, { ...options, useEvents: true, emitter });
+
+            await progressTracker.waitForCompletion();
+
+            Deno.exit(0);
+        }
         
         // Perform validation
         const result = await validate(fileTree, options);

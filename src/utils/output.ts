@@ -65,7 +65,7 @@ export function consoleFormat(
 /**
  * Format one issue as text with colors
  */
-function formatIssue(issue: Issue, options?: LoggingOptions): string {
+export function formatIssue(issue: Issue, options?: LoggingOptions): string {
   const severity = issue.severity
   const color = severity === 'error' ? chalk.red : chalk.yellow;
   const output = []

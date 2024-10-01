@@ -191,7 +191,7 @@ import { psychDSFile } from '../types/file.ts';
     //loop through all the fields found in dataset_metadata.yaml, along with their requirement levels 
     for (const [key, requirement] of Object.entries(rule.fields)) {
       const severity = getFieldSeverity(requirement, context)
-      const keyName = `https://schema.org/${key}`
+      const keyName = `http://schema.org/${key}`
       //expandedSidecar represents the metadata object with all contexts added, e.g. the "name" field becomes the "https://schema.org/name" field.
       //we add this schema.org namespace to keyName to account for this.
       if (severity && severity !== 'ignore' && !(keyName in context.expandedSidecar)) {
@@ -227,7 +227,7 @@ import { psychDSFile } from '../types/file.ts';
     schema: GenericSchema,
     issues: SchemaOrgIssues
   ){
-    const schemaNamespace = 'https://schema.org/'
+    const schemaNamespace = 'http://schema.org/'
     //@type is required in the root object of the metadata file
     if ("@type" in context.expandedSidecar){
       //@type for the root object must be schema.org/Dataset
@@ -547,8 +547,7 @@ import { psychDSFile } from '../types/file.ts';
         const match = addendumRegex.exec(requirement.level_addendum)
         if (match && match.length === 4) {
           const [_, addendumLevel, key, value] = match
-          // @ts-expect-error: sidecar assumed
-          if (key in context.sidecar && context.sidecar[key] === value) {
+          if (key in context.sidecar && (context.sidecar as Record<string,unknown>)[key] === value) {
             severity = levelToSeverity[addendumLevel]
           }
         }

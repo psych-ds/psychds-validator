@@ -6,7 +6,7 @@ const { createLogger, format, transports } = winston;
 /**
  * Defines the valid log levels for the application.
  */
-export type LevelName = 'error' | 'warn' | 'info' | 'debug';
+export type LevelName = 'error' | 'warn' | 'info' | 'debug' | 'checklist';
 
 /**
  * Create a Winston logger instance with custom formatting.
@@ -14,14 +14,27 @@ export type LevelName = 'error' | 'warn' | 'info' | 'debug';
  */
 const logger = createLogger({
   level: 'info',
+  levels: {
+    error: 0,
+    warn: 1,
+    info: 2,
+    debug: 3,
+    checklist: 4
+  },
   format: format.combine(
     format.timestamp(),
     format.printf(({ timestamp, level, message, ...rest }) => {
+      if (level === 'checklist') {
+        // For checklist, just return the message without timestamp or level
+        return message;
+      }
       return `${timestamp} [${level.toUpperCase()}]: ${message} ${Object.keys(rest).length ? JSON.stringify(rest) : ''}`;
     })
   ),
   transports: [
-    new transports.Console()
+    new transports.Console({
+      level: 'checklist'
+    })
   ]
 });
 
@@ -31,6 +44,7 @@ const logger = createLogger({
  */
 export function setupLogging(level: LevelName) {
   logger.level = level;
+  logger.transports[0].level = level; 
 }
 
 /**
@@ -44,6 +58,11 @@ export function parseStack(stack: string) {
   const token = caller.split('at ');
   return token[1] ?? '';
 }
+
+// Cursor manipulation methods
+const cursorUp = (n: number) => console.log(`\x1b[${n}A`);
+const clearScreen = () => console.log('\x1b[0J');
+const moveCursor = (x: number, y: number) => console.log(`\x1b[${y};${x}H`);
 
 /**
  * Defines the structure of a logging method.
@@ -59,6 +78,7 @@ interface LoggerInterface {
   warn: LogMethod;
   info: LogMethod;
   debug: LogMethod;
+  checklist: LogMethod;
 }
 
 /**
@@ -103,7 +123,8 @@ export const LogLevels = {
   ERROR: 'error',
   WARN: 'warn',
   INFO: 'info',
-  DEBUG: 'debug'
+  DEBUG: 'debug',
+  CHECKLIST: 'checklist'
 };
 
 /**
@@ -114,3 +135,12 @@ export const error = proxyLogger.error;
 export const warn = proxyLogger.warn;
 export const info = proxyLogger.info;
 export const debug = proxyLogger.debug;
+export const checklist = (message: string) => {
+  logger.log('checklist', message);
+};
+
+export const cursor = {
+  up: cursorUp,
+  clear: clearScreen,
+  move: moveCursor,
+};

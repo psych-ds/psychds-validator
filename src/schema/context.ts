@@ -11,7 +11,7 @@ import {
   import { parseCSV,csvIssue } from '../files/csv.ts'
   import { ValidatorOptions } from '../setup/options.ts'
   import { logger } from '../utils/logger.ts'
-  import jsonld from 'jsonld'
+  import jsonld, { JsonLdDocument, NodeObject } from 'jsonld';
 
   
   export class psychDSContextDataset implements ContextDataset {
@@ -53,7 +53,7 @@ import {
     keywords: Record<string, string>
     dataset: ContextDataset
     datatype: string
-    sidecar: object
+    sidecar: JsonLdDocument
     expandedSidecar: object
     columns: ColumnsMap
     metadataProvenance: Record<string, psychDSFile>
@@ -78,7 +78,7 @@ import {
       this.suffix = elements.suffix
       this.dataset = dsContext ? dsContext : defaultDsContext
       this.datatype = ''
-      this.sidecar = dsContext ? dsContext.dataset_description : {}
+      this.sidecar = dsContext ? dsContext.dataset_description as JsonLdDocument : {} as JsonLdDocument;
       this.expandedSidecar = {}
       this.validColumns = []
       this.metadataProvenance = {}
@@ -179,7 +179,7 @@ import {
             return
           }
         //TODO:possibly redundant (could maybe be stored in one place)
-        const nameSpace = "https://schema.org/"
+        const nameSpace = "http://schema.org/"
         //if there's no variableMeasured property, then the valid column headers cannot be determined
         if(!(`${nameSpace}variableMeasured`in this.expandedSidecar)){
             return
@@ -248,18 +248,23 @@ import {
       })
     }
     
-    async getExpandedSidecar(){
+    async getExpandedSidecar(): Promise<NodeObject>{
       try{
         //account for possibility of both http and https in metadata context
-        if('@context' in this.sidecar){
-          if(typeof(this.sidecar['@context']) === 'string'){
-            if(['http://schema.org','https://schema.org','http://www.schema.org','https://www.schema.org','http://schema.org/','https://schema.org/','http://www.schema.org/','https://www.schema.org/'].includes(this.sidecar['@context'])){
-              this.sidecar['@context'] = {
-                "@vocab":"https://schema.org/"
-              }
-            }
-
+        if(!('@context' in this.sidecar) && this.dataset.metadataFile){
+          try{
+            this.issues.add({
+              key:'INVALID_JSONLD_FORMATTING',
+              reason:`Metadata files must follow JSON-LD syntax, which means, among other things, that a @context field must be included.`,
+              severity:'error',
+              files:[this.dataset.metadataFile]
+            })
           }
+          catch(error){
+            console.log(error)
+          }
+          
+          return {}
         }
         //use the jsonld library to expand metadata json and remove context.
         //in addition to adding the appropriate namespace (e.g. http://schema.org)
@@ -278,7 +283,7 @@ import {
           evidence:JSON.stringify(error.details.context)
         } as IssueFile
         this.issues.add({
-          key:'INVALID_JSONLD_SYNTAX',
+          key:'INVALID_JSONLD_FORMATTING',
           reason:`${error.message.split(';')[1]}`,
           severity:'error',
           files:[issueFile]
