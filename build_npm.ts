@@ -68,8 +68,17 @@ try {
         package: {
             // npm package configuration
             name: "psychds-validator",
+            author: {
+                name: "Brian Leonard",
+                email: "bleonard@mit.edu",
+                url: "https://orcid.org/0009-0005-7244-6882"
+            },
+            repository: {
+                type: "git",
+                url: "git+https://github.com/psych-ds/psychds-validator.git"
+            },
             version: Deno.args[0],
-            description: "psychds-validator",
+            description: "This is the node implementation of the Psych-DS validator, originally implemented within the Deno framework. Psych-DS is a lightweight data standard for data collected in the behavioral sciences. This tool can be used to test the validity of datasets (in the form of file systems) with respect to the Psych-DS schema.",
             license: "MIT",
             repository: {
                 type: "git",
