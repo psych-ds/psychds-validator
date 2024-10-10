@@ -10,14 +10,30 @@ import {
   import { DatasetIssues } from '../issues/datasetIssues.ts'
   import { parseCSV,csvIssue } from '../files/csv.ts'
   import { ValidatorOptions } from '../setup/options.ts'
-  import { logger } from '../utils/logger.ts'
-  import jsonld, { JsonLdDocument, NodeObject } from 'jsonld';
+  import { isBrowser, readFile } from '../utils/platform.ts'
+  import { fetchJSON } from '../setup/loadSchema.ts'
+
+  // TypeScript type declaration for jsonld
+  declare global {
+    interface Window {
+      // deno-lint-ignore no-explicit-any
+      jsonld: any;
+    }
+  }
+
+  // Define JsonLdDocument type
+  export type JsonLdDocument = Record<string, unknown>;
+
+  // Define NodeObject type
+  type NodeObject = Record<string, unknown>;
+
 
   
   export class psychDSContextDataset implements ContextDataset {
     dataset_description: Record<string, unknown>
     metadataFile: psychDSFile
     options?: ValidatorOptions
+    sidecarCache: Record<string,JsonLdDocument>
     // deno-lint-ignore no-explicit-any
     files: any[]
     baseDirs: string[]
@@ -30,6 +46,7 @@ import {
       this.files = []
       this.metadataFile = metadataFile as psychDSFile
       this.baseDirs = []
+      this.sidecarCache = {}
       this.tree = {}
       this.ignored = []
       if (options) {
@@ -139,11 +156,7 @@ import {
         if (exactMatch) {
           validSidecars.splice(1)
           validSidecars[0] = exactMatch
-        } else {
-          logger.warning(
-            `Multiple sidecar files detected for '${this.file.path}'`,
-          )
-        }
+        } 
       }
   
       if (validSidecars.length === 1) {
@@ -164,10 +177,18 @@ import {
         await this.loadSidecar(nextDir)
       }
       else{
+
         //moved getExpandedSidecar to the end of loadSidecar since it is asyncronous, subsequent to 
         //the content of loadSidecar, and necessary for loadValidColumns. previous implementation had them
         //all running in parallel, which caused issues.
-        this.expandedSidecar = await this.getExpandedSidecar()
+        const jsonString = JSON.stringify(this.sidecar)
+        if (jsonString in this.dataset.sidecarCache){
+          this.expandedSidecar = this.dataset.sidecarCache[jsonString]
+        }
+        else{
+          this.expandedSidecar = await this.getExpandedSidecar()
+          this.dataset.sidecarCache[jsonString] = this.expandedSidecar as JsonLdDocument
+        }
         this.loadValidColumns()
       }
     }
@@ -215,11 +236,8 @@ import {
       try{
         result = await parseCSV(await this.file.text())
       }
-      catch(error){
-        logger.warning(
-          `csv file could not be opened by loadColumns '${this.file.path}'`,
-        )
-        logger.debug(error)
+      catch(_error){
+        
         result = new Map<string, string[]>() as ColumnsMap
       }
       this.columns = result['columns'] as ColumnsMap
@@ -249,6 +267,59 @@ import {
     }
     
     async getExpandedSidecar(): Promise<NodeObject>{
+      // deno-lint-ignore no-explicit-any
+      let jsonld: any;
+      if (!isBrowser) {
+        const jsonldModule = await import('npm:jsonld');
+        jsonld = jsonldModule.default;
+      }
+      // deno-lint-ignore no-explicit-any
+      const jsonldToUse = isBrowser ? (window as any).jsonld : jsonld;
+
+      const customDocumentLoader = async (url: string) => {
+        if (url.startsWith('http://schema.org/') || url.startsWith('https://schema.org/')) {
+          // Use a specific version of the schema.org context
+          const safeSchemaUrl = 'https://schema.org/version/latest/schemaorg-current-https.jsonld';
+          try {
+            const response = await fetch(safeSchemaUrl);
+            const context = await response.json();
+            return {
+              contextUrl: null,
+              document: context,
+              documentUrl: url
+            };
+          }
+          catch(_error){
+            if(isBrowser){
+              try{
+                const context = await fetchJSON('/defaultSchemaOrgJsonLD.json') || {};
+                return {
+                  contextUrl: null,
+                  document: context,
+                  documentUrl: url
+                };
+
+              }
+              catch(error){
+                console.log(error)
+              }
+            }
+            else{
+              const context = JSON.parse(await readFile('../setup/defaultSchemaOrgJsonLD.json'));
+              return {
+                contextUrl: null,
+                document: context,
+                documentUrl: url
+              };
+            }
+            
+          }
+          
+        }
+        // For all other URLs, use the default document loader
+        return jsonldToUse.documentLoaders.node()(url);
+      };
+
       try{
         //account for possibility of both http and https in metadata context
         if(!('@context' in this.sidecar) && this.dataset.metadataFile){
@@ -266,15 +337,20 @@ import {
           
           return {}
         }
+
+        const expandOptions = {
+          documentLoader: customDocumentLoader
+        };
         //use the jsonld library to expand metadata json and remove context.
         //in addition to adding the appropriate namespace (e.g. http://schema.org)
         //to all keys within the json, it also throws a variety of errors for improper JSON-LD syntax,
         //which mostly all pertain to improper usages of privileged @____ keywords
-        const exp = await jsonld.expand(this.sidecar)
-        if(!exp[0])
-          return {}
-        else
-          return exp[0]
+        if ('@context' in this.sidecar && typeof this.sidecar['@context'] == 'string' && ['http://schema.org/','http://schema.org','http://www.schema.org/','http://www.schema.org','https://schema.org/','https://schema.org','https://www.schema.org/','https://www.schema.org/'].includes(this.sidecar['@context']))
+        this.sidecar['@context'] = {
+          '@vocab':'http://schema.org/'
+        }
+        const exp = await jsonldToUse.expand(this.sidecar,expandOptions)
+        return exp[0] || {};
       }
       catch(error){
         //format thrown error and pipe into validator issues
