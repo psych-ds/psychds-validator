@@ -1,10 +1,10 @@
 import { validate } from './validate.ts';
 import { consoleFormat } from './utils/output.ts';
 import { parseOptions } from './setup/options.ts';
-import path from 'node:path';
+import { initializePlatform, path, EventEmitter } from './utils/platform.ts';
 import { readFileTree } from './files/deno.ts';
-import {ValidationProgressTracker} from './utils/validationProgressTracker.ts'
-import { EventEmitter } from 'node:events';
+import { ValidationProgressTracker } from './utils/validationProgressTracker.ts';
+import process from "node:process";
 
 export { validate };
 
@@ -16,6 +16,8 @@ export { validate };
  */
 export async function run(args: string[] = []) {
     try {
+        await initializePlatform();
+
         // Parse command line options
         const options = parseOptions(args);
         
@@ -35,7 +37,12 @@ export async function run(args: string[] = []) {
 
             await progressTracker.waitForCompletion();
 
-            Deno.exit(0);
+            // Use a platform-agnostic way to exit
+            if (typeof process !== 'undefined' && process.exit) {
+                process.exit(0);
+            } else if (typeof Deno !== 'undefined') {
+                Deno.exit(0);
+            }
         }
         
         // Perform validation
@@ -49,7 +56,7 @@ export async function run(args: string[] = []) {
             ));
         } else {
             // Format output for console
-            console.log(consoleFormat(result, {
+            console.log(await consoleFormat(result, {
                 verbose: options.verbose ?? false,
                 showWarnings: options.showWarnings ?? false
             }));
@@ -60,6 +67,8 @@ export async function run(args: string[] = []) {
 }
 
 // Run the validator if this is the main module
-if (import.meta.main) {
+if (typeof Deno !== 'undefined' && Deno.mainModule === import.meta.url) {
     run(Deno.args);
+} else if (typeof process !== 'undefined' && process.argv[1] === import.meta.url) {
+    run(process.argv.slice(2));
 }
