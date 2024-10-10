@@ -25,7 +25,7 @@ Deno.test("test emptyFile", async (t) => {
         assertEquals(
             context.issues
               .getFileIssueKeys(context.file.path)
-              .includes('EMPTY_FILE'),
+              .includes('FILE_EMPTY'),
             true,
           )
     })
@@ -38,7 +38,7 @@ Deno.test("test emptyFile", async (t) => {
         assertEquals(
             context.issues
               .getFileIssueKeys(context.file.path)
-              .includes('EMPTY_FILE'),
+              .includes('FILE_EMPTY'),
             false,
           )
     })
