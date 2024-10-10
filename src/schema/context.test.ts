@@ -17,7 +17,6 @@ Deno.test({
     const PATH = 'test_data/valid_datasets/bfi-dataset'
     const absolutePath = path.resolve(PATH)
     const fileTree = await readFileTree(absolutePath)
-    console.log(fileTree)
     const issues = new DatasetIssues()
     const ignore = new FileIgnoreRules([])
     const ddFile = fileTree.files.find(
@@ -50,7 +49,6 @@ Deno.test({
       const context = new psychDSContext(fileTree, file, issues,dsContext)
       
       await context.loadSidecar(fileTree)
-      console.log(context.expandedSidecar)
       if("http://schema.org/key" in context.expandedSidecar)
         assertEquals(context.expandedSidecar['http://schema.org/key'],[{"@value":"value2"}])
       else
