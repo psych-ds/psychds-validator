@@ -35,7 +35,7 @@ Deno.test('Test parseCSV', async (t) => {
                 'issues': []
             }
             })
-        assertEquals(result['issues'][0]['issue'],'NoHeader')
+        assertEquals(result['issues'][0]['issue'],'CSVHeaderMissing')
     })
     await t.step('Header row mismatch', async() => {
         const file = new psychDSFileDeno("test_data/testfiles", 'headerRowMismatch.csv', ignore)
@@ -49,7 +49,7 @@ Deno.test('Test parseCSV', async (t) => {
                 'issues': []
             }
             })
-        assertEquals(result['issues'][0]['issue'],'HeaderRowMismatch')
+        assertEquals(result['issues'][0]['issue'],'CSVHeaderLengthMismatch')
     })
     await t.step('Row_id values not unique', async() => {
         const file = new psychDSFileDeno("test_data/testfiles", 'rowidValuesNotUnique.csv', ignore)

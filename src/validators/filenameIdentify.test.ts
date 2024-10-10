@@ -11,16 +11,18 @@ import { FileIgnoreRules } from '../files/ignore.ts'
 import { loadSchema } from '../setup/loadSchema.ts'
 import { validate } from './psychds.ts';
 import { ValidatorOptions } from '../setup/options.ts';
-import path from 'node:path';
+import { path, initializePlatform } from '../utils/platform.ts';
 
 Deno.test({
   name:'test filenameIdentify.ts', 
     sanitizeResources: false,
     fn: async (t) => {
+      await initializePlatform();
       // Move initial declarations inside test function to avoid top-level await
       const PATH = 'test_data/valid_datasets/bfi-dataset'
+      const absolutePath = path.resolve(PATH)
       const schema = await loadSchema()
-      const fileTree = new FileTree(PATH, '/')
+      const fileTree = new FileTree(absolutePath, '/')
       const issues = new DatasetIssues()
       const ignore = new FileIgnoreRules([])
 
@@ -45,7 +47,7 @@ Deno.test({
       // base case
       await t.step('Rule stem matches',  () => {
         const fileName = 'dataset_description.json'
-        const file = new psychDSFileDeno(PATH, fileName, ignore)
+        const file = new psychDSFileDeno(absolutePath, fileName, ignore)
         const context = new psychDSContext(fileTree, file, issues)
         _findRuleMatches(node, schemaPath, context)
         assertEquals(context.filenameRules[0], schemaPath)
@@ -56,7 +58,7 @@ Deno.test({
         'Non-terminal schema node, should recurse then match',
         () => {
           const fileName = 'data/raw_data/study-bfi_data.csv'
-          const file = new psychDSFileDeno(PATH, fileName, ignore)
+          const file = new psychDSFileDeno(absolutePath, fileName, ignore)
           const context = new psychDSContext(fileTree, file, issues)
           context.baseDir = 'data'
           _findRuleMatches(recurseNode, schemaPath, context)
@@ -67,7 +69,7 @@ Deno.test({
         'recurse failure without arbitraryNesting',
         () => {
           const fileName = 'data/raw_data/study-bfi_data.csv'
-          const file = new psychDSFileDeno(PATH, fileName, ignore)
+          const file = new psychDSFileDeno(absolutePath, fileName, ignore)
           const context = new psychDSContext(fileTree, file, issues)
           context.baseDir = 'data'
           recurseNode.recurse.arbitraryNesting = false

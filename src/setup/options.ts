@@ -29,7 +29,7 @@ export function parseOptions(
         .version('alpha')
         .option('--useEvents', 'Display validation progress sequentially')
         .option('--json', 'Output machine readable JSON')
-        .option('-s, --schema <type>', 'Specify a schema version to use for validation', 'latest')
+        .option('-s, --schema <type>', 'Specify a schema version to use for validation', '1.4.0')
         .option('-v, --verbose', 'Log more extensive information about issues')
         .addOption(new Option('--debug <level>', 'Enable debug output').choices(Object.values(LogLevels)).default('error'))
         .option('-w, --showWarnings', 'Include warnings and suggestions in addition to errors');
