@@ -5,17 +5,19 @@ import { FileIgnoreRules } from "../files/ignore.ts";
 import { psychDSFileDeno, readFileTree } from "../files/deno.ts";
 import { psychDSFile } from "../types/file.ts";
 import { ValidatorOptions } from "../setup/options.ts";
-import path from 'node:path';
+import { path, initializePlatform } from '../utils/platform.ts';
 
 
 Deno.test({
   name:'test context LoadSidecar', 
   sanitizeResources: false,
   fn: async (t) => {
+    await initializePlatform();
     // Move initial declarations inside test function to avoid top-level await
     const PATH = 'test_data/valid_datasets/bfi-dataset'
     const absolutePath = path.resolve(PATH)
     const fileTree = await readFileTree(absolutePath)
+    console.log(fileTree)
     const issues = new DatasetIssues()
     const ignore = new FileIgnoreRules([])
     const ddFile = fileTree.files.find(
@@ -43,11 +45,12 @@ Deno.test({
 
     await t.step('directory sidecar overwrites dataset_description', async() => {
       const fileName = '/data/raw_data/study-other_data.csv'
-      const file = new psychDSFileDeno(PATH, fileName, ignore)
+      const file = new psychDSFileDeno(absolutePath, fileName, ignore)
 
       const context = new psychDSContext(fileTree, file, issues,dsContext)
       
       await context.loadSidecar(fileTree)
+      console.log(context.expandedSidecar)
       if("http://schema.org/key" in context.expandedSidecar)
         assertEquals(context.expandedSidecar['http://schema.org/key'],[{"@value":"value2"}])
       else

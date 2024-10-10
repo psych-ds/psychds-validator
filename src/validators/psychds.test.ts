@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { path,initializePlatform } from '../utils/platform.ts';
 import { validate } from './psychds.ts'
 import { readFileTree } from '../files/deno.ts'
 import { ValidatorOptions } from '../setup/options.ts'
@@ -9,6 +9,7 @@ Deno.test({
   name: 'test validate (valid datasets)', 
   sanitizeResources: false,
   fn: async (t) => {
+    await initializePlatform()
     await t.step('bfi-dataset', async () => {
       const PATH = 'test_data/valid_datasets/bfi-dataset'
       const absolutePath = path.resolve(PATH)

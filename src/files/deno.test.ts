@@ -1,5 +1,5 @@
 import { assertEquals, assertRejects } from '../deps/asserts.ts'
-import path from 'node:path';
+import { path, initializePlatform } from '../utils/platform.ts';
 import { psychDSFileDeno, UnicodeDecodeError, readFileTree } from './deno.ts'
 import { requestReadPermission } from '../setup/requestPermissions.ts'
 import { FileIgnoreRules } from './ignore.ts'
@@ -7,10 +7,10 @@ import { FileIgnoreRules } from './ignore.ts'
 Deno.test('Deno implementation of BIDSFile', async (t) => {
   // Move initial declarations inside test function to avoid top-level await
   await requestReadPermission()
+  await initializePlatform();
 
   // Use this file for testing file behavior
   const testUrl = import.meta.url
-  console.log(testUrl)
   const testPath = testUrl.slice('file://'.length)
   const testDir = path.dirname(testPath)
   const testFilename = path.basename(testPath)
