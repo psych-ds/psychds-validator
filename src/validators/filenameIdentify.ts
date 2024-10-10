@@ -96,7 +96,7 @@ function findRuleMatches(schema, context) {
   ) {
     //if no rules are found to match given file/directory, add NotIncluded warning to indicate 
     //that the file/directory is not part of the PsychDS specification
-    context.issues.addSchemaIssue('NotIncluded', [context.file])
+    context.issues.addSchemaIssue('FileNotChecked', [context.file])
     if(context.file.name === "dataset_description.json"){
       //if global metadata file is located outside of root directory, issue specific warning
       context.issues.addSchemaIssue(
