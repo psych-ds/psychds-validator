@@ -7,7 +7,6 @@ import {
   } from '../types/schema.ts'
 import { Severity } from '../types/issues.ts'
 import { psychDSContext } from './context.ts'
-import { logger } from '../utils/logger.ts'
 import { memoize } from '../utils/memoize.ts'
 import { psychDSFile } from '../types/file.ts';
   
@@ -73,8 +72,7 @@ import { psychDSFile } from '../types/file.ts';
     const safeContext = new Proxy(context, { has: safeHas, get: safeGet })
     try {
       return test(safeContext)
-    } catch (error) {
-      logger.debug(error)
+    } catch (_error) {
       return false
     }
   }
@@ -146,7 +144,7 @@ import { psychDSFile } from '../types/file.ts';
         }
     }
     if(invalidHeaders.length != 0){
-        context.issues.addSchemaIssue('CsvColumnMissing', [
+        context.issues.addSchemaIssue('CsvColumnMissingFromMetadata', [
             {
               ...context.file,
               evidence: `Column headers: [${invalidHeaders}] do not appear in variableMeasured. ${schemaPath}`,
