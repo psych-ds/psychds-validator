@@ -1,5 +1,9 @@
 import { build, emptyDir } from "@deno/dnt";
 import { copy } from "https://deno.land/std/fs/mod.ts";
+import fs from "node:fs"
+
+import * as esbuild from "https://deno.land/x/esbuild@v0.17.11/mod.js";
+import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@0.9";
 
 // Clear the npm directory to ensure a clean build
 // Confirm that these directories exist so copying files works
@@ -86,7 +90,8 @@ try {
                 "winston": "^3.8.2",
                 "commander": "^9.4.0",
                 "chalk": "^4.1.2",
-                "cli-table3": "^0.6.3"
+                "cli-table3": "^0.6.3",
+                "eventemitter3": "^5.0.0"
             },
             // Entry points for different module systems
             main: "./script/src/index.js",
@@ -106,10 +111,67 @@ try {
         importMap: "deno.json",
     }); 
 
+    const _result = await esbuild.build({
+    entryPoints: ["./src/validate-web.ts"],
+    bundle: true,
+    outfile: "./npm/web/psychds-validator.js",
+    format: "esm",
+    target: "es2020",
+    sourcemap: true,
+    minify: false,
+    platform: 'browser',
+    treeShaking: true,
+    define: {
+      "Deno.env.get": "undefined",
+      "import.meta.main": "undefined",
+      "global": "window",
+    },
+    external: [
+      "chalk",
+      "cli-table3",
+      "commander",
+      "winston",
+      "node-fetch",
+      "undici",
+      "jsonld",
+      "rdf-canonize-native"
+    ],
+    plugins: [
+        ...denoPlugins(),
+      {
+        name: 'node-modules-resolver',
+        setup(build) {
+          // Handle Node.js built-ins
+          build.onResolve({ filter: /^node:/ }, args => {
+            return { path: args.path, external: true };
+          });
+        },
+      },
+      {
+        name: 'expose-validate-web',
+        setup(build) {
+          build.onEnd(() => {
+            const outfile = "./npm/web/psychds-validator.js";
+            let content = fs.readFileSync(outfile, 'utf8');
+            if (!content.includes('window.psychDSValidator')) {
+              content += '\nif (typeof window !== "undefined") { window.psychDSValidator = { validateWeb }; }';
+              fs.writeFileSync(outfile, content);
+            }
+          });
+        }
+      }
+    ],
+  });
+
+    
+
+
 } catch (error) {
     console.error("Build failed with error:", error);
     if (error.stack) {
         console.error("Stack trace:", error.stack);
     }
     Deno.exit(1)
+} finally {
+    esbuild.stop()
 }
