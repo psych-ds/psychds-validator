@@ -58,7 +58,7 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build NPM Package
-        run: deno run --allow-read --allow-write --allow-env --allow-net --allow-run --allow-sys --allow-ffi --allow-hrtime -- --allow-scripts=esbuild -A build_npm.ts ${{ steps.get_version.outputs.VERSION }}
+        run: deno run --allow-read --allow-write --allow-env --allow-net --allow-run --allow-sys --allow-ffi --allow-hrtime -A build_npm.ts ${{ steps.get_version.outputs.VERSION }}
 
       - name: Setup Node
         uses: actions/setup-node@v2
