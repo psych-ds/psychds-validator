@@ -42,7 +42,7 @@ jobs:
           key: ${{ runner.OS }}-deno-${{ hashFiles('**/deno.json', 'src/deps/*.ts') }}
 
       - name: Cache Dependencies 2
-        run: deno cache --allow-scripts=npm:esbuild src/index.ts
+        run: deno cache --allow-scripts=npm:esbuild@0.20.2 src/index.ts
         
       
       - name: Run Deno Tests
