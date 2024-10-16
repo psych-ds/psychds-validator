@@ -40,7 +40,10 @@ jobs:
         with:
           path: ~/.deno
           key: ${{ runner.OS }}-deno-${{ hashFiles('**/deno.json', 'src/deps/*.ts') }}
-          
+
+      - name: Cache Dependencies 2
+        run: deno cache --allow-scripts=esbuild src/index.ts
+        
       
       - name: Run Deno Tests
         run: deno test --allow-all
