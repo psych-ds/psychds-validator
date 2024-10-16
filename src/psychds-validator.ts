@@ -1,10 +1,9 @@
 import { validate } from './validators/psychds.ts';
 import { parseOptions } from './setup/options.ts';
 import { readFileTree } from './files/deno.ts';
-import path from 'node:path';
+import { path, EventEmitter, initializePlatform }  from './utils/platform.ts';
 import { consoleFormat } from './utils/output.ts';
-import {ValidationProgressTracker} from './utils/validationProgressTracker.ts'
-import { EventEmitter } from 'node:events';
+import {ValidationProgressTracker} from './utils/validationProgressTracker.ts';
 
 /**
  * Main function to run the validator in a Deno environment.
@@ -14,6 +13,7 @@ import { EventEmitter } from 'node:events';
  */
 export async function run(args: string[] = Deno.args) {
     try {
+        await initializePlatform();
         // Parse command line options
         const options = parseOptions(args);
         

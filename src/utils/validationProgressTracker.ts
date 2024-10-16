@@ -1,4 +1,4 @@
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from './platform.ts';
 import { ValidationResult } from '../types/validation-result.ts';
 import { logger } from './logger.ts';
 import { formatIssue } from './output.ts';
@@ -42,17 +42,18 @@ type StepStatus = {
  * Tracks and displays the progress of the validation process.
  */
 export class ValidationProgressTracker {
-    private emitter: EventEmitter;
+    private emitter: typeof EventEmitter;
     private steps: SuperStep[];
     private stepStatus: Map<string, StepStatus>;
     private result: ValidationResult | null;
     private lastUpdateTime: number;
+    private logger: Awaited<typeof logger> | null;
   
     /**
      * Creates a new ValidationProgressTracker.
      * @param emitter - The EventEmitter to listen for validation events.
      */
-    constructor(emitter: EventEmitter) {
+    constructor(emitter: typeof EventEmitter) {
       this.emitter = emitter;
       this.steps = [
         {
@@ -117,8 +118,15 @@ export class ValidationProgressTracker {
       
       this.result = null;
       this.lastUpdateTime = 0;
+      this.logger = null;
   
       this.setupListeners();
+      this.initLogger();
+    }
+
+
+    private async initLogger() {
+      this.logger = await logger;
       this.displayChecklist();
     }
   
@@ -141,7 +149,7 @@ export class ValidationProgressTracker {
       this.steps.forEach((superStep) => {
         if (superStep.subSteps.length === 0) {
           this.emitter.once(superStep.key, (data: { success: boolean, issue?: Issue }) => {
-            this.updateStepStatus(superStep.key, data);
+            this.updateStepStatus(superStep.key, data, superStep);
           });
         } else {
           superStep.subSteps.forEach(subStep => {
@@ -163,7 +171,7 @@ export class ValidationProgressTracker {
     private updateStepStatus(stepKey: string, data: { success: boolean, issue?: Issue }, superStep?: SuperStep) {
       this.stepStatus.set(stepKey, { complete: true, success: data.success, issue: data.issue });
     
-      if (superStep) {
+      if (superStep && superStep.subSteps.length > 0) {
         this.updateSuperStepStatus(superStep);
       }
       this.displayChecklist();
@@ -177,6 +185,7 @@ export class ValidationProgressTracker {
     private updateSuperStepStatus(superStep: SuperStep) {
       const allSubStepsComplete = superStep.subSteps.every(subStep => this.stepStatus.get(subStep.key)?.complete);
       const allSubStepsSuccess = superStep.subSteps.every(subStep => this.stepStatus.get(subStep.key)?.success);
+
       this.stepStatus.set(superStep.key, { 
         complete: allSubStepsComplete, 
         success: allSubStepsSuccess,
@@ -188,8 +197,12 @@ export class ValidationProgressTracker {
      * Displays the current status of all steps and substeps.
      */
     private displayChecklist() {
+      if (!this.logger) {
+        console.warn('Logger not initialized yet');
+        return;
+      }
       // Clear the console
-      logger.info('\x1Bc'); 
+      this.logger.info('\x1Bc'); 
   
       const checklistLines = ['Validation Progress:'];
       let prevComplete = true;
@@ -207,6 +220,11 @@ export class ValidationProgressTracker {
         // Determine the message and checkmark for the step
         const superStepMessage = (superStepStatus?.complete && prevComplete && !prevFails) ? superStep.message.pastTense : superStep.message.imperative;
         const superStepCheckMark = (superStepStatus?.complete && prevComplete && !prevFails) ? (superStepStatus.success ? '✓' : '✗') : ' ';
+        if((superStepStatus?.complete && prevComplete && !prevFails)){
+          this.emitter.emit('progress',{step: superStep})
+          this.emitter.emit('stepStatusChange',{ stepStatus: Array.from(this.stepStatus.entries()), superStep: superStep })
+
+        }
         checklistLines.push(`[${superStepCheckMark}] ${index + 1}. ${superStepMessage}`);
         
         // Display issue if the step failed
@@ -230,6 +248,8 @@ export class ValidationProgressTracker {
             validationFailed = true;
             checklistLines.push(`     Issue:\n ${formatIssue(subStepStatus.issue)}`);
           }
+          if(subStepStatus?.complete && subComplete && !prevFails)
+            this.emitter.emit('stepStatusChange',{ stepStatus: Array.from(this.stepStatus.entries()), superStep: superStep })
           if(!subStepStatus?.complete) {
             subComplete = false;
           }
@@ -243,9 +263,10 @@ export class ValidationProgressTracker {
   
   
       // Display the new checklist
-      logger.info(checklistLines.join('\n'));
-      if (validationFailed)
+      this.logger.info(checklistLines.join('\n'));
+      if (validationFailed){
         this.emitter.emit('validation-halted')
+      }
       if (this.stepStatus.get('check-variableMeasured')?.success){
         this.emitter.emit('complete')
 

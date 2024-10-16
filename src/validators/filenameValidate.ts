@@ -2,7 +2,7 @@ import { CheckFunction, RuleCheckFunction } from '../types/check.ts'
 import { DatasetIssues } from '../issues/datasetIssues.ts'
 import { psychDSContext } from '../schema/context.ts'
 import { GenericRule, GenericSchema } from '../types/schema.ts'
-import { sep } from 'node:path';
+import { SEP } from '../utils/platform.ts';
 import { Severity } from '../types/issues.ts'
 
 const CHECKS: CheckFunction[] = [
@@ -20,7 +20,7 @@ export async function filenameValidate(
 }
 
 export function isAtRoot(context: psychDSContext) {
-  if (context.file.path.split(sep).length !== 2) {
+  if (context.file.path.split(SEP).length !== 2) {
     return false
   }
   return true
@@ -113,7 +113,7 @@ export function keywordCheck(
       // within the schema model, log error
       if((regexMatch && regexMatch[0] !== context.file.name) || !regexMatch){
         context.issues.addSchemaIssue(
-          "KeywordFormattingError",
+          "FilenameKeywordFormattingError",
           [context.file]
         )
       }
@@ -122,7 +122,7 @@ export function keywordCheck(
     if(!Object.keys(context.keywords).every((keyword) => keyword in schema['meta.context.context.properties.keywords.properties'])){
       //will be delivered either as warning or error depending on schema model configuration.
       context.issues.addSchemaIssue(
-        "UnofficialKeywordWarning",
+        "FilenameUnofficialKeywordWarning",
         [context.file]
       )
     }

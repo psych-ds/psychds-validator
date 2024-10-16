@@ -15,9 +15,10 @@
     "./": "./",
     "../": "./src/",
     "canonicalize": "npm:canonicalize@1.0.8",
-    "npm:csv-parse/sync": "https://esm.sh/csv-parse@5.5.2/sync",
+    "csv-parse/sync": "https://esm.sh/csv-parse@5.5.2/sync",
     "npm:commander": "https://esm.sh/commander@9.4.0",
     "chalk": "https://esm.sh/chalk@5.0.1",
-    "cli-table3": "https://esm.sh/cli-table3@0.6.3"
+    "cli-table3": "https://esm.sh/cli-table3@0.6.3",
+    "rdf-canonize": "https://esm.sh/rdf-canonize@3.4.0"
   }
 }

@@ -1,146 +1,114 @@
-// logger.ts, re-written to accommodate winston rather than Deno logger
-import winston from 'npm:winston';
+import { isBrowser } from './platform.ts';
 
-const { createLogger, format, transports } = winston;
+// Import winston types
+import type { transport as WinstonTransport } from 'npm:winston';
 
-/**
- * Defines the valid log levels for the application.
- */
-export type LevelName = 'error' | 'warn' | 'info' | 'debug' | 'checklist';
-
-/**
- * Create a Winston logger instance with custom formatting.
- * The logger outputs to the console with timestamp, level, and message.
- */
-const logger = createLogger({
-  level: 'info',
-  levels: {
-    error: 0,
-    warn: 1,
-    info: 2,
-    debug: 3,
-    checklist: 4
-  },
-  format: format.combine(
-    format.timestamp(),
-    format.printf(({ timestamp, level, message, ...rest }) => {
-      if (level === 'checklist') {
-        // For checklist, just return the message without timestamp or level
-        return message;
-      }
-      return `${timestamp} [${level.toUpperCase()}]: ${message} ${Object.keys(rest).length ? JSON.stringify(rest) : ''}`;
-    })
-  ),
-  transports: [
-    new transports.Console({
-      level: 'checklist'
-    })
-  ]
-});
-
-/**
- * Sets up the logging level for the application.
- * @param level - The desired logging level
- */
-export function setupLogging(level: LevelName) {
-  logger.level = level;
-  logger.transports[0].level = level; 
+// Define the logger interface
+export interface Logger {
+  error: (message: string, ...meta: unknown[]) => void;
+  warn: (message: string, ...meta: unknown[]) => void;
+  info: (message: string, ...meta: unknown[]) => void;
+  debug: (message: string, ...meta: unknown[]) => void;
+  checklist: (message: string) => void;
+  add?: (transport: unknown) => void;
 }
 
-/**
- * Parses the stack trace to extract the caller's location.
- * @param stack - The stack trace string
- * @returns The caller's location or an empty string if not found
- */
-export function parseStack(stack: string) {
-  const lines = stack.split('\n');
-  const caller = lines[2]?.trim() ?? '';
-  const token = caller.split('at ');
-  return token[1] ?? '';
-}
+export type LevelName = keyof Logger;
 
-// Cursor manipulation methods
-const cursorUp = (n: number) => console.log(`\x1b[${n}A`);
-const clearScreen = () => console.log('\x1b[0J');
-const moveCursor = (x: number, y: number) => console.log(`\x1b[${y};${x}H`);
-
-/**
- * Defines the structure of a logging method.
- */
-type LogMethod = (message: string, ...meta: unknown[]) => void;
-
-/**
- * Defines the interface for the logger object.
- */
-interface LoggerInterface {
-  [key: string]: LogMethod;
-  error: LogMethod;
-  warn: LogMethod;
-  info: LogMethod;
-  debug: LogMethod;
-  checklist: LogMethod;
-}
-
-/**
- * Proxy handler for the logger object.
- * It adds the caller's location to debug logs and handles non-existent log methods.
- */
-const loggerProxyHandler: ProxyHandler<winston.Logger> = {
-  get(_target: winston.Logger, prop: string | symbol): LogMethod {
-    return (...args: [string, ...unknown[]]) => {
-      // Add debug information about the caller's location
-      const stack = new Error().stack;
-      if (stack) {
-        const callerLocation = parseStack(stack);
-        logger.debug(`Logger invoked at "${callerLocation}"`);
-      }
-      
-      // Call the appropriate logging method or default to warning
-      if (typeof prop === 'string' && prop in logger) {
-        (logger[prop as keyof typeof logger] as LogMethod)(...args);
-      } else {
-        logger.warn(...args); // Default to warning if the method doesn't exist
-      }
+// Create a promise that resolves to the logger
+const loggerPromise: Promise<Logger> = (async () => {
+  if (isBrowser) {
+    // Browser implementation (no-op)
+    return {
+      error: console.error,
+      warn: console.warn,
+      info: console.log,
+      debug: console.log,
+      checklist: console.log,
     };
-  },
+  } else {
+    // Node.js implementation (using Winston)
+    const winston = await import('npm:winston');
+    const { createLogger, format, transports } = winston;
+
+    const winstonLogger = createLogger({
+      level: 'info',
+      levels: {
+        error: 0,
+        warn: 1,
+        info: 2,
+        debug: 3,
+        checklist: 4
+      },
+      format: format.combine(
+        format.timestamp(),
+        format.printf(({ timestamp, level, message, ...rest }) => {
+          if (level === 'checklist') {
+            return message;
+          }
+          return `${timestamp} [${level.toUpperCase()}]: ${message} ${Object.keys(rest).length ? JSON.stringify(rest) : ''}`;
+        })
+      ),
+      transports: [
+        new transports.Console({
+          level: 'checklist'
+        })
+      ]
+    });
+
+    // Create a logger object that matches our Logger interface
+    const logger: Logger = {
+      error: (message: string, ...meta: unknown[]) => winstonLogger.error(message, ...meta),
+      warn: (message: string, ...meta: unknown[]) => winstonLogger.warn(message, ...meta),
+      info: (message: string, ...meta: unknown[]) => winstonLogger.info(message, ...meta),
+      debug: (message: string, ...meta: unknown[]) => winstonLogger.debug(message, ...meta),
+      checklist: (message: string) => winstonLogger.log('checklist', message),
+      add: (transport: unknown) => winstonLogger.add(transport as WinstonTransport),
+    };
+
+    return logger;
+  }
+})();
+
+// Export the logger promise for advanced usage
+export { loggerPromise as logger };
+
+// Async wrapper for logging functions
+const createAsyncLogger = (level: keyof Logger) => async (message: string, ...meta: unknown[]) => {
+  const logger = await loggerPromise;
+  if (logger[level]) {
+    logger[level](message, ...meta);
+  }
 };
 
-/**
- * Create a proxied version of the logger to add additional functionality.
- */
-const proxyLogger = new Proxy(logger, loggerProxyHandler);
+// Exports
+export const error = createAsyncLogger('error');
+export const warn = createAsyncLogger('warn');
+export const info = createAsyncLogger('info');
+export const debug = createAsyncLogger('debug');
+export const checklist = createAsyncLogger('checklist');
 
-/**
- * Export the proxied logger as the main logger object.
- */
-export { proxyLogger as logger };
-
-/**
- * Log levels enum.
- * Exported to maintain compatibility with existing code.
- */
 export const LogLevels = {
-  ERROR: 'error',
-  WARN: 'warn',
-  INFO: 'info',
-  DEBUG: 'debug',
-  CHECKLIST: 'checklist'
+  ERROR: 'error' as const,
+  WARN: 'warn' as const,
+  INFO: 'info' as const,
+  DEBUG: 'debug' as const,
+  CHECKLIST: 'checklist' as const
 };
 
-/**
- * Convenience exports for individual log levels.
- * These allow direct usage of log methods without accessing the logger object.
- */
-export const error = proxyLogger.error;
-export const warn = proxyLogger.warn;
-export const info = proxyLogger.info;
-export const debug = proxyLogger.debug;
-export const checklist = (message: string) => {
-  logger.log('checklist', message);
-};
-
+// Cursor manipulation methods (these will only work in Node.js environment)
 export const cursor = {
-  up: cursorUp,
-  clear: clearScreen,
-  move: moveCursor,
+  up: (n: number) => isBrowser ? undefined : console.log(`\x1b[${n}A`),
+  clear: () => isBrowser ? undefined : console.log('\x1b[0J'),
+  move: (x: number, y: number) => isBrowser ? undefined : console.log(`\x1b[${y};${x}H`),
+};
+
+// Setup logging function (no-op in browser)
+export const setupLogging = async (level: LevelName) => {
+  if (!isBrowser) {
+    const loggerInstance = await loggerPromise;
+    // Assuming the Winston logger is accessible here
+    // deno-lint-ignore no-explicit-any
+    (loggerInstance as any).level = level;
+  }
 };

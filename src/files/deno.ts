@@ -1,7 +1,7 @@
 /**
  * Deno specific implementation for reading files
  */
-import path from 'node:path';
+import { path, readFile, createReadStream, isBrowser } from '../utils/platform.ts';
 import { psychDSFile, issueInfo } from '../types/file.ts'
 import { FileTree } from '../types/filetree.ts'
 import { requestReadPermission } from '../setup/requestPermissions.ts'
@@ -17,6 +17,10 @@ export class UnicodeDecodeError extends Error {
   }
 }
 
+interface WebFile {
+  text(): Promise<string>;
+}
+
 /**
  * Deno implementation of psychDSFile
  */
@@ -26,6 +30,7 @@ export class psychDSFileDeno implements psychDSFile {
   path: string
   expanded: object
   issueInfo: issueInfo[]
+  webFile: WebFile | null
   #fileInfo?: Deno.FileInfo
   #datasetAbsPath: string
 
@@ -36,6 +41,7 @@ export class psychDSFileDeno implements psychDSFile {
     this.expanded = {}
     this.issueInfo = []
     this.#ignore = ignore
+    this.webFile = null
     try {
       this.#fileInfo = Deno.statSync(this._getPath())
     } catch (error) {
@@ -54,8 +60,7 @@ export class psychDSFileDeno implements psychDSFile {
   }
 
   get stream(): ReadableStream<Uint8Array> {
-    const handle = this.#openHandle()
-    return handle.readable
+    return createReadStream(this._getPath());
   }
 
   get ignored(): boolean {
@@ -66,37 +71,41 @@ export class psychDSFileDeno implements psychDSFile {
    * Read the entire file and decode as utf-8 text
    */
   async text(): Promise<string> {
-    const stream = this.stream
-    const decoder = new TextDecoder('utf-8')
-    let data = ''
-    try {
-      // Read the stream chunk by chunk and decode
-      for await (const chunk of stream) {
-        const value = decoder.decode(chunk, { stream: true })
-        // Check for UTF-16 BOM at the start of the file
-        if (data.length === 0 && value.startsWith('\uFFFD')) {
-          throw new UnicodeDecodeError('This file appears to be UTF-16')
-        }
-        data += value
-      }
-    } finally {
-      // Ensure the decoder is flushed even if an error occurs
-      // This prevents resource leaks and ensures all data is processed
-      data += decoder.decode()
+    let data: string
+    if (!isBrowser) {
+      data = await readFile(this._getPath());
+    } else if (this.webFile) {
+      data = await this.webFile.text()
+    } else {
+      throw new Error('WebFile not set for browser environment')
     }
-    return data
+    if (data.startsWith('\uFFFD')) {
+      throw new UnicodeDecodeError('This file appears to be UTF-16');
+    }
+    return data;
   }
 
   /**
    * Read bytes in a range efficiently from a given file
    */
-  async readBytes(size: number, offset = 0): Promise<Uint8Array> {
-    const handle = this.#openHandle()
-    const buf = new Uint8Array(size)
-    await handle.seek(offset, Deno.SeekMode.Start)
-    await handle.read(buf)
-    handle.close()
-    return buf
+  async readBytes(size: number, _offset = 0): Promise<Uint8Array> {
+    const stream = this.stream;
+    const reader = stream.getReader();
+    const result = new Uint8Array(size);
+    let bytesRead = 0;
+
+    while (bytesRead < size) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      
+      const remaining = size - bytesRead;
+      const chunk = value.slice(0, remaining);
+      result.set(chunk, bytesRead);
+      bytesRead += chunk.length;
+    }
+
+    reader.releaseLock();
+    return result;
   }
 
   /**
@@ -110,55 +119,78 @@ export class psychDSFileDeno implements psychDSFile {
 }
 
 /* recursive function for readFileTree, crawls through dataset */
-export async function _readFileTree(
-  rootPath: string,
+async function _readFileTree(
+  // deno-lint-ignore no-explicit-any
+  rootPathOrDict: string | { [key: string]: any },
   relativePath: string,
   ignore: FileIgnoreRules,
   parent?: FileTree,
   context?: object | null
 ): Promise<FileTree> {
-  await requestReadPermission()
-  const name = path.basename(relativePath)
-  const tree = new FileTree(relativePath, name, parent)
+  const name = path.basename(relativePath);
+  const tree = new FileTree(relativePath, name, parent);
 
-  
-  
-  
-  for await (const dirEntry of Deno.readDir(path.join(rootPath, relativePath))) {
-    if (dirEntry.isFile || dirEntry.isSymlink) {
-      const file = new psychDSFileDeno(
-        rootPath,
-        path.join(relativePath, dirEntry.name),
-        ignore,
-      )
+  if (typeof rootPathOrDict === 'string') {
+    // Deno file system
+    await requestReadPermission();
+    for await (const dirEntry of Deno.readDir(path.join(rootPathOrDict, relativePath))) {
+      if (dirEntry.isFile || dirEntry.isSymlink) {
+        const file = new psychDSFileDeno(
+          rootPathOrDict,
+          path.join(relativePath, dirEntry.name),
+          ignore,
+        );
 
-      // For .psychdsignore, read in immediately and add the rules
-      if (dirEntry.name === '.psychdsignore') {
-        ignore.add(await readPsychDSIgnore(file))
+        if (dirEntry.name === '.psychdsignore') {
+          ignore.add(await readPsychDSIgnore(file));
+        }
+        
+        tree.files.push(file);
       }
-      
-      tree.files.push(file)
+      if (dirEntry.isDirectory) {
+        const dirTree = await _readFileTree(
+          rootPathOrDict,
+          path.join(relativePath, dirEntry.name),
+          ignore,
+          tree,
+          context
+        );
+        tree.directories.push(dirTree);
+      }
     }
-    if (dirEntry.isDirectory) {
-      const dirTree = await _readFileTree(
-        rootPath,
-        path.join(relativePath, dirEntry.name),
-        ignore,
-        tree,
-        context
-      )
-      tree.directories.push(dirTree)
+  } else {
+
+    // Browser-based file structure
+    for (const key in rootPathOrDict) {
+      const path = (relativePath === '/') ? `/${key}` : `${relativePath}/${key}`;
+
+      if (rootPathOrDict[key]['type'] === 'file') {
+        const file = new psychDSFileDeno('.', path, ignore);
+        file.webFile = rootPathOrDict[key]['file']
+
+        //file.fileText = rootPathOrDict[key]['text'].replace('http://schema.org', 'https://schema.org').replace('http://www.schema.org', 'https://schema.org');
+
+        if (key === '.psychdsignore') {
+          ignore.add(await readPsychDSIgnore(file));
+        }
+        tree.files.push(file);
+      } else {
+        const dirTree = await _readFileTree(rootPathOrDict[key]['contents'], path, ignore, tree, context);
+        tree.directories.push(dirTree);
+      }
     }
   }
-  return tree
+
+  return tree;
 }
 
 /**
  * Read in the target directory structure and return a FileTree
  */
-export function readFileTree(rootPath: string): Promise<FileTree> {
-  const ignore = new FileIgnoreRules([])
-  return _readFileTree(rootPath, '/', ignore)
+// deno-lint-ignore no-explicit-any
+export function readFileTree(rootPathOrDict: string | { [key: string]: any }): Promise<FileTree> {
+  const ignore = new FileIgnoreRules([]);
+  return _readFileTree(rootPathOrDict, '/', ignore);
 }
 
 export {FileIgnoreRules as FileIgnoreRules}

@@ -1,31 +1,7 @@
 import { Schema, GenericSchema } from '../types/schema.ts'
 import { objectPathHandler } from '../utils/objectPathHandler.ts'
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { path, readFile, isBrowser, isNode, isDeno } from '../utils/platform.ts';
 
-
-/**
- * Determines the directory name of the current module.
- * This function handles both CommonJS and ES Module environments.
- * @returns {string} The directory name of the current module.
- */
-function getDirname(): string {
-  if (typeof __dirname !== 'undefined') {
-    // CommonJS environment
-    return __dirname;
-  } else {
-    // ES Module environment or unknown
-    try {
-      return path.dirname(fileURLToPath(import.meta.url));
-    } catch (error) {
-      console.warn('Unable to determine directory:', error);
-      return '';
-    }
-  }
-}
-
-const dirname = getDirname();
 
 // Base URLs for fetching schemas
 const SCHEMA_BASE_URL = 'https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons';
@@ -36,17 +12,46 @@ let defaultSchema: GenericSchema = {};
 let defaultSchemaOrg: GenericSchema = {};
 
 /**
- * Loads default schemas from local JSON files.
+ * Loads default schemas from local JSON files or fetches them in browser environment.
  * This function is used to initialize fallback schemas if network requests fail.
  */
-function loadDefaultSchemas(): void {
+async function loadDefaultSchemas(): Promise<void> {
   try {
-    defaultSchema = JSON.parse(fs.readFileSync(path.join(dirname, 'defaultSchema.json'), 'utf-8'));
-    defaultSchemaOrg = JSON.parse(fs.readFileSync(path.join(dirname, 'defaultSchemaOrg.json'), 'utf-8'));
+    if (isBrowser) {
+      // In browser, fetch the default schemas
+      defaultSchema = await fetchJSON('/defaultSchema.json') || {};
+      defaultSchemaOrg = await fetchJSON('/defaultSchemaOrg.json') || {};
+    } else {
+      // In Node.js or Deno, read from local files
+      const dirname = getDirname();
+      defaultSchema = JSON.parse(await readFile(path.join(dirname, 'defaultSchema.json')));
+      defaultSchemaOrg = JSON.parse(await readFile(path.join(dirname, 'defaultSchemaOrg.json')));
+    }
   } catch (error) {
     console.error('Error loading default schemas:', error);
     defaultSchema = {};
     defaultSchemaOrg = {};
+  }
+}
+
+
+/**
+ * Determines the directory name of the current module.
+ * This function handles different JavaScript environments.
+ * @returns {string} The directory name of the current module.
+ */
+function getDirname(): string {
+  if (isNode && typeof __dirname !== 'undefined') {
+    // CommonJS environment
+    return __dirname;
+  } else if (isDeno || (isNode && typeof __dirname === 'undefined')) {
+    // Deno or Node.js ESM
+    const url = new URL(import.meta.url);
+    return path.dirname(url.pathname);
+  } else {
+    // Browser environment
+    console.warn('Unable to determine directory in browser environment');
+    return '';
   }
 }
 
@@ -55,7 +60,7 @@ function loadDefaultSchemas(): void {
  * @param {string} url - The URL to fetch JSON from.
  * @returns {Promise<GenericSchema | null>} The fetched JSON data or null if the fetch fails.
  */
-async function fetchJSON(url: string): Promise<GenericSchema | null> {
+export async function fetchJSON(url: string): Promise<GenericSchema | null> {
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -70,19 +75,14 @@ async function fetchJSON(url: string): Promise<GenericSchema | null> {
 
 /**
  * Loads the schema from the specification.
- * This function has been significantly refactored from the old version:
- * - It now uses a more robust version checking mechanism.
- * - It implements better error handling and fallback mechanisms.
- * - It separates concerns by using helper functions (fetchJSON, loadDefaultSchemas).
- * 
- * @param {string} [version='latest'] - The version of the schema to load.
+ * @param {string} [version='1.4.0'] - The version of the schema to load.
  * @returns {Promise<Schema>} A Promise that resolves to the loaded Schema.
  * @throws {Error} If the version format is invalid.
  */
-export async function loadSchema(version = 'latest'): Promise<Schema> {
+export async function loadSchema(version = '1.4.0'): Promise<Schema> {
   // Ensure default schemas are loaded
   if (Object.keys(defaultSchema).length === 0 || Object.keys(defaultSchemaOrg).length === 0) {
-    loadDefaultSchemas();
+    await loadDefaultSchemas();
   }
 
   // Regex to check for X.Y.Z format

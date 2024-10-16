@@ -19,16 +19,13 @@ jobs:
         id: release
         with:
           release-type: node
-          default-branch: ${{ github.head_ref }}
-          package-name: your-package-name
+          default-branch: main
+          package-name: psychds-validator
           path: .
           token: ${{ secrets.GITHUB_TOKEN }}
 
   build-test-publish:
     needs: [release-please]
-    if: |
-      always() &&
-      (needs.release-please.result == 'success' || needs.release-please.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -43,6 +40,10 @@ jobs:
         with:
           path: ~/.deno
           key: ${{ runner.OS }}-deno-${{ hashFiles('**/deno.json', 'src/deps/*.ts') }}
+
+      - name: Cache Dependencies 2
+        run: deno cache --allow-scripts=npm:esbuild@0.20.2 src/index.ts
+        
       
       - name: Run Deno Tests
         run: deno test --allow-all
@@ -60,13 +61,8 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build NPM Package
-        run: deno run -A build_npm.ts ${{ steps.get_version.outputs.VERSION }}
-      
-      - name: Build NPM Package
-        run: |
-          set -e
-          deno run -A build_npm.ts ${{ needs.release-please.outputs.version || steps.get_version.outputs.VERSION }}
-      
+        run: deno run --allow-read --allow-write --allow-env --allow-net --allow-run --allow-sys --allow-ffi --allow-hrtime -A build_npm.ts ${{ steps.get_version.outputs.VERSION }}
+
       - name: Setup Node
         uses: actions/setup-node@v2
         with:
@@ -82,10 +78,7 @@ jobs:
         working-directory: npm
 
       - name: Publish to NPM
-        if: |
-          github.event_name == 'push' && 
-          github.ref == 'refs/heads/main' &&
-          needs.release-please.outputs.release_created == 'true'
+        if: needs.release-please.outputs.release_created == 'true'
         run: npm publish
         working-directory: npm
         env:
