@@ -1,92 +1,48 @@
-# The psych-DS Validator CLI 
+# The Psych-DS Validator
 
-This repository contains the source code for the psych-DS validator tool, which is currently in development. 
+This repository contains the source code for the Psych-DS Validator tool. 
 
-This version of the validator requires using your terminal to enter text commands on your computer. Please visit https://github.com/psych-DS/psych-DS/ for more information on the Psych-DS project!
+The validator was developed using the Deno framework and can be run as a Deno app, but it also available via npm as a node package (ESM/CJS compatible) to be used either as a CLI tool or an imported javascript function. There is a bundled version as well that can be imported for browser contexts. All versions of the validator app are generated from the Deno-based source code, and they all leverage the [LinkML-based Psych-DS schema model](https://github.com/psych-DS/psych-DS/) for information on rules and error messages, etc.
 
-## Quickstart
+There is a [browser-based version of the validator](https://psych-ds.github.io/validator/) available for anyone to use. It uses the same code as the CLI tool and produces identical validation results.
+
+Please visit [The Psych-DS Docs](https://psychds-docs.readthedocs.io/en/latest/) or [Our core repository](https://github.com/psych-DS/psych-DS/) for more information on the Psych-DS project!
+
+## Installation
 
 ### Using npm
 
-Make sure that you're using node version 18 for compatibility:
+Install the psychds-validator package:
 
-```
-nvm install 18
-nvm use 18
-```
+`npm install -g psychds-validator`
 
-Install the psychds-validator package (requires sudo in cases where Deno framework needs to be installed):
-
-`sudo npm install -g psychds-validator`
-
-Now you can use the "validate" command to run the psychds validator on your datasets, like so (with any of the optional flags, like "--showWarnings", as described below:
+Use the "validate" command to run the validator on your datasets (with any of the optional flags as described below):
 
 `validate <path_to_input_directory>`
 
+The validate function can be imported within other node apps as well:
+
+For CJS contexts:
+`const { validate } = require("psychds-validator");`
+
+For ESM contexts:
+`import { validate } from "psychds-validator";`
+
+Then the validate function can be used with any of the optional flags:
+`const result = await validate("<path_to_example_dataset>",{'exampleOption':true});`
+
 ### Without npm:
 
-To begin, open your terminal and clone this repository:
-
-`git clone https://github.com/psych-ds/psychds-validator.git`
-
-The psych-DS validator is built using Deno, a runtime environment for Javascript and Typescript. 
-
-You will need to install Deno, but your computer should already have all of the other software tools needed to install and use the Psych-DS validator. (Tested on Macs only as of 10-2023.)
-
-
-### Mac/Linux Installation Instructions
-
-Open the terminal and input this command:
-
-`curl -fsSL https://deno.land/x/install/install.sh | sh`
-
-After installing, deno will output some instructions about how to add deno to your PATH variable (so that you can use it without writing out the entire path to the app). It will look like this:
-
-(make sure to modify the command by replacing <your_username> with your actual mac username)
-
-```
-export DENO_INSTALL="/Users/<your_username>/.deno"
-export PATH="$DENO_INSTALL/bin:$PATH"
-```
-
-If you're unsure how to handle this, you can use these commands to add the lines to the .zshrc file and then source the file so the changes are reloaded:
-
-(The point of adding these commands to the .zshrc file instead of just running them directly is that, if you run them directly, they will only affect your current terminal session. By adding them to .zshrc, they will apply every time you open a new terminal)
-
-```
-echo -e '\nexport DENO_INSTALL="/Users/<your_username>/.deno"\nexport PATH="$DENO_INSTALL/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-```
-
-You can test to see if the commands have worked by typing `deno --version` and confirming that deno returns a series of version numbers instead of something like 'deno could not be found'.
-
-### PC Installation Instructions
-
-Open powershell (cmd.exe) and input this command:
-
-`irm https://deno.land/install.ps1 | iex`
-
-(PC instructions to be added)
-
-
+If you would prefer to run the validator directly as a Deno app, you can [install deno](https://docs.deno.com/runtime/getting_started/installation/), clone this repository, and run the following command from the root of the repository:
+`deno run -A src/index.ts <path_to_dataset> <optional_flags>`
 
 ## Usage
-To run the CLI validator, navigate to the psychds-validator directory and input this command:
+The validator app can be run with the following optional parameters:
 
-`deno run --allow-net --allow-read --allow-env src/psychds-validator.ts <input_dataset_to_validate>`
-
-By default, the validator only outputs errors that it finds in the dataset. To show warnings as well, add the `--showWarnings` tag to the end of the command.
-
-## Testing
-To run the testing suite for the application, navigate to the base directory and run the command:
-
-`deno test --allow-net --allow-read --allow-env`
+- `-w` or `--showWarnings`: causes the validator to output warnings and suggestions for best practices in addition to any errors.
+- `--useEvents`: switches the validator to display the output as a sequential progress checklist instead of a collection of issues. Only reports the first error it encounters in the sequence
+- `--json`: causes the validator to return the validation results as a JSON rather than printing them to the log.
+- `-s` or `--schema`: switches the validator to use a different version of the Psych-DS schema. Default is "latest".
 
 ## Basis of the Code
 The core infrastructure is derived explicitly from the [BIDS Deno-based CLI validator](https://github.com/bids-standard/bids-validator/tree/master/bids-validator/src).
-
-There are many elements of this application whose core elements and functions remain untouched from the BIDS validator, including but not limited to schema imports, context generation, file crawling, interface definitions, I/O formatting, and issue generation. 
-
-My reasoning for not building this app explicitly as a fork or a proposed module on the BIDS app comes down to a combination of how little of the BIDS app's considerable functionality is actually required for our purposes and how many small but consequential adjustments have gone into adapting it to our purposes. For instance, it seems that BIDS only attends to the validity of the files it finds, whereas psych-DS has rules that govern which files and directories must be included, in addition to specifying their contents/formatting. 
-
-The main component left to build in this version is a json-LD validator, which could have value for the BIDS team as a module to be integrated into their app.
