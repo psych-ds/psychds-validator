@@ -3,8 +3,8 @@ import { parseOptions, ValidatorOptions } from './setup/options.ts';
 import { FileTree } from './types/filetree.ts';
 import { ValidationResult } from './types/validation-result.ts';
 import { readFileTree } from './files/deno.ts';
-import path from 'node:path';
-import { EventEmitter } from 'node:events';
+import { path } from './utils/platform.ts';
+import { EventEmitter } from './utils/platform.ts';
 import {ValidationProgressTracker} from './utils/validationProgressTracker.ts'
 
 
@@ -16,7 +16,7 @@ import {ValidationProgressTracker} from './utils/validationProgressTracker.ts'
  * @param {Partial<ValidatorOptions>} [options] - Optional validator options.
  * @returns {Promise<ValidationResult>} A promise that resolves to the validation result.
  */
-export async function validate(fileTreeOrPath: FileTree | string, options?: ValidatorOptions & { emitter?: EventEmitter }): Promise<ValidationResult> {
+export async function validate(fileTreeOrPath: FileTree | string, options?: ValidatorOptions & { emitter?: typeof EventEmitter }): Promise<ValidationResult> {
     let fileTree: FileTree;
 
     // Determine if fileTreeOrPath is a string (path) or a FileTree object

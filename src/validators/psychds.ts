@@ -16,7 +16,7 @@ import { psychDSFile } from '../types/file.ts'
 import { psychDSContextDataset } from '../schema/context.ts'
 import { walkFileTree } from '../schema/walk.ts'
 import { GenericSchema } from '../types/schema.ts'
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from '../utils/platform.ts';
 
 const CHECKS: CheckFunction[] = [
     emptyFile,
@@ -30,7 +30,7 @@ const CHECKS: CheckFunction[] = [
  */
 export async function validate(
   fileTree: FileTree,
-  options: ValidatorOptions & { emitter?: EventEmitter },
+  options: ValidatorOptions & { emitter?: typeof EventEmitter },
 ): Promise<ValidationResult> {
 
   // Emitter event: Signals the start of the validation process
@@ -70,9 +70,30 @@ export async function validate(
       )
       // Emitter event: Signals that there was an error parsing the metadata JSON
       options.emitter?.emit('metadata-json', { success: false, issue: issues.get('INVALID_JSON_FORMATTING') } )
+      if (options.emitter){
+        const output: ValidationResult = {
+          valid: false,
+          issues,
+          summary: summary.formatOutput(),
+        }
+        return output
+      }
     }
   
   } else {
+    issues.addSchemaIssue(
+      'MissingDatasetDescription',
+      []
+    )
+    options.emitter?.emit('find-metadata',{success: false, issue: issues.get('MISSING_DATASET_DESCRIPTION')})
+    if (options.emitter){
+      const output: ValidationResult = {
+        valid: false,
+        issues,
+        summary: summary.formatOutput(),
+      }
+      return output
+    }
     dsContext = new psychDSContextDataset(options)
   }
 
@@ -101,9 +122,10 @@ export async function validate(
   }
 
   for await (const context of walkFileTree(fileTree, issues, dsContext)) {
-    if (dsContext.baseDirs.includes('/data'))
+    if (dsContext.baseDirs.includes('/data')){
       // Emitter event: Signals that the data directory has been found
       options.emitter?.emit('find-data-dir', { success: true } )
+    }
 
     // json-ld processing is now done in the readFileTree stage,
     // so there may be some issues (like json-ld grammar errors)
@@ -142,25 +164,33 @@ export async function validate(
 
     await summary.update(context)
 
+    // Emitter events: Signal various metadata checks
+    
+
     if (context.extension === '.csv' && context.suffix === 'data'){
-      // Emitter events: Signal various metadata checks
+      options.emitter?.emit('check-for-csv', { success: true } )
       options.emitter?.emit('metadata-utf8', { success: true } )
       emitCheck('metadata-json',['INVALID_JSON_FORMATTING'])
       emitCheck('metadata-fields',['JSON_KEY_REQUIRED'])
       emitCheck('metadata-jsonld',['INVALID_JSONLD_FORMATTING'])
       emitCheck('metadata-type',['INCORRECT_DATASET_TYPE','MISSING_DATASET_TYPE'])
       emitCheck('metadata-schemaorg',['INVALID_SCHEMAORG_PROPERTY','INVALID_OBJECT_TYPE','OBJECT_TYPE_MISSING'])
-      options.emitter?.emit('check-for-csv', { success: true } )
     }
   }
 
+  options.emitter?.emit('metadata-utf8', { success: true } )
+  emitCheck('metadata-json',['INVALID_JSON_FORMATTING'])
+  emitCheck('metadata-fields',['JSON_KEY_REQUIRED'])
+  emitCheck('metadata-jsonld',['INVALID_JSONLD_FORMATTING'])
+  emitCheck('metadata-type',['INCORRECT_DATASET_TYPE','MISSING_DATASET_TYPE'])
+  emitCheck('metadata-schemaorg',['INVALID_SCHEMAORG_PROPERTY','INVALID_OBJECT_TYPE','OBJECT_TYPE_MISSING'])
   // Emitter events: Signal various CSV checks
-  emitCheck('csv-keywords',['KEYWORD_FORMATTING_ERROR','UNOFFICIAL_KEYWORD_ERROR'])
+  emitCheck('csv-keywords',['FILENAME_KEYWORD_FORMATTING_ERROR','FILENAME_UNOFFICIAL_KEYWORD_ERROR'])
   emitCheck('csv-parse',['CSV_FORMATTING_ERROR'])
-  emitCheck('csv-header',['NO_HEADER'])
-  emitCheck('csv-nomismatch',['HEADER_ROW_MISMATCH'])
+  emitCheck('csv-header',['CSV_HEADER_MISSING'])
+  emitCheck('csv-nomismatch',['CSV_HEADER_LENGTH_MISMATCH'])
   emitCheck('csv-rowid',['ROWID_VALUES_NOT_UNIQUE'])
-  emitCheck('check-variableMeasured',['CSV_COLUMN_MISSING'])
+  emitCheck('check-variableMeasured',['CSV_COLUMN_MISSING_FROM_METADATA'])
 
   // Since directories don't get their own psychDS context, any directories found
   // within the root directory are added the psychDSContextDataset's baseDirs property.
@@ -172,6 +202,7 @@ export async function validate(
   // Emitter events: Final checks for metadata and data directory
   emitCheck('find-metadata',['MISSING_DATASET_DESCRIPTION'])
   emitCheck('find-data-dir', ['MISSING_DATA_DIRECTORY'])
+  emitCheck('check-for-csv', ['MISSING_DATAFILE'])
 
   //filters out issues that apply to unfound objects
   issues.filterIssues(rulesRecord)

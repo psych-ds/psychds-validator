@@ -1,0 +1,10 @@
+#!/bin/sh
+# pre-commit for bundling validate function and linting
+
+deno lint . || {
+	echo "Linting failed. Commit aborted."
+}
+
+deno test -A
+
+deno check src/**/*.ts

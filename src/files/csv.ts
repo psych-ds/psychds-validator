@@ -5,7 +5,8 @@
 
 import { ColumnsMap } from '../types/columns.ts'
 // Changed from Deno std library to npm package for better cross-platform compatibility
-import { parse } from 'npm:csv-parse/sync'
+import { isBrowser } from '../utils/platform.ts'
+
 
 // Helper function to normalize line endings
 const normalizeEOL = (str: string): string =>
@@ -17,12 +18,14 @@ export interface csvIssue {
 }
 
 // Function to parse CSV contents
-export function parseCSV(contents: string) {
+export async function parseCSV(contents: string) {
   const columns = new ColumnsMap();
   const issues: csvIssue[] = [];
   const normalizedStr = normalizeEOL(contents);
   
   try {
+    const parse = (isBrowser) ? (await import('npm:csv-parse/browser/esm/sync')).parse : (await import('npm:csv-parse/sync')).parse
+    
     // Use the new csv-parse library with more flexible options
     const rows: string[][] = parse(normalizedStr, {
       skip_empty_lines: false,
@@ -32,7 +35,7 @@ export function parseCSV(contents: string) {
     const headers = rows.length ? rows[0] : [];
 
     if (headers.length === 0) {
-      issues.push({'issue':'NoHeader','message':null});
+      issues.push({'issue':'CSVHeaderMissing','message':null});
     } else {
       // Initialize columns based on headers
       headers.forEach((x) => {
@@ -43,7 +46,7 @@ export function parseCSV(contents: string) {
       for (let i = 1; i < rows.length; i++) {
         if (rows[i].length !== headers.length) {
           // Improved error reporting: specify which row has a mismatch and how many columns it has
-          issues.push({'issue':'HeaderRowMismatch','message':`Row ${i + 1} has ${rows[i].length} columns, expected ${headers.length}`});
+          issues.push({'issue':'CSVHeaderLengthMismatch','message':`Row ${i + 1} has ${rows[i].length} columns, expected ${headers.length}`});
         } else {
           for (let j = 0; j < headers.length; j++) {
             const col = columns[headers[j]] as string[];

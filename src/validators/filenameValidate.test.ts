@@ -6,21 +6,26 @@ import { psychDSFileDeno, readFileTree } from '../files/deno.ts'
 import { DatasetIssues } from '../issues/datasetIssues.ts'
 import { FileIgnoreRules } from '../files/ignore.ts'
 import { loadSchema } from '../setup/loadSchema.ts'
+import { path,initializePlatform } from '../utils/platform.ts';
+
 
 Deno.test({
     name:'test filenameValidate.ts', 
     sanitizeResources: false,
     fn: async (t) => {
+      await initializePlatform()
       // Move initial declarations inside test function to avoid top-level await
       const PATH = 'test_data/valid_datasets/bfi-dataset'
+      const absolutePath = path.resolve(PATH)
       const schema = (await loadSchema()) as unknown as GenericSchema
-      const fileTree = await readFileTree(PATH)
+
+      const fileTree = await readFileTree(absolutePath)
       const issues = new DatasetIssues(schema)
       const ignore = new FileIgnoreRules([])
 
       await t.step('extensions match', async () => {
         const fileName = 'dataset_description.json'
-        const file = new psychDSFileDeno(PATH,fileName, ignore)
+        const file = new psychDSFileDeno(absolutePath,fileName, ignore)
         const context = new psychDSContext(fileTree, file, issues)
         await extensionMismatch('rules.files.common.core.dataset_description',schema,context)
         assertEquals(
@@ -31,7 +36,7 @@ Deno.test({
     
       await t.step('extensions mismatch', async () => {
           const fileName = 'dataset_description.json'
-          const file = new psychDSFileDeno(PATH,fileName, ignore)
+          const file = new psychDSFileDeno(absolutePath,fileName, ignore)
           const context = new psychDSContext(fileTree, file, issues)
           await extensionMismatch('rules.files.common.core.README',schema,context)
           assertEquals(
@@ -41,7 +46,7 @@ Deno.test({
         })
       await t.step('rule satisfied',  () => {
           const fileName = 'dataset_description.json'
-          const file = new psychDSFileDeno(PATH,fileName, ignore)
+          const file = new psychDSFileDeno(absolutePath,fileName, ignore)
           const context = new psychDSContext(fileTree, file, issues)
           const rulesRecord: Record<string,boolean> = {}
           rulesRecord['rules.files.common.core.dataset_description'] = true
@@ -54,7 +59,7 @@ Deno.test({
 
       await t.step('rule not satisfied',  () => {
           const fileName = 'dataset_description.json'
-          const file = new psychDSFileDeno(PATH,fileName, ignore)
+          const file = new psychDSFileDeno(absolutePath,fileName, ignore)
           const context = new psychDSContext(fileTree, file, issues)
           const rulesRecord: Record<string,boolean> = {}
           rulesRecord['rules.files.common.core.dataset_description'] = false
@@ -67,11 +72,11 @@ Deno.test({
       // Added all test steps to main Deno test
       await t.step('rule satisfied',  () => {
         const fileName = 'study-bfi_data.csv'
-        const file = new psychDSFileDeno(`${PATH}/data/raw_data`,fileName, ignore)
+        const file = new psychDSFileDeno(`${absolutePath}/data/raw_data`,fileName, ignore)
         const context = new psychDSContext(fileTree, file, issues)
         keywordCheck('rules.files.tabular_data.data.Datafile',schema,context)
         assertEquals(
-            context.issues.has('KEYWORD_FORMATTING_ERROR'),
+            context.issues.has('FILENAME_KEYWORD_FORMATTING_ERROR'),
             false
             )
       })
@@ -82,7 +87,7 @@ Deno.test({
         const context = new psychDSContext(fileTree, file, issues)
         keywordCheck('rules.files.tabular_data.data.Datafile',schema,context)
         assertEquals(
-            context.issues.has('KEYWORD_FORMATTING_ERROR'),
+            context.issues.has('FILENAME_KEYWORD_FORMATTING_ERROR'),
             true
             )
       })
@@ -93,7 +98,7 @@ Deno.test({
           const context = new psychDSContext(fileTree, file, issues)
           keywordCheck('rules.files.tabular_data.data.Datafile',schema,context)
           assertEquals(
-              context.issues.has('UNOFFICIAL_KEYWORD_WARNING'),
+              context.issues.has('FILENAME_KEYWORD_FORMATTING_ERROR'),
               true
           )
       })

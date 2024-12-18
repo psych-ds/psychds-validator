@@ -8,7 +8,8 @@ import { psychDSContext, psychDSContextDataset } from "./context.ts";
 import { GenericSchema } from "../types/schema.ts";
 import { psychDSFile } from "../types/file.ts";
 import { ValidatorOptions } from "../setup/options.ts";
-import jsonld from 'jsonld';
+import { path, initializePlatform } from "../utils/platform.ts"
+import jsonld from 'npm:jsonld';
 
 // Define constants for file paths to improve maintainability
 const BASE_PATH = 'test_data/valid_datasets/bfi-dataset';
@@ -22,9 +23,10 @@ const WRONG_TYPE_PATH = 'test_data/invalid_datasets/bfi-dataset_wrongtype';
  * This function encapsulates the common setup logic for each test,
  * reducing code duplication and improving maintainability.
  */
-async function setupTest(path: string, fileName: string) {
+async function setupTest(thisPath: string, fileName: string) {
   const schema = await loadSchema();
-  const fileTree = await readFileTree(path);
+  const absolutePath = path.resolve(thisPath)
+  const fileTree = await readFileTree(absolutePath)
   const issues = new DatasetIssues(schema as unknown as GenericSchema);
   const ignore = new FileIgnoreRules([]);
 
@@ -36,10 +38,10 @@ async function setupTest(path: string, fileName: string) {
   if (ddFile) {
     const description = await ddFile.text()
       .then(JSON.parse)
-    dsContext = new psychDSContextDataset({datasetPath: path} as ValidatorOptions, ddFile, description);
+    dsContext = new psychDSContextDataset({datasetPath: thisPath} as ValidatorOptions, ddFile, description);
   }
 
-  const file = new psychDSFileDeno(path, fileName, ignore);
+  const file = new psychDSFileDeno(absolutePath, fileName, ignore);
   
   const context = new psychDSContext(fileTree, file, issues, dsContext);
   await context.asyncLoads();
@@ -51,6 +53,7 @@ Deno.test({
   name:'test applyRules.ts', 
   sanitizeResources: false,
   fn: async(t) => {
+    await initializePlatform();
     // Test cases remain largely the same, but now use the setupTest helper function
 
     await t.step('Columns Found', async () => {
@@ -58,7 +61,7 @@ Deno.test({
       context.validColumns = ["A1","A2","A3","A4","A5","C1","C2","C3","C4","C5","E1","E2","E3","E4","E5","N1","N2","N3","N4","N5","O1","O2","O3","O4","O5","gender","education","age"];
       
       await applyRules(schema as unknown as GenericSchema, context);
-      assertEquals(context.issues.has('CSV_COLUMN_MISSING'), false);
+      assertEquals(context.issues.has('CSV_COLUMN_MISSING_FROM_METADATA'), false);
     });
 
     await t.step('Columns Not Found', async () => {
@@ -66,7 +69,7 @@ Deno.test({
       context.validColumns = [];
       
       await applyRules(schema as unknown as GenericSchema, context);
-      assertEquals(context.issues.has('CSV_COLUMN_MISSING'), true);
+      assertEquals(context.issues.has('CSV_COLUMN_MISSING_FROM_METADATA'), true);
     });
 
     await t.step('Fields found', async () => {
