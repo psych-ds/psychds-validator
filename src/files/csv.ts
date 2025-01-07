@@ -10,7 +10,7 @@ import { isBrowser } from "../utils/platform.ts";
 /**
  * Normalizes line endings across different platforms
  * Converts both CRLF and CR to LF
- * 
+ *
  * @param str - String to normalize
  * @returns String with normalized line endings
  */
@@ -29,20 +29,19 @@ export interface csvIssue {
 
 /**
  * Parses CSV content and validates its structure
- * 
+ *
  * Performs several validations:
  * 1. Checks for presence of headers
  * 2. Validates consistent column counts across rows
  * 3. Verifies row_id uniqueness if present
- * 
+ *
  * Uses different parsing strategies for browser and Node.js environments.
  * Handles empty lines and inconsistent column counts gracefully.
- * 
+ *
  * @param contents - CSV content as string
  * @returns Object containing:
  *          - columns: Map of column names to their values
  *          - issues: Array of parsing/validation issues
- * 
  */
 export async function parseCSV(contents: string) {
   // Initialize result structures
@@ -104,6 +103,7 @@ export async function parseCSV(contents: string) {
     // Handle parsing errors with detailed messages
     issues.push({
       "issue": "CSVFormattingError",
+      // deno-lint-ignore no-explicit-any
       "message": (error as unknown as any).message,
     });
   }

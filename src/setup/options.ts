@@ -38,14 +38,14 @@ export type ValidatorOptions = {
 
 /**
  * Parses command line arguments and builds validator configuration
- * 
+ *
  * This function sets up the command-line interface using Commander and processes
  * the provided arguments into a structured configuration object. It handles:
  * - Required dataset directory path
  * - Optional schema version
  * - Various output format options
  * - Debug and verbosity settings
- * 
+ *
  * @param argumentOverride - Optional array of arguments to use instead of Deno.args
  * @returns Parsed configuration options for the validator
  */

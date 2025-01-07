@@ -14,8 +14,8 @@ import { ValidationProgressTracker } from "./utils/validationProgressTracker.ts"
  * @param {Partial<ValidatorOptions>} [options] - Optional validator options.
  * @returns {Promise<ValidationResult>} A promise that resolves to the validation result.
  */
-// deno-lint-ignore no-explicit-any
 export async function validateWeb(
+  // deno-lint-ignore no-explicit-any
   fileTree: { [key: string]: any },
   options: ValidatorOptions & { emitter?: typeof EventEmitter },
 ): Promise<ValidationResult> {

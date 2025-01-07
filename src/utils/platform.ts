@@ -5,6 +5,7 @@
  */
 
 // Global type declarations for cross-platform compatibility
+import process from "node:process";
 declare global {
   interface Window {
     process?: NodeJS.Process;
@@ -38,11 +39,10 @@ declare global {
  * Environment detection flags
  * These constants help determine the current runtime environment
  */
-// deno-lint-ignore no-explicit-any
 export const isBrowser = typeof window !== "undefined" &&
+  // deno-lint-ignore no-explicit-any
   typeof (window as any).document !== "undefined";
 
-// deno-lint-ignore no-node-globals
 export const isNode = typeof process !== "undefined" &&
   process.versions != null && process.versions.node != null;
 
@@ -224,9 +224,9 @@ export const createReadStream = (
       async start(controller) {
         const fs = await import("node:fs");
         const readStream = fs.createReadStream(filePath);
-        // deno-lint-ignore no-node-globals
         readStream.on(
           "data",
+          // deno-lint-ignore no-node-globals
           (chunk: Buffer) => controller.enqueue(new Uint8Array(chunk)),
         );
         readStream.on("end", () => controller.close());

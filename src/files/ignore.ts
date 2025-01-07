@@ -10,7 +10,7 @@ import { Ignore, ignore } from "../deps/ignore.ts";
 /**
  * Reads and parses a .psychdsignore file
  * Converts file content into array of ignore patterns
- * 
+ *
  * @param file - File object containing ignore rules
  * @returns Promise resolving to array of ignore patterns
  */
@@ -29,19 +29,19 @@ export async function readPsychDSIgnore(file: psychDSFile) {
  * Includes common directories and files that shouldn't be validated
  */
 const defaultIgnores = [
-  ".git**",          
-  "*.DS_Store",      
-  ".datalad/",        
-  ".reproman/",       
-  "sourcedata/",      
-  "code/",            
-  "stimuli/",         
-  "materials/",       
-  "results/",         
-  "products/",        
-  "analysis/",        
-  "documentation/",   
-  "log/",            
+  ".git**",
+  "*.DS_Store",
+  ".datalad/",
+  ".reproman/",
+  "sourcedata/",
+  "code/",
+  "stimuli/",
+  "materials/",
+  "results/",
+  "products/",
+  "analysis/",
+  "documentation/",
+  "log/",
 ];
 
 /**
@@ -55,9 +55,8 @@ export class FileIgnoreRules {
   /**
    * Creates new ignore rules manager
    * Initializes with default patterns and custom configuration
-   * 
+   *
    * @param config - Additional ignore patterns to apply
-   * 
    */
   constructor(config: string[]) {
     this.#ignore = ignore({ allowRelativePaths: true });
@@ -68,7 +67,7 @@ export class FileIgnoreRules {
   /**
    * Adds additional ignore patterns
    * Expands current rule set with new patterns
-   * 
+   *
    * @param config - New patterns to add
    */
   add(config: string[]): void {
@@ -78,7 +77,7 @@ export class FileIgnoreRules {
   /**
    * Tests if a path should be ignored
    * Checks path against all configured ignore patterns
-   * 
+   *
    * @param path - Path to test (relative to dataset root)
    * @returns True if path matches any ignore pattern
    */

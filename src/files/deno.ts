@@ -70,6 +70,7 @@ export class psychDSFileDeno implements psychDSFile {
     try {
       this.#fileInfo = Deno.statSync(this._getPath());
     } catch (error) {
+      // deno-lint-ignore no-explicit-any
       if ((error as unknown as any).code === "ENOENT") {
         this.#fileInfo = Deno.lstatSync(this._getPath());
       }
@@ -124,7 +125,7 @@ export class psychDSFileDeno implements psychDSFile {
   /**
    * Reads bytes from file in specified range
    * Efficiently handles large files through streaming
-   * 
+   *
    * @param size - Number of bytes to read
    * @param _offset - Start position (currently unused)
    * @returns Promise resolving to byte array
@@ -163,7 +164,7 @@ export class psychDSFileDeno implements psychDSFile {
 /**
  * Recursively builds file tree structure
  * Handles both filesystem and browser-based directory traversal
- * 
+ *
  * @param rootPathOrDict - Root path or browser file dictionary
  * @param relativePath - Current path relative to root
  * @param ignore - Ignore rules to apply
@@ -246,12 +247,12 @@ async function _readFileTree(
 /**
  * Reads directory structure and creates file tree
  * Public interface for file tree construction
- * 
+ *
  * @param rootPathOrDict - Root path or browser file dictionary
  * @returns Promise resolving to complete file tree
  */
-// deno-lint-ignore no-explicit-any
 export function readFileTree(
+  // deno-lint-ignore no-explicit-any
   rootPathOrDict: string | { [key: string]: any },
 ): Promise<FileTree> {
   const ignore = new FileIgnoreRules([]);

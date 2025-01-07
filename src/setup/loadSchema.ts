@@ -31,7 +31,7 @@ let defaultSchemaOrg: GenericSchema = {};
  * Loads default schemas from appropriate sources based on environment.
  * In browser environments, fetches from static URLs.
  * In Node.js/Deno environments, reads from local filesystem.
- * 
+ *
  * @throws {Error} Logs error and sets empty defaults if loading fails
  */
 async function loadDefaultSchemas(): Promise<void> {
@@ -58,7 +58,7 @@ async function loadDefaultSchemas(): Promise<void> {
 /**
  * Gets the current module's directory path across different environments
  * Handles path resolution for CommonJS, ES Modules, and Deno
- * 
+ *
  * @returns Directory path string, or empty string if unable to determine
  */
 function getDirname(): string {
@@ -78,7 +78,7 @@ function getDirname(): string {
 /**
  * Fetches and parses JSON from a URL
  * Includes error handling and logging for failed requests
- * 
+ *
  * @param url - URL to fetch JSON from
  * @returns Parsed JSON data, or null if fetch/parse fails
  */
@@ -97,11 +97,10 @@ export async function fetchJSON(url: string): Promise<GenericSchema | null> {
 
 /**
  * Loads and combines the Psych-DS schema for the specified version
- * 
+ *
  * @param version - Schema version to load (defaults to '1.4.0')
  * @returns Promise resolving to complete Schema object
  * @throws {Error} If version format is invalid
- * 
  */
 export async function loadSchema(version = "1.4.0"): Promise<Schema> {
   // Ensure default schemas are loaded
@@ -153,7 +152,7 @@ export async function loadSchema(version = "1.4.0"): Promise<Schema> {
   } catch (error) {
     console.error(`Error loading schema: ${error}`);
     console.warn("Falling back to default schema");
-    
+
     // Ultimate fallback using default schemas
     return new Proxy(
       { ...defaultSchema, schemaOrg: defaultSchemaOrg },

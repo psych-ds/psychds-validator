@@ -21,7 +21,7 @@ const CODE_DEPRECATED = Number.MIN_SAFE_INTEGER;
 /**
  * Formats a file reference with issue context for output
  * Creates standardized output format for file-specific issues
- * 
+ *
  * @param issue - Issue associated with the file
  * @param f - File information to format
  * @returns Formatted issue output for the file
@@ -80,7 +80,7 @@ export class DatasetIssues extends Map<string, Issue> {
   /**
    * Adds a new issue or updates an existing one
    * If an issue with the same key exists, merges the file references
-   * 
+   *
    * @param params - Issue parameters
    * @returns The added or updated issue
    */
@@ -125,7 +125,7 @@ export class DatasetIssues extends Map<string, Issue> {
   /**
    * Adds an issue using metadata from the schema
    * Retrieves issue details from schema's error definitions
-   * 
+   *
    * @param key - Schema error key
    * @param files - Array of affected files
    */
@@ -169,7 +169,7 @@ export class DatasetIssues extends Map<string, Issue> {
   /**
    * Removes issues for objects that weren't found
    * Filters based on rule satisfaction record
-   * 
+   *
    * @param rulesRecord - Record of which rules were satisfied
    */
   filterIssues(rulesRecord: Record<string, boolean>) {
@@ -184,7 +184,7 @@ export class DatasetIssues extends Map<string, Issue> {
    * Formats issues for output
    * Converts internal representation to standardized output format
    * Separates issues by severity (errors vs warnings)
-   * 
+   *
    * @returns Formatted issues object with separate error and warning arrays
    */
   formatOutput(): FullTestIssuesReturn {
@@ -210,7 +210,7 @@ export class DatasetIssues extends Map<string, Issue> {
         output.errors.push(outputIssue);
       }
     }
-    
+
     return output;
   }
 }

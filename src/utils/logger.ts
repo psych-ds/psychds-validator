@@ -42,16 +42,19 @@ const loggerPromise: Promise<Logger> = (async () => {
       },
       format: format.combine(
         format.timestamp(),
+        // deno-lint-ignore no-explicit-any
         format.printf((info: any): string => {
           if (info.level === "checklist") {
             return info.message;
           }
           return `${info.timestamp} [${info.level.toUpperCase()}]: ${info.message} ${
-            Object.keys(info).length > 3 ? JSON.stringify(Object.assign({}, info, { 
-              timestamp: undefined, 
-              level: undefined, 
-              message: undefined 
-            })) : ""
+            Object.keys(info).length > 3
+              ? JSON.stringify(Object.assign({}, info, {
+                timestamp: undefined,
+                level: undefined,
+                message: undefined,
+              }))
+              : ""
           }`;
         }),
       ),

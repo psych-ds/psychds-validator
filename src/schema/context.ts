@@ -211,7 +211,7 @@ export class psychDSContext implements Context {
       const validSidecarJson = await validSidecars[0].text()
         .then(JSON.parse);
       this.sidecar = { ...this.sidecar, ...validSidecarJson };
-      
+
       // Track metadata sources
       Object.keys(validSidecarJson).forEach((key) => {
         const baseKey = key.split("/").at(-1) as string;
@@ -417,10 +417,12 @@ export class psychDSContext implements Context {
       // Handle JSON-LD processing errors
       const issueFile = {
         ...this.file,
+        // deno-lint-ignore no-explicit-any
         evidence: JSON.stringify((error as unknown as any).details.context),
       } as IssueFile;
       this.issues.add({
         key: "INVALID_JSONLD_FORMATTING",
+        // deno-lint-ignore no-explicit-any
         reason: `${(error as unknown as any).message.split(";")[1]}`,
         severity: "error",
         files: [issueFile],

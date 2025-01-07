@@ -19,7 +19,7 @@ import { psychDSFile } from "../types/file.ts";
 /**
  * Recursively applies schema rules to a given context.
  * Traverses schema object to find and evaluate applicable rules.
- * 
+ *
  * @param schema - Schema containing rules to apply
  * @param context - Validation context
  * @param rootSchema - Original complete schema (used in recursion)
@@ -120,7 +120,7 @@ const evalMap: Record<
 /**
  * Evaluates a single rule against a context
  * Checks selectors and applies appropriate evaluation functions
- * 
+ *
  * @param rule - Rule to evaluate
  * @param context - Context to evaluate against
  * @param schema - Complete schema
@@ -157,7 +157,7 @@ function mapEvalCheck(statements: string[], context: psychDSContext): boolean {
  * Validates that CSV columns match metadata definitions
  * Checks column headers against variableMeasured metadata
  * Also performs schema.org validation on metadata
- * 
+ *
  * @param _rule - Rule being evaluated
  * @param context - Current validation context
  * @param schema - Complete schema
@@ -201,7 +201,7 @@ function evalColumns(
 /**
  * Validates required fields in JSON metadata
  * Checks both field presence and schema.org validity
- * 
+ *
  * @param rule - Rule containing field requirements
  * @param context - Current validation context
  * @param _schema - Complete schema
@@ -214,12 +214,12 @@ function evalJsonCheck(
   schemaPath: string,
 ) {
   const issueKeys: string[] = [];
-  
+
   // Check each required field
   for (const [key, requirement] of Object.entries(rule.fields)) {
     const severity = getFieldSeverity(requirement, context);
     const keyName = `http://schema.org/${key}`;
-    
+
     if (
       severity && severity !== "ignore" && !(keyName in context.expandedSidecar)
     ) {
@@ -251,7 +251,7 @@ function evalJsonCheck(
 /**
  * Validates schema.org metadata compliance
  * Checks type requirements for root object and recursively validates sub-objects
- * 
+ *
  * @param context - Current validation context
  * @param schema - Complete schema
  * @param issues - Collection of validation issues
@@ -262,7 +262,7 @@ function schemaCheck(
   issues: SchemaOrgIssues,
 ) {
   const schemaNamespace = "http://schema.org/";
-  
+
   if ("@type" in context.expandedSidecar) {
     if (
       (context.expandedSidecar["@type"] as string[])[0] !==
@@ -310,7 +310,7 @@ function schemaCheck(
 /**
  * Records collected schema.org validation issues
  * Groups issues by type and adds them to context
- * 
+ *
  * @param context - Current validation context
  * @param issues - Collected validation issues
  */
@@ -416,7 +416,7 @@ function logSchemaIssues(
 /**
  * Recursively validates schema.org metadata structure
  * Checks each node for proper typing and property usage
- * 
+ *
  * @param node - Current node being validated
  * @param context - Validation context
  * @param schema - Complete schema
@@ -534,7 +534,7 @@ function _schemaCheck(
 /**
  * Recursively collects valid property slots from type hierarchy
  * Traverses up the schema.org class hierarchy to gather all applicable properties
- * 
+ *
  * @param type - Current type being processed
  * @param schema - Complete schema
  * @param nameSpace - Schema.org namespace
@@ -576,7 +576,7 @@ function getSuperClassSlots(
 /**
  * Recursively collects subclass types that are valid for a property
  * Finds all types that could be valid values for a property
- * 
+ *
  * @param type - Base type to find subclasses for
  * @param schema - Complete schema
  * @param nameSpace - Schema.org namespace
@@ -607,7 +607,7 @@ function getSubClassSlots(
 /**
  * Determines the severity level for a JSON field requirement
  * Handles conditional requirements based on other field values
- * 
+ *
  * @param requirement - Requirement specification
  * @param context - Current validation context
  * @returns Appropriate severity level for the requirement

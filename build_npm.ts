@@ -120,36 +120,36 @@ try {
       },
     },
     plugins: [
-        ...denoPlugins({ 
-            nodeModulesDir: true,
-            allowImports: {
-                "cdn.skypack.dev": true,
-                "unpkg.com": true
-              }
-        }),
-        {
-            name: "node-modules-resolver",
-            setup(build) {
-              // Handle Node.js built-ins
-              build.onResolve({ filter: /^node:/ }, (args) => {
-                return { path: args.path, external: true };
-              });
-            },
-          },
-          {
-            name: "expose-validate-web",
-            setup(build) {
-              build.onEnd(() => {
-                const outfile = "./npm/web/psychds-validator.js";
-                let content = fs.readFileSync(outfile, "utf8");
-                if (!content.includes("window.psychDSValidator")) {
-                  content +=
-                    '\nif (typeof window !== "undefined") { window.psychDSValidator = { validateWeb }; }';
-                  fs.writeFileSync(outfile, content);
-                }
-              });
-            },
-          },
+      ...denoPlugins({
+        nodeModulesDir: true,
+        allowImports: {
+          "cdn.skypack.dev": true,
+          "unpkg.com": true,
+        },
+      }),
+      {
+        name: "node-modules-resolver",
+        setup(build) {
+          // Handle Node.js built-ins
+          build.onResolve({ filter: /^node:/ }, (args) => {
+            return { path: args.path, external: true };
+          });
+        },
+      },
+      {
+        name: "expose-validate-web",
+        setup(build) {
+          build.onEnd(() => {
+            const outfile = "./npm/web/psychds-validator.js";
+            let content = fs.readFileSync(outfile, "utf8");
+            if (!content.includes("window.psychDSValidator")) {
+              content +=
+                '\nif (typeof window !== "undefined") { window.psychDSValidator = { validateWeb }; }';
+              fs.writeFileSync(outfile, content);
+            }
+          });
+        },
+      },
     ],
     packageManager: "npm",
     importMap: "deno.json",
@@ -181,13 +181,13 @@ try {
       "rdf-canonize-native",
     ],
     plugins: [
-      ...denoPlugins({ 
+      ...denoPlugins({
         nodeModulesDir: true,
         allowImports: {
-            "cdn.skypack.dev": true,
-            "unpkg.com": true
-          }
-        }),
+          "cdn.skypack.dev": true,
+          "unpkg.com": true,
+        },
+      }),
       {
         name: "node-modules-resolver",
         setup(build) {
