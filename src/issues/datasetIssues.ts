@@ -1,25 +1,36 @@
+/**
+ * @fileoverview Manages validation issues for Psych-DS datasets.
+ * Provides functionality for collecting, tracking, and formatting validation
+ * issues found during dataset validation. Supports both error and warning
+ * severity levels with file-specific context tracking.
+ */
+
 import {
+  FullTestIssuesReturn,
   Issue,
   IssueFile,
-  IssueOutput,
   IssueFileOutput,
+  IssueOutput,
   Severity,
-  FullTestIssuesReturn,
-} from '../types/issues.ts'
-import { GenericSchema } from '../types/schema.ts';
+} from "../types/issues.ts";
+import { GenericSchema } from "../types/schema.ts";
 
-
-// Code is deprecated, return something unusual but JSON serializable
-const CODE_DEPRECATED = Number.MIN_SAFE_INTEGER
+/** Special code to indicate deprecated status in issue output */
+const CODE_DEPRECATED = Number.MIN_SAFE_INTEGER;
 
 /**
- * Format an internal file reference with context as IssueFileOutput
+ * Formats a file reference with issue context for output
+ * Creates standardized output format for file-specific issues
+ * 
+ * @param issue - Issue associated with the file
+ * @param f - File information to format
+ * @returns Formatted issue output for the file
  */
 const issueFile = (issue: Issue, f: IssueFile): IssueFileOutput => {
-  const evidence = f.evidence || ''
-  const reason = issue.reason || ''
-  const line = f.line || 0
-  const character = f.character || 0
+  const evidence = f.evidence || "";
+  const reason = issue.reason || "";
+  const line = f.line || 0;
+  const character = f.character || 0;
   return {
     key: issue.key,
     code: CODE_DEPRECATED,
@@ -30,46 +41,62 @@ const issueFile = (issue: Issue, f: IssueFile): IssueFileOutput => {
     severity: issue.severity,
     reason,
     helpUrl: issue.helpUrl,
-  }
-}
+  };
+};
 
+/** Parameters for adding a new issue to the collection */
 interface DatasetIssuesAddParams {
-  key: string
-  reason: string
-  // Defaults to error
-  severity?: Severity
-  requires?: string[]
-  // Defaults to an empty array if no files are provided
-  files?: Array<IssueFile>
+  /** Unique identifier for the issue type */
+  key: string;
+  /** Human-readable description of the issue */
+  reason: string;
+  /** Issue severity level (defaults to error) */
+  severity?: Severity;
+  /** Required rule identifiers */
+  requires?: string[];
+  /** Affected files (defaults to empty array) */
+  files?: Array<IssueFile>;
 }
 
 /**
- * Management class for dataset issues
+ * Manages collection and organization of dataset validation issues
+ * Extends Map to provide issue-specific functionality with key-based access
  */
 export class DatasetIssues extends Map<string, Issue> {
-  //added optional schema hook so addSchemaIssue can reference the error list from schema model
-  schema?: GenericSchema
+  /** Optional schema reference for issue metadata */
+  schema?: GenericSchema;
+
+  /**
+   * Creates a new dataset issues collection
+   * @param schema - Optional schema containing issue definitions
+   */
   constructor(
-    schema?: GenericSchema
+    schema?: GenericSchema,
   ) {
-    super()
-    this.schema = schema ? schema : {}
+    super();
+    this.schema = schema ? schema : {};
   }
 
+  /**
+   * Adds a new issue or updates an existing one
+   * If an issue with the same key exists, merges the file references
+   * 
+   * @param params - Issue parameters
+   * @returns The added or updated issue
+   */
   add({
     key,
     reason,
-    severity = 'error',
+    severity = "error",
     requires = [],
     files = [],
   }: DatasetIssuesAddParams): Issue {
-    const existingIssue = this.get(key)
-    // Handle both the shorthand psychDSFile array or full IssueFile
+    const existingIssue = this.get(key);
     if (existingIssue) {
       for (const f of files) {
-        existingIssue.files.set(f.path, f)
+        existingIssue.files.set(f.path, f);
       }
-      return existingIssue
+      return existingIssue;
     } else {
       const newIssue = new Issue({
         key,
@@ -77,72 +104,95 @@ export class DatasetIssues extends Map<string, Issue> {
         reason,
         requires,
         files,
-      })
-      this.set(key, newIssue)
-      return newIssue
+      });
+      this.set(key, newIssue);
+      return newIssue;
     }
   }
 
-  // Shorthand to test if an issue has occurred
+  /**
+   * Checks if a specific issue exists
+   * @param key - Issue identifier to check
+   * @returns True if the issue exists
+   */
   hasIssue({ key }: { key: string }): boolean {
     if (this.has(key)) {
-      return true
+      return true;
     }
-    return false
+    return false;
   }
 
-  //adds issue from errors.yaml file of schema model
-  addSchemaIssue(key: string,files: Array<IssueFile>) {
-    if(this.schema){
+  /**
+   * Adds an issue using metadata from the schema
+   * Retrieves issue details from schema's error definitions
+   * 
+   * @param key - Schema error key
+   * @param files - Array of affected files
+   */
+  addSchemaIssue(key: string, files: Array<IssueFile>) {
+    if (this.schema) {
       this.add({
         key: this.schema[`rules.errors.${key}.code`] as string,
         reason: this.schema[`rules.errors.${key}.reason`] as string,
-        severity: this.schema[`rules.errors.${key}.level`] as string as Severity,
+        severity: this
+          .schema[`rules.errors.${key}.level`] as string as Severity,
         requires: this.schema[`rules.errors.${key}.requires`] as string[],
-        files: files
-      })
-      
+        files: files,
+      });
     }
   }
 
+  /**
+   * Finds all issues affecting a specific file
+   * @param path - File path to check
+   * @returns Array of issues affecting the file
+   */
   fileInIssues(path: string): Issue[] {
-    const matchingIssues = []
+    const matchingIssues = [];
     for (const [_, issue] of this) {
       if (issue.files.get(path)) {
-        matchingIssues.push(issue)
+        matchingIssues.push(issue);
       }
     }
-    return matchingIssues
+    return matchingIssues;
   }
 
   /**
-   * Report Issue keys related to a file
-   * @param path File path relative to dataset root
-   * @returns Array of matching issue keys
+   * Gets issue keys for issues affecting a file
+   * @param path - File path relative to dataset root
+   * @returns Array of issue keys
    */
   getFileIssueKeys(path: string): string[] {
-    return this.fileInIssues(path).map((issue) => issue.key)
+    return this.fileInIssues(path).map((issue) => issue.key);
   }
 
-  //removes any issues that pertain to objects that were not founds
-  filterIssues(rulesRecord: Record<string,boolean>){
+  /**
+   * Removes issues for objects that weren't found
+   * Filters based on rule satisfaction record
+   * 
+   * @param rulesRecord - Record of which rules were satisfied
+   */
+  filterIssues(rulesRecord: Record<string, boolean>) {
     for (const [_, issue] of this) {
-      if(!issue.requires.every((req) => rulesRecord[req])){
-        this.delete(_)
+      if (!issue.requires.every((req) => rulesRecord[req])) {
+        this.delete(_);
       }
     }
   }
 
   /**
-   * Format output
-   *
-   * Converts from new internal representation to old IssueOutput structure
+   * Formats issues for output
+   * Converts internal representation to standardized output format
+   * Separates issues by severity (errors vs warnings)
+   * 
+   * @returns Formatted issues object with separate error and warning arrays
    */
   formatOutput(): FullTestIssuesReturn {
     const output: FullTestIssuesReturn = {
       errors: [],
       warnings: [],
-    }
+    };
+
     for (const [_, issue] of this) {
       const outputIssue: IssueOutput = {
         severity: issue.severity,
@@ -152,13 +202,15 @@ export class DatasetIssues extends Map<string, Issue> {
         reason: issue.reason,
         files: Array.from(issue.files.values()).map((f) => issueFile(issue, f)),
         helpUrl: issue.helpUrl,
-      }
-      if (issue.severity === 'warning') {
-        output.warnings.push(outputIssue)
+      };
+
+      if (issue.severity === "warning") {
+        output.warnings.push(outputIssue);
       } else {
-        output.errors.push(outputIssue)
+        output.errors.push(outputIssue);
       }
     }
-    return output
+    
+    return output;
   }
 }

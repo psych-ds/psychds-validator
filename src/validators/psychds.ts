@@ -1,216 +1,238 @@
-import { emptyFile } from './internal/emptyFile.ts'
-import { filenameIdentify,findFileRules, checkDirRules } from './filenameIdentify.ts'
-import { filenameValidate, checkMissingRules } from './filenameValidate.ts'
-import { applyRules } from '../schema/applyRules.ts'
-import { CheckFunction } from '../types/check.ts'
-import { FileTree } from '../types/filetree.ts'
-import { ValidatorOptions } from '../setup/options.ts'
-import { ValidationResult } from '../types/validation-result.ts'
-import { DatasetIssues } from '../issues/datasetIssues.ts'
-import {
-  IssueFile
-} from '../types/issues.ts'
-import { Summary } from '../summary/summary.ts'
-import { loadSchema } from '../setup/loadSchema.ts'
-import { psychDSFile } from '../types/file.ts'
-import { psychDSContextDataset } from '../schema/context.ts'
-import { walkFileTree } from '../schema/walk.ts'
-import { GenericSchema } from '../types/schema.ts'
-import { EventEmitter } from '../utils/platform.ts';
+/**
+ * @fileoverview Main validation module for Psych-DS  validation.
+ * Provides core functionality for validating dataset structures against defined schemas.
+ */
 
+import { emptyFile } from "./internal/emptyFile.ts";
+import {
+  checkDirRules,
+  filenameIdentify,
+  findFileRules,
+} from "./filenameIdentify.ts";
+import { checkMissingRules, filenameValidate } from "./filenameValidate.ts";
+import { applyRules } from "../schema/applyRules.ts";
+import { CheckFunction } from "../types/check.ts";
+import { FileTree } from "../types/filetree.ts";
+import { ValidatorOptions } from "../setup/options.ts";
+import { ValidationResult } from "../types/validation-result.ts";
+import { DatasetIssues } from "../issues/datasetIssues.ts";
+import { IssueFile } from "../types/issues.ts";
+import { Summary } from "../summary/summary.ts";
+import { loadSchema } from "../setup/loadSchema.ts";
+import { psychDSFile } from "../types/file.ts";
+import { psychDSContextDataset } from "../schema/context.ts";
+import { walkFileTree } from "../schema/walk.ts";
+import { GenericSchema } from "../types/schema.ts";
+import { EventEmitter } from "../utils/platform.ts";
+
+/** Array of validation check functions to be applied to each file */
 const CHECKS: CheckFunction[] = [
-    emptyFile,
-    filenameIdentify,
-    filenameValidate,
-    applyRules,
-  ]
+  emptyFile,
+  filenameIdentify,
+  filenameValidate,
+  applyRules,
+];
 
 /**
- * Full psych-DS schema validation entrypoint
+ * Validates a file tree against the Psych-DS schema
+ * @param fileTree - The hierarchical structure of files to validate
+ * @param options - Validation options and optional event emitter
+ * @returns Promise resolving to validation results including issues and summary
  */
 export async function validate(
   fileTree: FileTree,
   options: ValidatorOptions & { emitter?: typeof EventEmitter },
 ): Promise<ValidationResult> {
+  // Signal start of validation process
+  options.emitter?.emit("start", { success: true });
 
-  // Emitter event: Signals the start of the validation process
-  options.emitter?.emit('start', { success: true })
+  const summary = new Summary();
+  const schema = await loadSchema(options.schema);
+  const issues = new DatasetIssues(schema as unknown as GenericSchema);
 
-  const summary = new Summary()
-  const schema = await loadSchema(options.schema)
-  const issues = new DatasetIssues(schema as unknown as GenericSchema)
+  // Signal successful file tree construction
+  options.emitter?.emit("build-tree", { success: true });
 
-  // Emitter event: Signals that the file tree has been successfully built
-  options.emitter?.emit('build-tree', { success: true })
+  summary.schemaVersion = schema.schema_version;
 
-  summary.schemaVersion = schema.schema_version
-  
-  /* There should be a dataset_description in root, this will tell us if we
-   * are dealing with a derivative dataset
-   */
+  // Look for dataset_description.json in root to determine if dealing with derivative dataset
   const ddFile = fileTree.files.find(
-    (file: psychDSFile) => file.path === '/dataset_description.json',
-  )
+    (file: psychDSFile) => file.path === "/dataset_description.json",
+  );
 
-  let dsContext
+  let dsContext;
   if (ddFile) {
-    // Emitter event: Signals that the metadata file has been found
-    options.emitter?.emit('find-metadata', { success: true } )
-    try{
+    options.emitter?.emit("find-metadata", { success: true });
+    try {
       const description = await ddFile.text()
-        .then(JSON.parse)
-      
-      dsContext = new psychDSContextDataset(options, ddFile,description)
-    }
-    catch(_error){
-      dsContext = new psychDSContextDataset(options,ddFile)
+        .then(JSON.parse);
+
+      dsContext = new psychDSContextDataset(options, ddFile, description);
+    } catch (_error) {
+      // Handle invalid JSON formatting in metadata
+      dsContext = new psychDSContextDataset(options, ddFile);
       issues.addSchemaIssue(
-        'InvalidJsonFormatting',
-        [ddFile]
-      )
-      // Emitter event: Signals that there was an error parsing the metadata JSON
-      options.emitter?.emit('metadata-json', { success: false, issue: issues.get('INVALID_JSON_FORMATTING') } )
-      if (options.emitter){
-        const output: ValidationResult = {
+        "InvalidJsonFormatting",
+        [ddFile],
+      );
+      options.emitter?.emit("metadata-json", {
+        success: false,
+        issue: issues.get("INVALID_JSON_FORMATTING"),
+      });
+      if (options.emitter) {
+        return {
           valid: false,
           issues,
           summary: summary.formatOutput(),
-        }
-        return output
+        };
       }
     }
-  
   } else {
+    // Handle missing dataset description
     issues.addSchemaIssue(
-      'MissingDatasetDescription',
-      []
-    )
-    options.emitter?.emit('find-metadata',{success: false, issue: issues.get('MISSING_DATASET_DESCRIPTION')})
-    if (options.emitter){
-      const output: ValidationResult = {
+      "MissingDatasetDescription",
+      [],
+    );
+    options.emitter?.emit("find-metadata", {
+      success: false,
+      issue: issues.get("MISSING_DATASET_DESCRIPTION"),
+    });
+    if (options.emitter) {
+      return {
         valid: false,
         issues,
         summary: summary.formatOutput(),
-      }
-      return output
+      };
     }
-    dsContext = new psychDSContextDataset(options)
+    dsContext = new psychDSContextDataset(options);
   }
 
-  // generate rulesRecord object to keep track of which schema rules 
-  // are not satisfied by a file in the dataset.
-  const rulesRecord: Record<string,boolean> = {}
-  findFileRules(schema,rulesRecord)
+  // Track which schema rules are satisfied by files in the dataset
+  const rulesRecord: Record<string, boolean> = {};
+  findFileRules(schema, rulesRecord);
 
   /**
-   * Emits a check event based on the presence of specific issues.
-   * 
-   * @param event_name - The name of the event to emit.
-   * @param issue_keys - An array of issue keys to check for.
-   * 
-   * This function checks if any of the specified issues exist. If they do, it emits
-   * the event with a failure status and the first found issue. Otherwise, it emits
-   * a success status.
+   * Helper to emit check events based on presence of specific issues
+   * @param event_name - Name of event to emit
+   * @param issue_keys - Array of issue keys to check for
    */
   const emitCheck = (event_name: string, issue_keys: string[]) => {
-    const fails = issue_keys.filter((issue) => issues.hasIssue({key:issue}))
+    const fails = issue_keys.filter((issue) => issues.hasIssue({ key: issue }));
 
-    options.emitter?.emit(event_name, fails.length > 0 ? 
-      { success: false, issue: issues.get(fails[0]) } :
-      { success: true }
-    )
-  }
+    options.emitter?.emit(
+      event_name,
+      fails.length > 0
+        ? { success: false, issue: issues.get(fails[0]) }
+        : { success: true },
+    );
+  };
 
+  // Process each file in the tree
   for await (const context of walkFileTree(fileTree, issues, dsContext)) {
-    if (dsContext.baseDirs.includes('/data')){
-      // Emitter event: Signals that the data directory has been found
-      options.emitter?.emit('find-data-dir', { success: true } )
+    if (dsContext.baseDirs.includes("/data")) {
+      options.emitter?.emit("find-data-dir", { success: true });
     }
 
-    // json-ld processing is now done in the readFileTree stage,
-    // so there may be some issues (like json-ld grammar errors)
-    // that are discovered before the issue object is created.
-    // Check all files found for any of these issues and add them.
-    if (context.file.issueInfo.length > 0){
+    // Handle any issues found during file tree reading
+    if (context.file.issueInfo.length > 0) {
       context.file.issueInfo.forEach((iss) => {
         issues.addSchemaIssue(
           iss.key,
           [{
             ...context.file,
-            evidence: iss.evidence ? iss.evidence : ''
-            } as IssueFile]
-          
-        )
-      })
+            evidence: iss.evidence ? iss.evidence : "",
+          } as IssueFile],
+        );
+      });
     }
-    // TODO - Skip ignored files for now (some tests may reference ignored files)
-    if (context.file.ignored) {
-      continue
+
+    if (context.file.ignored) continue;
+
+    await context.asyncLoads();
+
+    // Track CSV columns for summary
+    if (context.extension === ".csv") {
+      summary.suggestedColumns = [
+        ...new Set([
+          ...summary.suggestedColumns,
+          ...Object.keys(context.columns),
+        ]),
+      ];
     }
-    await context.asyncLoads()
-    if(context.extension === ".csv"){
-        summary.suggestedColumns  = [...new Set([...summary.suggestedColumns,...Object.keys(context.columns)])]
-    }
-        
-    // Run majority of checks
+
+    // Run validation checks
     for (const check of CHECKS) {
-      // TODO - Resolve this double casting?
-      await check(schema as unknown as GenericSchema, context)
+      await check(schema as unknown as GenericSchema, context);
     }
 
+    // Update rules record and summary
     for (const rule of context.filenameRules) {
-        rulesRecord[rule] = true
+      rulesRecord[rule] = true;
     }
 
-    await summary.update(context)
+    await summary.update(context);
 
-    // Emitter events: Signal various metadata checks
-    
-
-    if (context.extension === '.csv' && context.suffix === 'data'){
-      options.emitter?.emit('check-for-csv', { success: true } )
-      options.emitter?.emit('metadata-utf8', { success: true } )
-      emitCheck('metadata-json',['INVALID_JSON_FORMATTING'])
-      emitCheck('metadata-fields',['JSON_KEY_REQUIRED'])
-      emitCheck('metadata-jsonld',['INVALID_JSONLD_FORMATTING'])
-      emitCheck('metadata-type',['INCORRECT_DATASET_TYPE','MISSING_DATASET_TYPE'])
-      emitCheck('metadata-schemaorg',['INVALID_SCHEMAORG_PROPERTY','INVALID_OBJECT_TYPE','OBJECT_TYPE_MISSING'])
+    // Emit events for metadata and CSV validation
+    if (context.extension === ".csv" && context.suffix === "data") {
+      options.emitter?.emit("check-for-csv", { success: true });
+      options.emitter?.emit("metadata-utf8", { success: true });
+      emitCheck("metadata-json", ["INVALID_JSON_FORMATTING"]);
+      emitCheck("metadata-fields", ["JSON_KEY_REQUIRED"]);
+      emitCheck("metadata-jsonld", ["INVALID_JSONLD_FORMATTING"]);
+      emitCheck("metadata-type", [
+        "INCORRECT_DATASET_TYPE",
+        "MISSING_DATASET_TYPE",
+      ]);
+      emitCheck("metadata-schemaorg", [
+        "INVALID_SCHEMAORG_PROPERTY",
+        "INVALID_OBJECT_TYPE",
+        "OBJECT_TYPE_MISSING",
+      ]);
     }
   }
 
-  options.emitter?.emit('metadata-utf8', { success: true } )
-  emitCheck('metadata-json',['INVALID_JSON_FORMATTING'])
-  emitCheck('metadata-fields',['JSON_KEY_REQUIRED'])
-  emitCheck('metadata-jsonld',['INVALID_JSONLD_FORMATTING'])
-  emitCheck('metadata-type',['INCORRECT_DATASET_TYPE','MISSING_DATASET_TYPE'])
-  emitCheck('metadata-schemaorg',['INVALID_SCHEMAORG_PROPERTY','INVALID_OBJECT_TYPE','OBJECT_TYPE_MISSING'])
-  // Emitter events: Signal various CSV checks
-  emitCheck('csv-keywords',['FILENAME_KEYWORD_FORMATTING_ERROR','FILENAME_UNOFFICIAL_KEYWORD_ERROR'])
-  emitCheck('csv-parse',['CSV_FORMATTING_ERROR'])
-  emitCheck('csv-header',['CSV_HEADER_MISSING'])
-  emitCheck('csv-nomismatch',['CSV_HEADER_LENGTH_MISMATCH'])
-  emitCheck('csv-rowid',['ROWID_VALUES_NOT_UNIQUE'])
-  emitCheck('check-variableMeasured',['CSV_COLUMN_MISSING_FROM_METADATA'])
+  // Final metadata validation events
+  options.emitter?.emit("metadata-utf8", { success: true });
+  emitCheck("metadata-json", ["INVALID_JSON_FORMATTING"]);
+  emitCheck("metadata-fields", ["JSON_KEY_REQUIRED"]);
+  emitCheck("metadata-jsonld", ["INVALID_JSONLD_FORMATTING"]);
+  emitCheck("metadata-type", [
+    "INCORRECT_DATASET_TYPE",
+    "MISSING_DATASET_TYPE",
+  ]);
+  emitCheck("metadata-schemaorg", [
+    "INVALID_SCHEMAORG_PROPERTY",
+    "INVALID_OBJECT_TYPE",
+    "OBJECT_TYPE_MISSING",
+  ]);
 
-  // Since directories don't get their own psychDS context, any directories found
-  // within the root directory are added the psychDSContextDataset's baseDirs property.
-  // Since these won't show up in the filetree exploration as files eligible to apply rules to,
-  // we need to check them explicitly.
-  checkDirRules(schema,rulesRecord,dsContext.baseDirs)
-  checkMissingRules(schema as unknown as GenericSchema,rulesRecord,issues)
+  // CSV validation events
+  emitCheck("csv-keywords", [
+    "FILENAME_KEYWORD_FORMATTING_ERROR",
+    "FILENAME_UNOFFICIAL_KEYWORD_ERROR",
+  ]);
+  emitCheck("csv-parse", ["CSV_FORMATTING_ERROR"]);
+  emitCheck("csv-header", ["CSV_HEADER_MISSING"]);
+  emitCheck("csv-nomismatch", ["CSV_HEADER_LENGTH_MISMATCH"]);
+  emitCheck("csv-rowid", ["ROWID_VALUES_NOT_UNIQUE"]);
+  emitCheck("check-variableMeasured", ["CSV_COLUMN_MISSING_FROM_METADATA"]);
 
-  // Emitter events: Final checks for metadata and data directory
-  emitCheck('find-metadata',['MISSING_DATASET_DESCRIPTION'])
-  emitCheck('find-data-dir', ['MISSING_DATA_DIRECTORY'])
-  emitCheck('check-for-csv', ['MISSING_DATAFILE'])
+  // Check directory rules and missing rules
+  checkDirRules(schema, rulesRecord, dsContext.baseDirs);
+  checkMissingRules(schema as unknown as GenericSchema, rulesRecord, issues);
 
-  //filters out issues that apply to unfound objects
-  issues.filterIssues(rulesRecord)
+  // Final validation checks
+  emitCheck("find-metadata", ["MISSING_DATASET_DESCRIPTION"]);
+  emitCheck("find-data-dir", ["MISSING_DATA_DIRECTORY"]);
+  emitCheck("check-for-csv", ["MISSING_DATAFILE"]);
 
-  const output: ValidationResult = {
-    valid: [...issues.values()].filter(issue => issue.severity === "error").length === 0,
+  // Filter issues for unfound objects
+  issues.filterIssues(rulesRecord);
+
+  return {
+    valid: [...issues.values()].filter((issue) => issue.severity === "error")
+      .length === 0,
     issues,
     summary: summary.formatOutput(),
-  }
-  return output
+  };
 }

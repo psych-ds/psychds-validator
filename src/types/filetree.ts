@@ -1,39 +1,39 @@
 /**
  * Abstract FileTree for all environments (Deno, Browser, Python)
  */
-import { psychDSFile } from '../types/file.ts'
+import { psychDSFile } from "../types/file.ts";
 
 export class FileTree {
   // Relative path to this FileTree location
-  path: string
+  path: string;
   // Name of this directory level
-  name: string
-  files: psychDSFile[]
-  directories: FileTree[]
-  parent?: FileTree
+  name: string;
+  files: psychDSFile[];
+  directories: FileTree[];
+  parent?: FileTree;
 
   constructor(path: string, name: string, parent?: FileTree) {
-    this.path = path
-    this.files = []
-    this.directories = []
-    this.name = name
-    this.parent = parent
+    this.path = path;
+    this.files = [];
+    this.directories = [];
+    this.name = name;
+    this.parent = parent;
   }
 
   contains(parts: string[]): boolean {
     if (parts.length === 0) {
-      return false
+      return false;
     } else if (parts.length === 1) {
-      return this.files.some((x) => x.name === parts[0])
+      return this.files.some((x) => x.name === parts[0]);
     } else if (parts.length > 1) {
-      const nextDir = this.directories.find((x) => x.name === parts[0])
+      const nextDir = this.directories.find((x) => x.name === parts[0]);
       if (nextDir) {
-        return nextDir.contains(parts.slice(1, parts.length))
+        return nextDir.contains(parts.slice(1, parts.length));
       } else {
-        return false
+        return false;
       }
     } else {
-      return false
+      return false;
     }
   }
 }
