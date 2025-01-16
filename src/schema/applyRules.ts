@@ -415,7 +415,7 @@ import { psychDSFile } from '../types/file.ts';
           //TODO: add else statement? if property is not a valid schema.org slot at all
           let subKeys: string[] = []
           //if current property is not a valid slot of this object type, raise issue
-          if (!(superClassSlots.includes(property))){
+          if (!superClassSlots.includes(property)){
             issues.termIssues.push(`${objectPath}.${property}`)
           }
           else{
@@ -460,25 +460,17 @@ import { psychDSFile } from '../types/file.ts';
     nameSpace: string
   ): string[]{
     
-    if(type.includes(nameSpace)){
-      type = type.replace(nameSpace,"")
-    }
-    if(type in schema[`schemaOrg.classes`]){
-      //if type has a super class, append this type's slots to the result of this function for super class
-      if('is_a' in schema[`schemaOrg.classes.${type}`]){
-        if('slots' in schema[`schemaOrg.classes.${type}`]){
-          return (schema[`schemaOrg.classes.${type}.slots`] as unknown as string[]).concat(getSuperClassSlots(schema[`schemaOrg.classes.${type}.is_a`] as unknown as string,schema,nameSpace))
+    type = type.replace(nameSpace,"")
 
-        }
-        else
-          return getSuperClassSlots(schema[`schemaOrg.classes.${type}.is_a`] as unknown as string,schema,nameSpace)
-      }
-      //TODO: shouldn't another if statement to check for slots presence be needed here?
-      else
-        return schema[`schemaOrg.classes.${type}.slots`] as unknown as string[]
-
+    if (!(type in schema['schemaOrg.classes'])) {
+      return []
     }
-    return []
+
+    //if type has a super class, append this type's slots to the result of this function for super class
+    const slots = schema[`schemaOrg.classes.${type}.slots`] as string[] || []
+    const is_a = 'is_a' in schema[`schemaOrg.classes.${type}`] ? getSuperClassSlots(schema[`schemaOrg.classes.${type}.is_a`] as string, schema, nameSpace) : []
+
+    return [...slots, ...is_a];
   }
 
   //recursive function for finding all classes that are more specific versions of a given class
