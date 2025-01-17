@@ -1,14 +1,14 @@
 // Allow ColumnsMap to be accessed as an object too
 export class ColumnsMap extends Map<string, string[]> {
-    [key: string]: Map<string, string[]>[keyof Map<string, string[]>] | string[]
-    constructor() {
-      super()
-      const columns = new Map<string, string[]>() as ColumnsMap
-      return columns
-      //return new Proxy<ColumnsMap>(columns, columnMapAccessorProxy)
-    }
+  [key: string]: Map<string, string[]>[keyof Map<string, string[]>] | string[];
+  constructor() {
+    super();
+    const columns = new Map<string, string[]>() as ColumnsMap;
+    return columns;
+    //return new Proxy<ColumnsMap>(columns, columnMapAccessorProxy)
   }
-  /*
+}
+/*
   // Proxy handler to implement ColumnsMap type
   export const columnMapAccessorProxy = {
     get: function (

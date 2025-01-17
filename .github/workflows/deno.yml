@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-
 jobs:
   release-please:
     if: github.event_name == 'pull_request'
@@ -29,12 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      
+
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-      
+
       - name: Cache Dependencies
         uses: actions/cache@v2
         with:
@@ -43,11 +42,10 @@ jobs:
 
       - name: Cache Dependencies 2
         run: deno cache --allow-scripts=npm:esbuild@0.20.2 src/index.ts
-        
-      
+
       - name: Run Deno Tests
         run: deno test --allow-all
-      
+
       - name: Run Type Check
         run: deno check **/*.ts
 
@@ -66,13 +64,13 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v2
         with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-      
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
       - name: Install Dependencies
         run: npm ci
         working-directory: npm
-      
+
       - name: Run NPM Tests
         run: npm test
         working-directory: npm

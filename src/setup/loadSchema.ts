@@ -1,64 +1,86 @@
-import { Schema, GenericSchema } from '../types/schema.ts'
-import { objectPathHandler } from '../utils/objectPathHandler.ts'
-import { path, readFile, isBrowser, isNode, isDeno } from '../utils/platform.ts';
+/**
+ * @fileoverview Manages schema loading and versioning for the Psych-DS validator.
+ * Handles fetching and combining schemas from remote sources with fallback mechanisms
+ * for offline or error scenarios. Supports multiple JavaScript environments including
+ * browser, Node.js, and Deno.
+ */
 
+import { GenericSchema, Schema } from "../types/schema.ts";
+import { objectPathHandler } from "../utils/objectPathHandler.ts";
+import {
+  isBrowser,
+  isDeno,
+  isNode,
+  path,
+  readFile,
+} from "../utils/platform.ts";
 
-// Base URLs for fetching schemas
-const SCHEMA_BASE_URL = 'https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons';
-const SCHEMA_ORG_URL = 'https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/external_schemas/schemaorg/schemaorg.json';
+/** Base URL for fetching version-specific schema files */
+const SCHEMA_BASE_URL =
+  "https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons";
 
-// Default schemas to be used as fallbacks
+/** URL for fetching the Schema.org definitions */
+const SCHEMA_ORG_URL =
+  "https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/external_schemas/schemaorg/schemaorg.json";
+
+/** Default schema storage for fallback scenarios */
 let defaultSchema: GenericSchema = {};
 let defaultSchemaOrg: GenericSchema = {};
 
 /**
- * Loads default schemas from local JSON files or fetches them in browser environment.
- * This function is used to initialize fallback schemas if network requests fail.
+ * Loads default schemas from appropriate sources based on environment.
+ * In browser environments, fetches from static URLs.
+ * In Node.js/Deno environments, reads from local filesystem.
+ *
+ * @throws {Error} Logs error and sets empty defaults if loading fails
  */
 async function loadDefaultSchemas(): Promise<void> {
   try {
     if (isBrowser) {
-      // In browser, fetch the default schemas
-      defaultSchema = await fetchJSON('/defaultSchema.json') || {};
-      defaultSchemaOrg = await fetchJSON('/defaultSchemaOrg.json') || {};
+      defaultSchema = await fetchJSON("/defaultSchema.json") || {};
+      defaultSchemaOrg = await fetchJSON("/defaultSchemaOrg.json") || {};
     } else {
-      // In Node.js or Deno, read from local files
       const dirname = getDirname();
-      defaultSchema = JSON.parse(await readFile(path.join(dirname, 'defaultSchema.json')));
-      defaultSchemaOrg = JSON.parse(await readFile(path.join(dirname, 'defaultSchemaOrg.json')));
+      defaultSchema = JSON.parse(
+        await readFile(path.join(dirname, "defaultSchema.json")),
+      );
+      defaultSchemaOrg = JSON.parse(
+        await readFile(path.join(dirname, "defaultSchemaOrg.json")),
+      );
     }
   } catch (error) {
-    console.error('Error loading default schemas:', error);
+    console.error("Error loading default schemas:", error);
     defaultSchema = {};
     defaultSchemaOrg = {};
   }
 }
 
-
 /**
- * Determines the directory name of the current module.
- * This function handles different JavaScript environments.
- * @returns {string} The directory name of the current module.
+ * Gets the current module's directory path across different environments
+ * Handles path resolution for CommonJS, ES Modules, and Deno
+ *
+ * @returns Directory path string, or empty string if unable to determine
  */
 function getDirname(): string {
-  if (isNode && typeof __dirname !== 'undefined') {
+  if (isNode && typeof __dirname !== "undefined") {
     // CommonJS environment
     return __dirname;
-  } else if (isDeno || (isNode && typeof __dirname === 'undefined')) {
+  } else if (isDeno || (isNode && typeof __dirname === "undefined")) {
     // Deno or Node.js ESM
     const url = new URL(import.meta.url);
     return path.dirname(url.pathname);
   } else {
-    // Browser environment
-    console.warn('Unable to determine directory in browser environment');
-    return '';
+    console.warn("Unable to determine directory in browser environment");
+    return "";
   }
 }
 
 /**
- * Fetches JSON data from a given URL.
- * @param {string} url - The URL to fetch JSON from.
- * @returns {Promise<GenericSchema | null>} The fetched JSON data or null if the fetch fails.
+ * Fetches and parses JSON from a URL
+ * Includes error handling and logging for failed requests
+ *
+ * @param url - URL to fetch JSON from
+ * @returns Parsed JSON data, or null if fetch/parse fails
  */
 export async function fetchJSON(url: string): Promise<GenericSchema | null> {
   try {
@@ -74,38 +96,44 @@ export async function fetchJSON(url: string): Promise<GenericSchema | null> {
 }
 
 /**
- * Loads the schema from the specification.
- * @param {string} [version='1.4.0'] - The version of the schema to load.
- * @returns {Promise<Schema>} A Promise that resolves to the loaded Schema.
- * @throws {Error} If the version format is invalid.
+ * Loads and combines the Psych-DS schema for the specified version
+ *
+ * @param version - Schema version to load (defaults to '1.4.0')
+ * @returns Promise resolving to complete Schema object
+ * @throws {Error} If version format is invalid
  */
-export async function loadSchema(version = '1.4.0'): Promise<Schema> {
+export async function loadSchema(version = "1.4.0"): Promise<Schema> {
   // Ensure default schemas are loaded
-  if (Object.keys(defaultSchema).length === 0 || Object.keys(defaultSchemaOrg).length === 0) {
+  if (
+    Object.keys(defaultSchema).length === 0 ||
+    Object.keys(defaultSchemaOrg).length === 0
+  ) {
     await loadDefaultSchemas();
   }
 
-  // Regex to check for X.Y.Z format
+  // Validate version format using X.Y.Z pattern
   const versionRegex = /^\d+\.\d+\.\d+$/;
-
-  // Validate version format
-  if (version !== 'latest' && !versionRegex.test(version)) {
-    throw new Error(`Invalid version format. Please use 'latest' or 'X.Y.Z' format (e.g., '1.0.0').`);
+  if (version !== "latest" && !versionRegex.test(version)) {
+    throw new Error(
+      `Invalid version format. Please use 'latest' or 'X.Y.Z' format (e.g., '1.0.0').`,
+    );
   }
-  
+
   const schemaUrl = `${SCHEMA_BASE_URL}/${version}/schema.json`;
 
   let schemaModule: GenericSchema | null;
   let schemaOrgModule: GenericSchema | null;
 
   try {
-    // Attempt to fetch both the main schema and the schema.org schema
+    // Fetch both schema components
     schemaModule = await fetchJSON(schemaUrl);
     schemaOrgModule = await fetchJSON(`${SCHEMA_ORG_URL}?v=${Date.now()}`);
 
-    // Fall back to default schemas if fetches fail
+    // Handle fetch failures with fallbacks
     if (!schemaModule) {
-      console.warn(`Failed to fetch schema from ${schemaUrl}, using default schema`);
+      console.warn(
+        `Failed to fetch schema from ${schemaUrl}, using default schema`,
+      );
       schemaModule = defaultSchema;
     }
 
@@ -114,15 +142,21 @@ export async function loadSchema(version = '1.4.0'): Promise<Schema> {
       schemaOrgModule = defaultSchemaOrg;
     }
 
-    // Combine the schemas
-    const combinedSchema: GenericSchema = { ...schemaModule, schemaOrg: schemaOrgModule };
+    // Combine schemas and wrap in Proxy
+    const combinedSchema: GenericSchema = {
+      ...schemaModule,
+      schemaOrg: schemaOrgModule,
+    };
 
-    // Return the combined schema wrapped in a Proxy for dynamic property access
     return new Proxy(combinedSchema, objectPathHandler) as Schema;
   } catch (error) {
     console.error(`Error loading schema: ${error}`);
-    console.warn('Falling back to default schema');
-    // If all else fails, use the default schemas
-    return new Proxy({ ...defaultSchema, schemaOrg: defaultSchemaOrg }, objectPathHandler) as Schema;
+    console.warn("Falling back to default schema");
+
+    // Ultimate fallback using default schemas
+    return new Proxy(
+      { ...defaultSchema, schemaOrg: defaultSchemaOrg },
+      objectPathHandler,
+    ) as Schema;
   }
 }

@@ -1,170 +1,201 @@
-/*
- * filenameIdentify.ts attempts to determine which schema rules from
- * `schema.rules.files` might apply to a given file context by looking at the
- * files suffix then its location in the directory hierarchy, and finally at
- * its extensions and entities. Ideally we end up with a single rule to
- * validate against. We try to take as broad an approach to finding a single
- * file rule as possible to generate the most possible errors for incorrectly
- * named files. Historically a regex was applied that was pass/fail with
- * little in the way of feed back. This way we can say hey you got the suffix
- * correct, but the directory is slightly off, or some entities are missing,
- * or too many are there for this rule. All while being able to point at an
- * object in the schema for reference.
+/**
+ * @fileoverview Handles identification of files against Psych-DS schema rules.
+ * This module attempts to match files with appropriate schema rules by analyzing
+ * their suffixes, directory locations, and extensions. The goal is to
+ * find the most specific matching rule for validation.
  */
+
 // @ts-nocheck: untyped functions
-import { GenericSchema } from '../types/schema.ts'
-import { CheckFunction } from '../types/check.ts'
+import { GenericSchema } from "../types/schema.ts";
+import { CheckFunction } from "../types/check.ts";
 
+/** Array of validation checks to run for file identification */
 const CHECKS: CheckFunction[] = [
-  findRuleMatches
-]
+  findRuleMatches,
+];
 
+/**
+ * Main entry point for identifying which schema rules apply to a file
+ * @param schema - The schema to check against
+ * @param context - Context containing file information
+ */
 export async function filenameIdentify(schema, context) {
   for (const check of CHECKS) {
-    await check(schema as unknown as GenericSchema, context)
+    await check(schema as unknown as GenericSchema, context);
   }
 }
 
-export function checkDirRules(schema,rulesRecord,baseDirs) {
-    Object.keys(rulesRecord)
+/**
+ * Checks base directory rules for validity
+ * Validates directories against core schema rules and updates rule record accordingly
+ * @param schema - The schema containing rules
+ * @param rulesRecord - Record tracking which rules have been satisfied
+ * @param baseDirs - Array of base directories to check
+ */
+export function checkDirRules(schema, rulesRecord, baseDirs) {
+  Object.keys(rulesRecord)
     .filter((key) => {
-        return (key.startsWith('rules.files.common.core') &&
-        !rulesRecord[key])
+      return (key.startsWith("rules.files.common.core") &&
+        !rulesRecord[key]);
     })
     .map((key) => {
-        const node = schema[key]
-        if (node.directory === true && 
-            baseDirs.includes(node.path)
-            )
-            rulesRecord[key] = true
-            
-      })
+      const node = schema[key];
+      if (
+        node.directory === true &&
+        baseDirs.includes(node.path)
+      ) {
+        rulesRecord[key] = true;
+      }
+    });
 }
 
-/* In order to check for the abscence of files in addition to their validity, we
- * need to keep a persistent rulesRecord object that contains all the file rules 
- * from the schema, so we can record which rules were satisfied by a file and which weren't
+/**
+ * Initializes tracking of file rules from schema
+ * Creates a record of all file rules to track which ones are satisfied
+ * @param schema - The schema containing rules
+ * @param rulesRecord - Object to track rule satisfaction
+ * @returns Promise that resolves when initialization is complete
  */
-export function findFileRules(schema,rulesRecord) {
-    const schemaPath = 'rules.files'
-    
-    Object.keys(schema[schemaPath]).map((key) => {
-        const path = `${schemaPath}.${key}`
-        _findFileRules(schema[path], path,rulesRecord)
-      })
-      
-    return Promise.resolve()
+export function findFileRules(schema, rulesRecord) {
+  const schemaPath = "rules.files";
+
+  Object.keys(schema[schemaPath]).map((key) => {
+    const path = `${schemaPath}.${key}`;
+    _findFileRules(schema[path], path, rulesRecord);
+  });
+
+  return Promise.resolve();
 }
 
-export function _findFileRules(node, path,rulesRecord) {
-    if (
-      ('baseDir' in node) &&
-      ('extensions' in node) &&
-      (('suffix' in node) || ('stem' in node))
-    ) {
-      rulesRecord[path] = false
-      return
-    }
-    //recognize that some objects required or recommended by the spec are directories
-    if (
-      'path' in node &&
-      'directory' in node
-    ){
-      rulesRecord[path] = false
-      return
-    }
-    else {
-      Object.keys(node).map((key) => {
-        if(
-          typeof node[key] === 'object'
-        ){
-          _findFileRules(node[key], `${path}.${key}`, rulesRecord)
-        }
-      })
-    }
+/**
+ * Recursive helper for finding file rules in schema
+ * Traverses schema tree to identify and record all file validation rules
+ * @param node - Current schema node being examined
+ * @param path - Path to current node in schema
+ * @param rulesRecord - Object tracking rule satisfaction
+ */
+export function _findFileRules(node, path, rulesRecord) {
+  if (
+    ("baseDir" in node) &&
+    ("extensions" in node) &&
+    (("suffix" in node) || ("stem" in node))
+  ) {
+    rulesRecord[path] = false;
+    return;
   }
+  // Handle directory specifications
+  if (
+    "path" in node &&
+    "directory" in node
+  ) {
+    rulesRecord[path] = false;
+    return;
+  } else {
+    Object.keys(node).map((key) => {
+      if (
+        typeof node[key] === "object"
+      ) {
+        _findFileRules(node[key], `${path}.${key}`, rulesRecord);
+      }
+    });
+  }
+}
 
+/**
+ * Main function for matching files against schema rules
+ * Attempts to find appropriate rules for each file based on various criteria
+ * @param schema - The schema containing rules
+ * @param context - Context containing file information
+ * @returns Promise that resolves when matching is complete
+ */
 function findRuleMatches(schema, context) {
-  const schemaPath = 'rules.files'
+  const schemaPath = "rules.files";
   Object.keys(schema[schemaPath]).map((key) => {
-    const path = `${schemaPath}.${key}`
-    _findRuleMatches(schema[path], path, context)
-  })
+    const path = `${schemaPath}.${key}`;
+    _findRuleMatches(schema[path], path, context);
+  });
+
   if (
     context.filenameRules.length === 0 &&
-    context.file.path !== '/.bidsignore'
+    context.file.path !== "/.bidsignore"
   ) {
-    //if no rules are found to match given file/directory, add NotIncluded warning to indicate 
-    //that the file/directory is not part of the PsychDS specification
-    context.issues.addSchemaIssue('FileNotChecked', [context.file])
-    if(context.file.name === "dataset_description.json"){
-      //if global metadata file is located outside of root directory, issue specific warning
+    // Handle files not matching any rules
+    context.issues.addSchemaIssue("FileNotChecked", [context.file]);
+    if (context.file.name === "dataset_description.json") {
       context.issues.addSchemaIssue(
         "WrongMetadataLocation",
         [context.file],
         `You have placed a file called "dataset_description.json" within the ${context.baseDir} 
-        subDirectory. Such files are only valid when placed in the root directory.`
-      )
+        subDirectory. Such files are only valid when placed in the root directory.`,
+      );
     }
   }
-  return Promise.resolve()
+  return Promise.resolve();
 }
 
-function checkFileRules(arbitraryNesting: boolean, hasSuffix: boolean, node, context){
-  let baseDirCond: boolean = null
-  let suffixStemCond: boolean = null
+/**
+ * Tests if a file matches specific file rule criteria
+ * @param arbitraryNesting - Whether subdirectories are allowed
+ * @param hasSuffix - Whether to match by suffix or stem
+ * @param node - Schema node containing rule
+ * @param context - Context containing file info
+ * @returns boolean indicating if file matches rule criteria
+ */
+function checkFileRules(
+  arbitraryNesting: boolean,
+  hasSuffix: boolean,
+  node,
+  context,
+) {
+  let baseDirCond: boolean = null;
+  let suffixStemCond: boolean = null;
 
-  //if arbitraryNesting applies, then it is only required that the file is located in the correct base directory,
-  //with any number of subdirectories intervening
-  if (arbitraryNesting)
-    baseDirCond = context.baseDir === node.baseDir
-  //otherwise, the file must be located directly under the baseDir
-  else{
-    //if the baseDir is root, arbitraryNesting does not apply
-    if(context.baseDir === "/")
-      baseDirCond = context.path === `/${context.file.name}`
-    else
-      baseDirCond = context.path === `/${node.baseDir}/${context.file.name}`
+  // Handle directory nesting rules
+  if (arbitraryNesting) {
+    baseDirCond = context.baseDir === node.baseDir;
+  } else {
+    if (context.baseDir === "/") {
+      baseDirCond = context.path === `/${context.file.name}`;
+    } else {
+      baseDirCond = context.path === `/${node.baseDir}/${context.file.name}`;
+    }
   }
 
-  //if the suffix property is present on a rule, then the file should be identified by its suffix
-  if (hasSuffix)
-    suffixStemCond = context.suffix === node.suffix
-  //otherwise, a file should be identified with its stem
-  else
-    suffixStemCond = context.file.name.startsWith(node.stem)
+  // Match either by suffix or stem
+  if (hasSuffix) {
+    suffixStemCond = context.suffix === node.suffix;
+  } else {
+    suffixStemCond = context.file.name.startsWith(node.stem);
+  }
 
-  //files are identified by a combination of their baseDir, their extensions, and either their stem or their suffix
-  if (
+  return (
     baseDirCond &&
     node.extensions.includes(context.extension) &&
     suffixStemCond
-  )
-    return true
-  else
-    return false
+  );
 }
 
-/* Schema rules specifying valid filenames follow a variety of patterns.
- * 'baseDir', 'extensions', 'stem' or 'suffixies' contain the most unique identifying
- * information for a rule. We don't know what kind of filename the context is,
- * so if one of these  match the respective value in the context lets
- * assume that this schema rule is applicable to this file.
+/**
+ * Recursive helper for matching files against schema rules
+ * @param node - Current schema node being examined
+ * @param path - Path to current node in schema
+ * @param context - Context containing file information
  */
 export function _findRuleMatches(node, path, context) {
-  if ('arbitraryNesting' in node){
-    if (checkFileRules(node.arbitraryNesting,'suffix' in node, node, context)){
-      context.filenameRules.push(path)
-      return
+  if ("arbitraryNesting" in node) {
+    if (
+      checkFileRules(node.arbitraryNesting, "suffix" in node, node, context)
+    ) {
+      context.filenameRules.push(path);
+      return;
     }
-  }
-  else {
+  } else {
     Object.keys(node).map((key) => {
-      if(
-        typeof node[key] === 'object'
-      ){
-        _findRuleMatches(node[key], `${path}.${key}`, context)
+      if (
+        typeof node[key] === "object"
+      ) {
+        _findRuleMatches(node[key], `${path}.${key}`, context);
       }
-    })
+    });
   }
 }

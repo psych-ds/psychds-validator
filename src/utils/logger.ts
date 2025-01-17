@@ -1,7 +1,7 @@
-import { isBrowser } from './platform.ts';
+import { isBrowser } from "./platform.ts";
 
 // Import winston types
-import type { transport as WinstonTransport } from 'npm:winston';
+import type { transport as WinstonTransport } from "npm:winston";
 
 // Define the logger interface
 export interface Logger {
@@ -28,42 +28,56 @@ const loggerPromise: Promise<Logger> = (async () => {
     };
   } else {
     // Node.js implementation (using Winston)
-    const winston = await import('npm:winston');
+    const winston = await import("npm:winston");
     const { createLogger, format, transports } = winston;
 
     const winstonLogger = createLogger({
-      level: 'info',
+      level: "info",
       levels: {
         error: 0,
         warn: 1,
         info: 2,
         debug: 3,
-        checklist: 4
+        checklist: 4,
       },
       format: format.combine(
         format.timestamp(),
-        format.printf(({ timestamp, level, message, ...rest }) => {
-          if (level === 'checklist') {
-            return message;
+        // deno-lint-ignore no-explicit-any
+        format.printf((info: any): string => {
+          if (info.level === "checklist") {
+            return info.message;
           }
-          return `${timestamp} [${level.toUpperCase()}]: ${message} ${Object.keys(rest).length ? JSON.stringify(rest) : ''}`;
-        })
+          return `${info.timestamp} [${info.level.toUpperCase()}]: ${info.message} ${
+            Object.keys(info).length > 3
+              ? JSON.stringify(Object.assign({}, info, {
+                timestamp: undefined,
+                level: undefined,
+                message: undefined,
+              }))
+              : ""
+          }`;
+        }),
       ),
       transports: [
         new transports.Console({
-          level: 'checklist'
-        })
-      ]
+          level: "checklist",
+        }),
+      ],
     });
 
     // Create a logger object that matches our Logger interface
     const logger: Logger = {
-      error: (message: string, ...meta: unknown[]) => winstonLogger.error(message, ...meta),
-      warn: (message: string, ...meta: unknown[]) => winstonLogger.warn(message, ...meta),
-      info: (message: string, ...meta: unknown[]) => winstonLogger.info(message, ...meta),
-      debug: (message: string, ...meta: unknown[]) => winstonLogger.debug(message, ...meta),
-      checklist: (message: string) => winstonLogger.log('checklist', message),
-      add: (transport: unknown) => winstonLogger.add(transport as WinstonTransport),
+      error: (message: string, ...meta: unknown[]) =>
+        winstonLogger.error(message, ...meta),
+      warn: (message: string, ...meta: unknown[]) =>
+        winstonLogger.warn(message, ...meta),
+      info: (message: string, ...meta: unknown[]) =>
+        winstonLogger.info(message, ...meta),
+      debug: (message: string, ...meta: unknown[]) =>
+        winstonLogger.debug(message, ...meta),
+      checklist: (message: string) => winstonLogger.log("checklist", message),
+      add: (transport: unknown) =>
+        winstonLogger.add(transport as WinstonTransport),
     };
 
     return logger;
@@ -74,33 +88,35 @@ const loggerPromise: Promise<Logger> = (async () => {
 export { loggerPromise as logger };
 
 // Async wrapper for logging functions
-const createAsyncLogger = (level: keyof Logger) => async (message: string, ...meta: unknown[]) => {
-  const logger = await loggerPromise;
-  if (logger[level]) {
-    logger[level](message, ...meta);
-  }
-};
+const createAsyncLogger =
+  (level: keyof Logger) => async (message: string, ...meta: unknown[]) => {
+    const logger = await loggerPromise;
+    if (logger[level]) {
+      logger[level](message, ...meta);
+    }
+  };
 
 // Exports
-export const error = createAsyncLogger('error');
-export const warn = createAsyncLogger('warn');
-export const info = createAsyncLogger('info');
-export const debug = createAsyncLogger('debug');
-export const checklist = createAsyncLogger('checklist');
+export const error = createAsyncLogger("error");
+export const warn = createAsyncLogger("warn");
+export const info = createAsyncLogger("info");
+export const debug = createAsyncLogger("debug");
+export const checklist = createAsyncLogger("checklist");
 
 export const LogLevels = {
-  ERROR: 'error' as const,
-  WARN: 'warn' as const,
-  INFO: 'info' as const,
-  DEBUG: 'debug' as const,
-  CHECKLIST: 'checklist' as const
+  ERROR: "error" as const,
+  WARN: "warn" as const,
+  INFO: "info" as const,
+  DEBUG: "debug" as const,
+  CHECKLIST: "checklist" as const,
 };
 
 // Cursor manipulation methods (these will only work in Node.js environment)
 export const cursor = {
   up: (n: number) => isBrowser ? undefined : console.log(`\x1b[${n}A`),
-  clear: () => isBrowser ? undefined : console.log('\x1b[0J'),
-  move: (x: number, y: number) => isBrowser ? undefined : console.log(`\x1b[${y};${x}H`),
+  clear: () => isBrowser ? undefined : console.log("\x1b[0J"),
+  move: (x: number, y: number) =>
+    isBrowser ? undefined : console.log(`\x1b[${y};${x}H`),
 };
 
 // Setup logging function (no-op in browser)
