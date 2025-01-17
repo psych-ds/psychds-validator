@@ -224,11 +224,14 @@ export const createReadStream = (
       async start(controller) {
         const fs = await import("node:fs");
         const readStream = fs.createReadStream(filePath);
-        readStream.on(
-          "data",
-          // deno-lint-ignore no-node-globals
-          (chunk: Buffer) => controller.enqueue(new Uint8Array(chunk)),
-        );
+        readStream.on('data', (chunk: string | Buffer) => {
+            if (Buffer.isBuffer(chunk)) {
+              controller.enqueue(new Uint8Array(chunk));
+            } else {
+              // Handle string data by converting it to Uint8Array
+              controller.enqueue(new TextEncoder().encode(chunk));
+            }
+          });
         readStream.on("end", () => controller.close());
         readStream.on("error", (error: Error) => controller.error(error));
       },
