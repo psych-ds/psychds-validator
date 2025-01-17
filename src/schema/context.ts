@@ -388,24 +388,21 @@ export class psychDSContext implements Context {
         return {};
       }
 
-      // Handle schema.org context normalization
-      if (
-        "@context" in this.sidecar &&
-        typeof this.sidecar["@context"] == "string" &&
-        [
-          "http://schema.org/",
-          "http://schema.org",
-          "http://www.schema.org/",
-          "http://www.schema.org",
-          "https://schema.org/",
-          "https://schema.org",
-          "https://www.schema.org/",
-          "https://www.schema.org/",
-        ].includes(this.sidecar["@context"])
-      ) {
-        this.sidecar["@context"] = {
-          "@vocab": "http://schema.org/",
-        };
+      //use the jsonld library to expand metadata json and remove context.
+      //in addition to adding the appropriate namespace (e.g. http://schema.org)
+      //to all keys within the json, it also throws a variety of errors for improper JSON-LD syntax,
+      //which mostly all pertain to improper usages of privileged @____ keywords
+      if ('@context' in this.sidecar){
+
+        if (Array.isArray(this.sidecar['@context']) && this.sidecar['@context'].length === 1){
+          this.sidecar['@context'] = this.sidecar['@context'][0]
+        }
+
+        if (typeof this.sidecar['@context'] == 'string' && ['http://schema.org/','http://schema.org','http://www.schema.org/','http://www.schema.org','https://schema.org/','https://schema.org','https://www.schema.org/','https://www.schema.org/'].includes(this.sidecar['@context'])){
+          this.sidecar['@context'] = {
+            '@vocab':'http://schema.org/'
+          }
+        }
       }
 
       // Expand JSON-LD document

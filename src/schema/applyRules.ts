@@ -541,37 +541,23 @@ function _schemaCheck(
  * @returns Array of valid property names
  */
 function getSuperClassSlots(
-  type: string,
-  schema: GenericSchema,
-  nameSpace: string,
-): string[] {
-  if (type.includes(nameSpace)) {
-    type = type.replace(nameSpace, "");
-  }
-  if (type in schema[`schemaOrg.classes`]) {
-    if ("is_a" in schema[`schemaOrg.classes.${type}`]) {
-      if ("slots" in schema[`schemaOrg.classes.${type}`]) {
-        return (schema[
-          `schemaOrg.classes.${type}.slots`
-        ] as unknown as string[]).concat(
-          getSuperClassSlots(
-            schema[`schemaOrg.classes.${type}.is_a`] as unknown as string,
-            schema,
-            nameSpace,
-          ),
-        );
-      } else {
-        return getSuperClassSlots(
-          schema[`schemaOrg.classes.${type}.is_a`] as unknown as string,
-          schema,
-          nameSpace,
-        );
-      }
+    type: string,
+    schema: GenericSchema,
+    nameSpace: string
+  ): string[]{
+    
+    type = type.replace(nameSpace,"")
+
+    if (!(type in schema['schemaOrg.classes'])) {
+      return []
     }
-    return schema[`schemaOrg.classes.${type}.slots`] as unknown as string[];
-  }
-  return [];
-}
+
+    //if type has a super class, append this type's slots to the result of this function for super class
+    const slots = schema[`schemaOrg.classes.${type}.slots`] as string[] || []
+    const is_a = 'is_a' in schema[`schemaOrg.classes.${type}`] ? getSuperClassSlots(schema[`schemaOrg.classes.${type}.is_a`] as string, schema, nameSpace) : []
+
+    return [...slots, ...is_a];
+ }
 
 /**
  * Recursively collects subclass types that are valid for a property
