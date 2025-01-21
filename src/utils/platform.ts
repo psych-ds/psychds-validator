@@ -217,47 +217,55 @@ export const getFileInfo = async (
  * @returns ReadableStream of file contents
  */
 export const createReadStream = (
-  filePath: string,
-): ReadableStream<Uint8Array> => {
-  if (isNode) {
-    return new ReadableStream({
-      async start(controller) {
-        const fs = await import("node:fs");
-        const readStream = fs.createReadStream(filePath);
-        readStream.on(
-          "data",
-          // deno-lint-ignore no-node-globals
-          (chunk: Buffer) => controller.enqueue(new Uint8Array(chunk)),
-        );
-        readStream.on("end", () => controller.close());
-        readStream.on("error", (error: Error) => controller.error(error));
-      },
-    });
-  } else if (isDeno) {
-    const file = Deno.openSync(filePath, { read: true });
-    return file.readable;
-  } else {
-    // Browser implementation using fetch
-    return new ReadableStream({
-      async start(controller) {
-        try {
-          const response = await fetch(filePath);
-          if (!response.body) {
-            throw new Error("No readable body in response");
+    filePath: string,
+  ): ReadableStream<Uint8Array> => {
+    if (isNode) {
+      return new ReadableStream({
+        async start(controller) {
+          const fs = await import("node:fs");
+          const readStream = fs.createReadStream(filePath);
+          
+          readStream.on('data', (chunk: unknown) => {
+            if (chunk instanceof Uint8Array) {
+              controller.enqueue(chunk);
+            } else if (typeof chunk === 'string') {
+              controller.enqueue(new TextEncoder().encode(chunk));
+            } else {
+              // Handle any other type that might come through
+              // Convert to string and then to Uint8Array
+              controller.enqueue(new TextEncoder().encode(String(chunk)));
+            }
+          });
+          
+          readStream.on("end", () => controller.close());
+          readStream.on("error", (error: Error) => controller.error(error));
+        },
+      });
+    } else if (isDeno) {
+      const file = Deno.openSync(filePath, { read: true });
+      return file.readable;
+    } else {
+      // Browser implementation using fetch
+      return new ReadableStream({
+        async start(controller) {
+          try {
+            const response = await fetch(filePath);
+            if (!response.body) {
+              throw new Error("No readable body in response");
+            }
+            const reader = response.body.getReader();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              controller.enqueue(value);
+            }
+            controller.close();
+          } catch (error) {
+            controller.error(error);
           }
-          const reader = response.body.getReader();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            controller.enqueue(value);
-          }
-          controller.close();
-        } catch (error) {
-          controller.error(error);
-        }
-      },
-    });
-  }
-};
+        },
+      });
+    }
+  };
 
 export { EventEmitter };
