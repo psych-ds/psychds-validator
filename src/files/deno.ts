@@ -196,7 +196,7 @@ async function _readFileTree(
           ignore,
         );
 
-        if (dirEntry.name === ".psychdsignore") {
+        if (dirEntry.name === ".psychds-ignore") {
           ignore.add(await readPsychDSIgnore(file));
         }
 
@@ -224,7 +224,7 @@ async function _readFileTree(
         const file = new psychDSFileDeno(".", path, ignore);
         file.webFile = rootPathOrDict[key]["file"];
 
-        if (key === ".psychdsignore") {
+        if (key === ".psychds-ignore") {
           ignore.add(await readPsychDSIgnore(file));
         }
         tree.files.push(file);

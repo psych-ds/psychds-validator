@@ -8,7 +8,7 @@ import { psychDSFile } from "../types/file.ts";
 import { Ignore, ignore } from "../deps/ignore.ts";
 
 /**
- * Reads and parses a .psychdsignore file
+ * Reads and parses a .psychds-ignore file
  * Converts file content into array of ignore patterns
  *
  * @param file - File object containing ignore rules

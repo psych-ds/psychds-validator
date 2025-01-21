@@ -2,7 +2,7 @@ import { assertEquals } from "../deps/asserts.ts";
 import { FileIgnoreRules } from "./ignore.ts";
 
 Deno.test("Deno implementation of FileIgnoreRules", async (t) => {
-  await t.step("handles basic .psychdsignore rules", () => {
+  await t.step("handles basic .psychds-ignore rules", () => {
     const files = [
       "/sub-01/anat/sub-01_T1w.nii.gz",
       "/dataset_description.json",
