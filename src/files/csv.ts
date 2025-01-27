@@ -63,6 +63,11 @@ export async function parseCSV(contents: string) {
 
     const headers = rows.length ? rows[0] : [];
 
+    // Check for duplicate headers
+    if (new Set(headers).size !== headers.length) {
+      issues.push({ "issue": "CSVHeaderRepeated", "message": null });
+    }
+
     // Check for missing headers
     if (headers.length === 0) {
       issues.push({ "issue": "CSVHeaderMissing", "message": null });
