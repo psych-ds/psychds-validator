@@ -72,4 +72,22 @@ Deno.test("Test parseCSV", async (t) => {
       });
     assertEquals(result["issues"][0]["issue"], "RowidValuesNotUnique");
   });
+  await t.step("Duplicate header names", async ()=>{
+    const file = new psychDSFileDeno(
+      "test_data/testfiles",
+      "duplicateHeaders.csv",
+      ignore,
+    );
+    const result = await file
+    .text()
+    .then((text) => parseCSV(text))
+    .catch((_error) => {
+      return {
+        "columns": new Map<string, string[]>() as ColumnsMap,
+        "issues": [],
+      };
+    });
+    assertEquals(result["issues"][0]["issue"], "CSVHeaderRepeated");
+  })
 });
+
