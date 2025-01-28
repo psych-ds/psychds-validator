@@ -17,11 +17,11 @@ import {
 
 /** Base URL for fetching version-specific schema files */
 const SCHEMA_BASE_URL =
-  "https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/versions/jsons";
+  "https://raw.githubusercontent.com/psych-ds/psych-DS/master/schema_model/versions/jsons";
 
 /** URL for fetching the Schema.org definitions */
 const SCHEMA_ORG_URL =
-  "https://raw.githubusercontent.com/psych-ds/psych-DS/develop/schema_model/external_schemas/schemaorg/schemaorg.json";
+  "https://raw.githubusercontent.com/psych-ds/psych-DS/master/schema_model/external_schemas/schemaorg/schemaorg.json";
 
 /** Default schema storage for fallback scenarios */
 let defaultSchema: GenericSchema = {};
@@ -98,11 +98,11 @@ export async function fetchJSON(url: string): Promise<GenericSchema | null> {
 /**
  * Loads and combines the Psych-DS schema for the specified version
  *
- * @param version - Schema version to load (defaults to '1.4.0')
+ * @param version - Schema version to load (defaults to 'latest')
  * @returns Promise resolving to complete Schema object
  * @throws {Error} If version format is invalid
  */
-export async function loadSchema(version = "1.4.0"): Promise<Schema> {
+export async function loadSchema(version = "latest"): Promise<Schema> {
   // Ensure default schemas are loaded
   if (
     Object.keys(defaultSchema).length === 0 ||
