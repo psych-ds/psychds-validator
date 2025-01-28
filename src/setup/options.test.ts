@@ -7,7 +7,7 @@ Deno.test("options parsing", async (t) => {
     assertEquals(options, {
       datasetPath: "my_dataset",
       json: true,
-      schema: "1.4.0",
+      schema: "latest",
       debug: "error",
       verbose: undefined,
       useEvents: undefined,

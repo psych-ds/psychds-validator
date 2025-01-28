@@ -68,7 +68,7 @@ export function parseOptions(
     .option(
       "-s, --schema <type>",
       "Specify a schema version to use for validation",
-      "1.4.0",
+      "latest",
     )
     .option("-v, --verbose", "Log more extensive information about issues")
     .addOption(
