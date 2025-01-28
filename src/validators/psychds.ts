@@ -213,6 +213,7 @@ export async function validate(
   ]);
   emitCheck("csv-parse", ["CSV_FORMATTING_ERROR"]);
   emitCheck("csv-header", ["CSV_HEADER_MISSING"]);
+  emitCheck("csv-header-repeat",["CSV_HEADER_REPEATED"])
   emitCheck("csv-nomismatch", ["CSV_HEADER_LENGTH_MISMATCH"]);
   emitCheck("csv-rowid", ["ROWID_VALUES_NOT_UNIQUE"]);
   emitCheck("check-variableMeasured", ["CSV_COLUMN_MISSING_FROM_METADATA"]);
