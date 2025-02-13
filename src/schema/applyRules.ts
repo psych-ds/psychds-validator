@@ -360,7 +360,7 @@ function logSchemaIssues(
                         Each schema.org property (which take the form of keys in your metadata json) has a specific range of types
                         that can be used as its value. Type constraints for a given property can be found by visiting their corresponding schema.org
                         URL. All properties can take strings or URLS as objects, under the assumption that the string/URL represents a unique ID.
-                        Type selection errors occured at the following locations in your json structure: [${issues.typeIssues}]`,
+                        Type selection errors occurred at the following locations in your json structure: [${issues.typeIssues}]`,
         },
       ]);
     });
