@@ -79,13 +79,6 @@ export async function validate(
         success: false,
         issue: issues.get("INVALID_JSON_FORMATTING"),
       });
-      if (options.emitter) {
-        return {
-          valid: false,
-          issues,
-          summary: summary.formatOutput(),
-        };
-      }
     }
   } else {
     // Handle missing dataset description
