@@ -2,7 +2,7 @@
 
 This repository contains the source code for the Psych-DS Validator tool. 
 
-The validator was developed using the Deno framework and can be run as a Deno app, but it also available via npm as a node package (ESM/CJS compatible) to be used either as a CLI tool or an imported javascript function. There is a bundled version as well that can be imported for browser contexts. All versions of the validator app are generated from the Deno-based source code, and they all leverage the [LinkML-based Psych-DS schema model](https://github.com/psych-DS/psych-DS/) for information on rules and error messages, etc.
+The validator was developed using the Deno framework and can be run as a Deno app, but it also available via npm as a node package (ESM/CJS compatible) to be used either as a CLI tool or an imported javascript function. There is a bundled version as well that can be imported for browser contexts. All versions of the validator app are generated from the Deno-based source code, and they all leverage the [YAML-based Psych-DS schema model](https://github.com/psych-DS/psych-DS/) for information on rules and error messages, etc.
 
 There is a [browser-based version of the validator](https://psych-ds.github.io/validator/) available for anyone to use. It uses the same code as the CLI tool and produces identical validation results.
 
