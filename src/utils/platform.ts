@@ -24,6 +24,7 @@ declare global {
   /**
    * Extended Buffer interface to ensure consistent buffer operations across platforms
    */
+  // @ts-ignore: Buffer/Uint8Array type compatibility issue
   interface Buffer extends Uint8Array {
     write(
       string: string,
