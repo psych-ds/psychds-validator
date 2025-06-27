@@ -50,6 +50,9 @@ export async function validate(
   const schema = await loadSchema(options.schema);
   const issues = new DatasetIssues(schema as unknown as GenericSchema);
 
+  let totalCsvFiles = 0;
+  let processedCsvFiles = 0;
+
   // Signal successful file tree construction
   options.emitter?.emit("build-tree", { success: true });
 
@@ -73,37 +76,17 @@ export async function validate(
       dsContext = new psychDSContextDataset(options, ddFile);
       issues.addSchemaIssue(
         "InvalidJsonFormatting",
-        [ddFile],
+        [{
+          ...ddFile,
+          evidence: (_error as unknown as any).message,
+        } as IssueFile],
       );
       options.emitter?.emit("metadata-json", {
         success: false,
         issue: issues.get("INVALID_JSON_FORMATTING"),
       });
-      if (options.emitter) {
-        return {
-          valid: false,
-          issues,
-          summary: summary.formatOutput(),
-        };
-      }
     }
   } else {
-    // Handle missing dataset description
-    issues.addSchemaIssue(
-      "MissingDatasetDescription",
-      [],
-    );
-    options.emitter?.emit("find-metadata", {
-      success: false,
-      issue: issues.get("MISSING_DATASET_DESCRIPTION"),
-    });
-    if (options.emitter) {
-      return {
-        valid: false,
-        issues,
-        summary: summary.formatOutput(),
-      };
-    }
     dsContext = new psychDSContextDataset(options);
   }
 
@@ -116,23 +99,37 @@ export async function validate(
    * @param event_name - Name of event to emit
    * @param issue_keys - Array of issue keys to check for
    */
-  const emitCheck = (event_name: string, issue_keys: string[]) => {
+  const emitCheck = (
+    event_name: string, 
+    issue_keys: string[], 
+    progress?: { current: number; total: number }
+  ) => {
     const fails = issue_keys.filter((issue) => issues.hasIssue({ key: issue }));
-
-    options.emitter?.emit(
-      event_name,
-      fails.length > 0
-        ? { success: false, issue: issues.get(fails[0]) }
-        : { success: true },
-    );
+  
+    const eventData = fails.length > 0
+      ? { success: false, issue: issues.get(fails[0]), progress }
+      : { success: true, progress };
+  
+    options.emitter?.emit(event_name, eventData);
   };
+
+  let validColumns: Record<string, boolean> = {}
+
+  for await (const context of walkFileTree(fileTree, issues, dsContext)) {
+    if (context.extension === ".csv" && context.suffix === "data") {
+      totalCsvFiles++;
+    }
+  }
+
+  if (totalCsvFiles > 0) {
+    options.emitter?.emit("csv-count-total", { total: totalCsvFiles });
+  }
 
   // Process each file in the tree
   for await (const context of walkFileTree(fileTree, issues, dsContext)) {
     if (dsContext.baseDirs.includes("/data")) {
       options.emitter?.emit("find-data-dir", { success: true });
     }
-
     // Handle any issues found during file tree reading
     if (context.file.issueInfo.length > 0) {
       context.file.issueInfo.forEach((iss) => {
@@ -188,7 +185,48 @@ export async function validate(
         "INVALID_OBJECT_TYPE",
         "OBJECT_TYPE_MISSING",
       ]);
+      processedCsvFiles++;
+
+      options.emitter?.emit("csv-progress", { 
+        current: processedCsvFiles, 
+        total: totalCsvFiles 
+      });
+      
+      // Emit progress for each CSV validation step with counter
+      const csvProgress = { current: processedCsvFiles, total: totalCsvFiles };
+      
+      emitCheck("csv-keywords", ["FILENAME_KEYWORD_FORMATTING_ERROR", "FILENAME_UNOFFICIAL_KEYWORD_ERROR"], csvProgress);
+      emitCheck("csv-parse", ["CSV_FORMATTING_ERROR"], csvProgress);
+      emitCheck("csv-header", ["CSV_HEADER_MISSING"], csvProgress);
+      emitCheck("csv-header-repeat", ["CSV_HEADER_REPEATED"], csvProgress);
+      emitCheck("csv-nomismatch", ["CSV_HEADER_LENGTH_MISMATCH"], csvProgress);
+      emitCheck("csv-rowid", ["ROWID_VALUES_NOT_UNIQUE"], csvProgress);
+    
     }
+
+    if(context.validColumns.length != 0){
+      context.validColumns.forEach((col) => {
+        if(!(col in validColumns))
+          validColumns[col] = false
+        if(col in context.columns)
+          validColumns[col] = true
+      })
+    }
+  }
+
+  const extraVars = Object.entries(validColumns)
+  .filter(([key, value]) => !value)
+  .map(([key]) => key);
+
+  if (extraVars.length != 0){
+    issues.addSchemaIssue("VariableMissingFromCsvColumns", [
+      {
+        ...dsContext.metadataFile,
+        evidence:
+          `One of the metadata files in your dataset (either dataset_description.json or a sidecar file) 
+          contains a variable in variableMeasured that does not appear in any CSV column headers. Here are the variables in question: [${extraVars}]`,
+      },
+    ]);
   }
 
   // Final metadata validation events
@@ -216,7 +254,7 @@ export async function validate(
   emitCheck("csv-header-repeat",["CSV_HEADER_REPEATED"])
   emitCheck("csv-nomismatch", ["CSV_HEADER_LENGTH_MISMATCH"]);
   emitCheck("csv-rowid", ["ROWID_VALUES_NOT_UNIQUE"]);
-  emitCheck("check-variableMeasured", ["CSV_COLUMN_MISSING_FROM_METADATA"]);
+  emitCheck("check-variableMeasured", ["CSV_COLUMN_MISSING_FROM_METADATA","VARIABLE_MISSING_FROM_CSV_COLUMNS"]);
 
   // Check directory rules and missing rules
   checkDirRules(schema, rulesRecord, dsContext.baseDirs);
