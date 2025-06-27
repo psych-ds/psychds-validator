@@ -9,6 +9,7 @@ export interface ContextDataset {
   tree: object;
   ignored: any[];
   metadataFile: psychDSFile;
+  allColumns: string[];
   options?: ValidatorOptions;
   sidecarCache: Record<string, JsonLdDocument>;
 }
