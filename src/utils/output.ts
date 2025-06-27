@@ -237,10 +237,6 @@ function browserFormatIssue(issue: Issue, options?: LoggingOptions): string {
     fileOutCount++;
   });
 
-  if (!options?.verbose) {
-    output.push("");
-    output.push(`  ${issue.files.size} more files with the same issue`);
-  }
   output.push("");
 
   return output.join("\n");
@@ -368,10 +364,6 @@ function nodeFormatIssue(
     fileOutCount++;
   });
 
-  if (!options?.verbose) {
-    output.push("");
-    output.push("\t\t" + issue.files.size + " more files with the same issue");
-  }
   output.push("");
 
   return output.join("\n");
