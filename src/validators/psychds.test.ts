@@ -85,6 +85,47 @@ Deno.test({
         name: "nih-reviews",
         description: "Dataset with schema compliance issues",
       },
+      {
+        name: "empty_csv",
+        description: "Dataset with empty csv file",
+      },
+      {
+        name: "empty_data",
+        description: "Dataset with empty data folder",
+      },
+      {
+        name: "empty_dataset",
+        description: "Dataset with no files or subdirectories",
+      },
+      {
+        name: "empty_json",
+        description: "Dataset with empty metadata file",
+      },
+      {
+        name: "empty_name",
+        description: "Dataset with CSV with no keywords",
+      },
+      {
+        name: "excel_csv",
+        description: "Dataset with excel file with CSV extension",
+      },
+      {
+        name: "just_data",
+        description: "Dataset with empty data folder and no metadata",
+      },
+      {
+        name: "just_json",
+        description: "Dataset with metadata file only",
+      },
+      {
+        name: "no_extension",
+        description: "Dataset with properly formatted CSV with no extension",
+      },
+      {
+        name: "two_extensions",
+        description: "Dataset with CSV with two extensions",
+      },
+
     ];
 
     for (const dataset of invalidDatasets) {

@@ -171,6 +171,7 @@ function evalColumns(
 ): void {
   if (context.extension !== ".csv") return;
   const headers = [...Object.keys(context.columns)];
+  context.dataset.allColumns = [...new Set([...context.dataset.allColumns, ...headers])];
   let invalidHeaders: string[] = [];
   for (const header of headers) {
     if (!(context.validColumns.includes(header))) {

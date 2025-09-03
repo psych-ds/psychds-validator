@@ -14,6 +14,7 @@ import { issueInfo, psychDSFile } from "../types/file.ts";
 import { FileTree } from "../types/filetree.ts";
 import { requestReadPermission } from "../setup/requestPermissions.ts";
 import { FileIgnoreRules, readPsychDSIgnore } from "./ignore.ts";
+import { exit } from "node:process";
 
 /**
  * Custom error for UTF-16 character detection in UTF-8 decoding
@@ -186,33 +187,39 @@ async function _readFileTree(
   if (typeof rootPathOrDict === "string") {
     // Filesystem-based traversal
     await requestReadPermission();
-    for await (
-      const dirEntry of Deno.readDir(path.join(rootPathOrDict, relativePath))
-    ) {
-      if (dirEntry.isFile || dirEntry.isSymlink) {
-        const file = new psychDSFileDeno(
-          rootPathOrDict,
-          path.join(relativePath, dirEntry.name),
-          ignore,
-        );
-
-        if (dirEntry.name === ".psychds-ignore") {
-          ignore.add(await readPsychDSIgnore(file));
+    try {
+      for await (
+        const dirEntry of Deno.readDir(path.join(rootPathOrDict, relativePath))
+      ) {
+        if (dirEntry.isFile || dirEntry.isSymlink) {
+          const file = new psychDSFileDeno(
+            rootPathOrDict,
+            path.join(relativePath, dirEntry.name),
+            ignore,
+          );
+  
+          if (dirEntry.name === ".psychds-ignore") {
+            ignore.add(await readPsychDSIgnore(file));
+          }
+  
+          tree.files.push(file);
         }
-
-        tree.files.push(file);
-      }
-      if (dirEntry.isDirectory) {
-        const dirTree = await _readFileTree(
-          rootPathOrDict,
-          path.join(relativePath, dirEntry.name),
-          ignore,
-          tree,
-          context,
-        );
-        tree.directories.push(dirTree);
+        if (dirEntry.isDirectory) {
+          const dirTree = await _readFileTree(
+            rootPathOrDict,
+            path.join(relativePath, dirEntry.name),
+            ignore,
+            tree,
+            context,
+          );
+          tree.directories.push(dirTree);
+        }
       }
     }
+    catch(error){
+      console.log("The path for your dataset must point to a directory, not a file. Please input a directory for your dataset input.")
+    }
+    
   } else {
     // Browser-based traversal
     for (const key in rootPathOrDict) {

@@ -67,6 +67,8 @@ export class ValidationProgressTracker {
   private result: ValidationResult | null;
   private lastUpdateTime: number;
   private logger: Awaited<typeof logger> | null;
+  private csvProgress: { current: number; total: number } = { current: 0, total: 0 };
+
 
   /**
    * Creates a new validation progress tracker
@@ -244,6 +246,15 @@ export class ValidationProgressTracker {
 
     this.setupListeners();
     this.initLogger();
+
+    this.emitter.on("csv-count-total", (data: { total: number }) => {
+      this.csvProgress.total = data.total;
+    });
+
+    this.emitter.on("csv-progress", (data: { current: number; total: number }) => {
+      this.csvProgress = data;
+      this.displayChecklist(); // Update display when progress changes
+    });
   }
 
   /**
@@ -304,14 +315,20 @@ export class ValidationProgressTracker {
    */
   private updateStepStatus(
     stepKey: string,
-    data: { success: boolean; issue?: Issue },
+    data: { success: boolean; issue?: Issue; progress?: { current: number; total: number } },
     superStep?: SuperStep,
   ) {
+    if (data.progress && stepKey.startsWith("csv-")) {
+      this.csvProgress = data.progress;
+    }
+
     this.stepStatus.set(stepKey, {
       complete: true,
       success: data.success,
       issue: data.issue,
     });
+
+    
 
     if (superStep && superStep.subSteps.length > 0) {
       this.updateSuperStepStatus(superStep);
@@ -319,6 +336,22 @@ export class ValidationProgressTracker {
 
     this.displayChecklist();
     this.lastUpdateTime = Date.now();
+  }
+
+  private getCsvProgressText(): string {
+    if (this.csvProgress.total === 0) return "";
+    return ` (${this.csvProgress.current}/${this.csvProgress.total} files checked)`;
+  }
+
+  private getStepMessage(step: SuperStep | SubStep, isComplete: boolean): string {
+    const baseMessage = isComplete ? step.message.pastTense : step.message.imperative;
+    
+    // Add counter for CSV validation step
+    if (step.key === "validate-csvs") {
+      return baseMessage + this.getCsvProgressText();
+    }
+    
+    return baseMessage;
   }
 
   /**
@@ -353,44 +386,46 @@ export class ValidationProgressTracker {
       console.warn("Logger not initialized yet");
       return;
     }
-
+  
     this.logger.info("\x1Bc");
-
+  
     const checklistLines = ["Validation Progress:"];
     let prevComplete = true;
     let validationFailed = false;
     let prevFails = false;
-
+  
     this.steps.forEach((superStep, index) => {
       let thisComplete = true;
       const superStepStatus = this.stepStatus.get(superStep.key);
       if (!superStepStatus?.complete) {
         thisComplete = false;
       }
-
-      const superStepMessage =
-        (superStepStatus?.complete && prevComplete && !prevFails)
-          ? superStep.message.pastTense
-          : superStep.message.imperative;
-      const superStepCheckMark =
-        (superStepStatus?.complete && prevComplete && !prevFails)
-          ? (superStepStatus.success ? "✓" : "✗")
-          : " ";
-
-      if (superStepStatus?.complete && prevComplete && !prevFails) {
+  
+      // Fix: Use explicit boolean conversion or null coalescing
+      const isStepCompleteAndValid = (superStepStatus?.complete ?? false) && prevComplete && !prevFails;
+  
+      const superStepMessage = this.getStepMessage(
+        superStep,
+        isStepCompleteAndValid
+      );
+      const superStepCheckMark = isStepCompleteAndValid && superStepStatus
+        ? (superStepStatus.success ? "✓" : "✗")
+        : " ";
+  
+      if (isStepCompleteAndValid) {
         this.emitter.emit("progress", { step: superStep });
         this.emitter.emit("stepStatusChange", {
           stepStatus: Array.from(this.stepStatus.entries()),
           superStep: superStep,
         });
       }
-
+  
       checklistLines.push(
         `[${superStepCheckMark}] ${index + 1}. ${superStepMessage}`,
       );
-
+  
       if (
-        superStepStatus?.complete && prevComplete && !prevFails &&
+        isStepCompleteAndValid && superStepStatus &&
         !superStepStatus.success && superStepStatus.issue
       ) {
         validationFailed = true;
@@ -398,32 +433,33 @@ export class ValidationProgressTracker {
           `   Issue:\n ${formatIssue(superStepStatus.issue)}`,
         );
       }
-
-      if (!superStepStatus?.success && superStep.subSteps.length == 0) {
+  
+      if (!(superStepStatus?.success ?? true) && superStep.subSteps.length == 0) {
         prevFails = true;
       }
-
+  
       let subComplete = true;
       superStep.subSteps.forEach((subStep, subIndex) => {
         const subStepStatus = this.stepStatus.get(subStep.key);
-
-        const subStepMessage =
-          (subStepStatus?.complete && subComplete && !prevFails)
-            ? subStep.message.pastTense
-            : subStep.message.imperative;
-        const subStepCheckMark =
-          (subStepStatus?.complete && subComplete && !prevFails)
-            ? (subStepStatus.success ? "✓" : "✗")
-            : " ";
-
+  
+        // Fix: Use explicit boolean conversion
+        const isSubStepCompleteAndValid = (subStepStatus?.complete ?? false) && subComplete && !prevFails;
+  
+        const subStepMessage = isSubStepCompleteAndValid
+          ? subStep.message.pastTense
+          : subStep.message.imperative;
+        const subStepCheckMark = isSubStepCompleteAndValid && subStepStatus
+          ? (subStepStatus.success ? "✓" : "✗")
+          : " ";
+  
         checklistLines.push(
           `  [${subStepCheckMark}] ${index + 1}.${
             subIndex + 1
           }. ${subStepMessage}`,
         );
-
+  
         if (
-          subStepStatus?.complete && subComplete && !prevFails &&
+          isSubStepCompleteAndValid && subStepStatus &&
           !subStepStatus.success && subStepStatus.issue
         ) {
           validationFailed = true;
@@ -431,31 +467,31 @@ export class ValidationProgressTracker {
             `     Issue:\n ${formatIssue(subStepStatus.issue)}`,
           );
         }
-
-        if (subStepStatus?.complete && subComplete && !prevFails) {
+  
+        if (isSubStepCompleteAndValid) {
           this.emitter.emit("stepStatusChange", {
             stepStatus: Array.from(this.stepStatus.entries()),
             superStep: superStep,
           });
         }
-
-        if (!subStepStatus?.complete) {
+  
+        if (!(subStepStatus?.complete ?? false)) {
           subComplete = false;
         }
-        if (!subStepStatus?.success) {
+        if (!(subStepStatus?.success ?? true)) {
           prevFails = true;
         }
       });
-
+  
       prevComplete = thisComplete;
     });
-
+  
     this.logger.info(checklistLines.join("\n"));
-
+  
     if (validationFailed) {
       this.emitter.emit("validation-halted");
     }
-
+  
     if (this.stepStatus.get("check-variableMeasured")?.success) {
       this.emitter.emit("complete");
     }
