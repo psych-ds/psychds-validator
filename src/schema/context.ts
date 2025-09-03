@@ -424,16 +424,21 @@ export class psychDSContext implements Context {
       });
       return exp[0] || {};
     } catch (error) {
+      // deno-lint-ignore no-explicit-any
+      if ((error as unknown as any).details.code.includes("remote context")){
+        // deno-lint-ignore no-explicit-any
+        (error as unknown as any).message += '\n\n This may be caused by using the wrong URL in the @context field of your dataset_description.json file, or it could be caused by failing to use either http:// or https:// at the beginning.'
+      }
       // Handle JSON-LD processing errors
       const issueFile = {
-        ...this.file,
+        ...this.dataset.metadataFile,
         // deno-lint-ignore no-explicit-any
-        evidence: JSON.stringify((error as unknown as any).details.context),
+        evidence: (error as unknown as any).message,
       } as IssueFile;
       this.issues.add({
         key: "INVALID_JSONLD_FORMATTING",
         // deno-lint-ignore no-explicit-any
-        reason: `${(error as unknown as any).message.split(";")[1]}`,
+        reason: `${(error as unknown as any).details.code}`,
         severity: "error",
         files: [issueFile],
       });
