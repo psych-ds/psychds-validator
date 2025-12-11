@@ -23,6 +23,9 @@ const SCHEMA_BASE_URL =
 const SCHEMA_ORG_URL =
   "https://raw.githubusercontent.com/psych-ds/psych-DS/master/schema_model/external_schemas/schemaorg/schemaorg.json";
 
+let cachedSchema: { schema: GenericSchema; version: string } | null = null;
+
+
 /** Default schema storage for fallback scenarios */
 let defaultSchema: GenericSchema = {};
 let defaultSchemaOrg: GenericSchema = {};
@@ -103,6 +106,10 @@ export async function fetchJSON(url: string): Promise<GenericSchema | null> {
  * @throws {Error} If version format is invalid
  */
 export async function loadSchema(version = "latest"): Promise<Schema> {
+  if (cachedSchema && cachedSchema.version === version) {
+    return new Proxy(cachedSchema.schema, objectPathHandler) as Schema;  // Fixed!
+  }
+
   // Ensure default schemas are loaded
   if (
     Object.keys(defaultSchema).length === 0 ||
@@ -147,7 +154,8 @@ export async function loadSchema(version = "latest"): Promise<Schema> {
       ...schemaModule,
       schemaOrg: schemaOrgModule,
     };
-
+    
+    cachedSchema = { schema: combinedSchema, version };
     return new Proxy(combinedSchema, objectPathHandler) as Schema;
   } catch (error) {
     console.error(`Error loading schema: ${error}`);
