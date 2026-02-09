@@ -21,10 +21,18 @@ async function getParser() {
   return cachedParse;
 }
 
-export async function parseCSV(contents: string) {
+/**
+ * Parse CSV or TSV file contents
+ * @param contents - The file contents as a string
+ * @param extension - The file extension (e.g., ".csv" or ".tsv"). Defaults to ".csv"
+ * @returns Object containing columns map and any parsing issues
+ */
+export async function parseCSV(contents: string, extension: string = ".csv") {
   const columns = new ColumnsMap();
   const issues: csvIssue[] = [];
   const normalizedStr = normalizeEOL(contents);
+  const delimiter = extension === ".tsv" ? '\t' : ',';
+  const formatName = extension === ".tsv" ? 'TSV' : 'CSV';
 
   try {
     const parse = await getParser();
@@ -32,6 +40,7 @@ export async function parseCSV(contents: string) {
     const rows: string[][] = parse(normalizedStr, {
       skip_empty_lines: false,
       relax_column_count: true,
+      delimiter: delimiter,
     });
 
     const headers = rows.length ? rows[0] : [];
@@ -85,7 +94,7 @@ export async function parseCSV(contents: string) {
   } catch (error) {
     issues.push({
       issue: "CSVFormattingError",
-      message: (error as Error).message,
+      message: `${formatName} parsing error: ${(error as Error).message}`,
     });
   }
 

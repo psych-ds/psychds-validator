@@ -34,6 +34,13 @@ const CHECKS: CheckFunction[] = [
 ];
 
 /**
+ * Check if a file is a data file (CSV or TSV with "data" suffix)
+ */
+function isDataFile(extension: string, suffix: string): boolean {
+  return (extension === ".csv" || extension === ".tsv") && suffix === "data";
+}
+
+/**
  * Validates a file tree against the Psych-DS schema
  * @param fileTree - The hierarchical structure of files to validate
  * @param options - Validation options and optional event emitter
@@ -50,8 +57,8 @@ export async function validate(
   const schema = await loadSchema(options.schema);
   const issues = new DatasetIssues(schema as unknown as GenericSchema);
 
-  let totalCsvFiles = 0;
-  let processedCsvFiles = 0;
+  let totalDataFiles = 0;
+  let processedDataFiles = 0;
 
   // Signal successful file tree construction
   options.emitter?.emit("build-tree", { success: true });
@@ -62,7 +69,6 @@ export async function validate(
   const ddFile = fileTree.files.find(
     (file: psychDSFile) => file.path === "/dataset_description.json",
   );
-
   let dsContext;
   if (ddFile) {
     options.emitter?.emit("find-metadata", { success: true });
@@ -115,14 +121,15 @@ export async function validate(
 
   let validColumns: Record<string, boolean> = {}
 
+  // Count total data files (CSV and TSV)
   for await (const context of walkFileTree(fileTree, issues, dsContext)) {
-    if (context.extension === ".csv" && context.suffix === "data") {
-      totalCsvFiles++;
+    if (isDataFile(context.extension, context.suffix)) {
+      totalDataFiles++;
     }
   }
 
-  if (totalCsvFiles > 0) {
-    options.emitter?.emit("csv-count-total", { total: totalCsvFiles });
+  if (totalDataFiles > 0) {
+    options.emitter?.emit("csv-count-total", { total: totalDataFiles });
   }
 
   // Process each file in the tree
@@ -147,8 +154,8 @@ export async function validate(
 
     await context.asyncLoads();
 
-    // Track CSV columns for summary
-    if (context.extension === ".csv") {
+    // Track data file columns for summary (CSV and TSV)
+    if (context.extension === ".csv" || context.extension === ".tsv") {
       summary.suggestedColumns = [
         ...new Set([
           ...summary.suggestedColumns,
@@ -156,7 +163,7 @@ export async function validate(
         ]),
       ];
     }
-
+    
     // Run validation checks
     for (const check of CHECKS) {
       await check(schema as unknown as GenericSchema, context);
@@ -169,8 +176,8 @@ export async function validate(
 
     await summary.update(context);
 
-    // Emit events for metadata and CSV validation
-    if (context.extension === ".csv" && context.suffix === "data") {
+    // Emit events for metadata and data file validation
+    if (isDataFile(context.extension, context.suffix)) {
       options.emitter?.emit("check-for-csv", { success: true });
       options.emitter?.emit("metadata-utf8", { success: true });
       emitCheck("metadata-json", ["INVALID_JSON_FORMATTING"]);
@@ -185,22 +192,22 @@ export async function validate(
         "INVALID_OBJECT_TYPE",
         "OBJECT_TYPE_MISSING",
       ]);
-      processedCsvFiles++;
+      processedDataFiles++;
 
       options.emitter?.emit("csv-progress", { 
-        current: processedCsvFiles, 
-        total: totalCsvFiles 
+        current: processedDataFiles, 
+        total: totalDataFiles 
       });
       
-      // Emit progress for each CSV validation step with counter
-      const csvProgress = { current: processedCsvFiles, total: totalCsvFiles };
+      // Emit progress for each data file validation step with counter
+      const dataFileProgress = { current: processedDataFiles, total: totalDataFiles };
       
-      emitCheck("csv-keywords", ["FILENAME_KEYWORD_FORMATTING_ERROR", "FILENAME_UNOFFICIAL_KEYWORD_ERROR"], csvProgress);
-      emitCheck("csv-parse", ["CSV_FORMATTING_ERROR"], csvProgress);
-      emitCheck("csv-header", ["CSV_HEADER_MISSING"], csvProgress);
-      emitCheck("csv-header-repeat", ["CSV_HEADER_REPEATED"], csvProgress);
-      emitCheck("csv-nomismatch", ["CSV_HEADER_LENGTH_MISMATCH"], csvProgress);
-      emitCheck("csv-rowid", ["ROWID_VALUES_NOT_UNIQUE"], csvProgress);
+      emitCheck("csv-keywords", ["FILENAME_KEYWORD_FORMATTING_ERROR", "FILENAME_UNOFFICIAL_KEYWORD_ERROR"], dataFileProgress);
+      emitCheck("csv-parse", ["CSV_FORMATTING_ERROR"], dataFileProgress);
+      emitCheck("csv-header", ["CSV_HEADER_MISSING"], dataFileProgress);
+      emitCheck("csv-header-repeat", ["CSV_HEADER_REPEATED"], dataFileProgress);
+      emitCheck("csv-nomismatch", ["CSV_HEADER_LENGTH_MISMATCH"], dataFileProgress);
+      emitCheck("csv-rowid", ["ROWID_VALUES_NOT_UNIQUE"], dataFileProgress);
     
     }
 
@@ -214,6 +221,7 @@ export async function validate(
     }
   }
 
+
   const extraVars = Object.entries(validColumns)
   .filter(([key, value]) => !value)
   .map(([key]) => key);
@@ -224,7 +232,7 @@ export async function validate(
         ...dsContext.metadataFile,
         evidence:
           `One of the metadata files in your dataset (either dataset_description.json or a sidecar file) 
-          contains a variable in variableMeasured that does not appear in any CSV column headers. Here are the variables in question: [${extraVars}]`,
+          contains a variable in variableMeasured that does not appear in any CSV/TSV column headers. Here are the variables in question: [${extraVars}]`,
       },
     ]);
   }
@@ -244,7 +252,7 @@ export async function validate(
     "OBJECT_TYPE_MISSING",
   ]);
 
-  // CSV validation events
+  // Data file validation events (CSV and TSV)
   emitCheck("csv-keywords", [
     "FILENAME_KEYWORD_FORMATTING_ERROR",
     "FILENAME_UNOFFICIAL_KEYWORD_ERROR",
