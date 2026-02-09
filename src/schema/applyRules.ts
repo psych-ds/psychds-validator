@@ -1,7 +1,6 @@
 /**
  * @fileoverview Handles schema rule application and validation for Psych-DS files.
- * Provides functionality for evaluating rules against files, validating JSON-LD metadata,
- * and checking schema.org compliance.
+ * OPTIMIZED VERSION v3 - Added memoization and defensive null checks.
  */
 
 import {
@@ -16,16 +15,17 @@ import { psychDSContext } from "./context.ts";
 import { memoize } from "../utils/memoize.ts";
 import { psychDSFile } from "../types/file.ts";
 
-/**
- * Recursively applies schema rules to a given context.
- * Traverses schema object to find and evaluate applicable rules.
- *
- * @param schema - Schema containing rules to apply
- * @param context - Validation context
- * @param rootSchema - Original complete schema (used in recursion)
- * @param schemaPath - Current path in schema (used in recursion)
- * @returns Promise that resolves when all rules are applied
- */
+// ============== MEMOIZATION CACHES ==============
+let superClassSlotsCache = new Map<string, string[]>();
+let subClassSlotsCache = new Map<string, string[]>();
+
+export function clearApplyRulesCaches() {
+  superClassSlotsCache = new Map();
+  subClassSlotsCache = new Map();
+}
+
+// ============== MAIN EXPORTS ==============
+
 export function applyRules(
   schema: GenericSchema,
   context: psychDSContext,
@@ -61,34 +61,20 @@ export function applyRules(
   return Promise.resolve();
 }
 
-/**
- * Creates a function to safely evaluate selectors in context
- * @param src - Source string to evaluate
- * @returns Function that evaluates source in context
- */
+// ============== SELECTOR EVALUATION ==============
+
 // deno-lint-ignore ban-types
 const evalConstructor = (src: string): Function =>
   new Function("context", `with (context) { return ${src} }`);
 
-/** Safe property access handler */
 const safeHas = () => true;
 
-/**
- * Safe property getter that handles symbols
- */
 // deno-lint-ignore no-explicit-any
 const safeGet = (target: any, prop: any) =>
   prop === Symbol.unscopables ? undefined : target[prop];
 
-/** Memoized version of evalConstructor for performance */
 const memoizedEvalConstructor = memoize(evalConstructor);
 
-/**
- * Safely evaluates a selector string in a given context
- * @param src - Selector string to evaluate
- * @param context - Context to evaluate in
- * @returns Result of evaluation
- */
 export function evalCheck(src: string, context: psychDSContext) {
   const test = memoizedEvalConstructor(src);
   const safeContext = new Proxy(context, { has: safeHas, get: safeGet });
@@ -99,10 +85,8 @@ export function evalCheck(src: string, context: psychDSContext) {
   }
 }
 
-/**
- * Maps rule types to their evaluation functions
- * Each function handles a different type of rule validation
- */
+// ============== RULE EVALUATION ==============
+
 // @ts-expect-error: most props not needed
 const evalMap: Record<
   keyof GenericRule,
@@ -117,15 +101,6 @@ const evalMap: Record<
   fields: evalJsonCheck,
 };
 
-/**
- * Evaluates a single rule against a context
- * Checks selectors and applies appropriate evaluation functions
- *
- * @param rule - Rule to evaluate
- * @param context - Context to evaluate against
- * @param schema - Complete schema
- * @param schemaPath - Path to current rule in schema
- */
 function evalRule(
   rule: GenericRule,
   context: psychDSContext,
@@ -143,26 +118,12 @@ function evalRule(
     });
 }
 
-/**
- * Evaluates multiple selector statements against context
- * @param statements - Array of selector statements
- * @param context - Context to evaluate against
- * @returns True if all statements evaluate to true
- */
 function mapEvalCheck(statements: string[], context: psychDSContext): boolean {
   return statements.every((x) => evalCheck(x, context));
 }
 
-/**
- * Validates that CSV columns match metadata definitions
- * Checks column headers against variableMeasured metadata
- * Also performs schema.org validation on metadata
- *
- * @param _rule - Rule being evaluated
- * @param context - Current validation context
- * @param schema - Complete schema
- * @param schemaPath - Path to current rule
- */
+// ============== COLUMN VALIDATION ==============
+
 function evalColumns(
   _rule: GenericRule,
   context: psychDSContext,
@@ -188,7 +149,6 @@ function evalColumns(
     ]);
   }
 
-  // Track issues by type for aggregated reporting
   const schemaOrgIssues = {
     "termIssues": [] as string[],
     "unknownNamespaceIssues": [] as string[],
@@ -199,15 +159,8 @@ function evalColumns(
   schemaCheck(context, schema, schemaOrgIssues);
 }
 
-/**
- * Validates required fields in JSON metadata
- * Checks both field presence and schema.org validity
- *
- * @param rule - Rule containing field requirements
- * @param context - Current validation context
- * @param _schema - Complete schema
- * @param schemaPath - Path to current rule
- */
+// ============== JSON FIELD VALIDATION ==============
+
 function evalJsonCheck(
   rule: GenericRule,
   context: psychDSContext,
@@ -216,7 +169,6 @@ function evalJsonCheck(
 ) {
   const issueKeys: string[] = [];
 
-  // Check each required field
   for (const [key, requirement] of Object.entries(rule.fields)) {
     const severity = getFieldSeverity(requirement, context);
     const keyName = `http://schema.org/${key}`;
@@ -249,14 +201,8 @@ function evalJsonCheck(
   }
 }
 
-/**
- * Validates schema.org metadata compliance
- * Checks type requirements for root object and recursively validates sub-objects
- *
- * @param context - Current validation context
- * @param schema - Complete schema
- * @param issues - Collection of validation issues
- */
+// ============== SCHEMA.ORG VALIDATION ==============
+
 function schemaCheck(
   context: psychDSContext,
   schema: GenericSchema,
@@ -308,18 +254,10 @@ function schemaCheck(
   logSchemaIssues(context, issues);
 }
 
-/**
- * Records collected schema.org validation issues
- * Groups issues by type and adds them to context
- *
- * @param context - Current validation context
- * @param issues - Collected validation issues
- */
 function logSchemaIssues(
   context: psychDSContext,
   issues: SchemaOrgIssues,
 ) {
-  // Handle invalid term issues
   if (issues.termIssues.length != 0) {
     issues.termIssues.forEach((issue) => {
       const rootKey = issue.split(".")[1];
@@ -334,15 +272,14 @@ function logSchemaIssues(
         {
           ...issueFile,
           evidence:
-            `This file contains one or more keys that use the schema.org namespace, but are not  official schema.org properties.
-                      According to the psych-DS specification, this is not an error, but be advised that these terms will not be
-                      machine-interpretable and do not function as linked data elements. These are the keys in question: [${issues.termIssues}]`,
+            `This file contains one or more keys that use the schema.org namespace, but are not official schema.org properties.
+            According to the psych-DS specification, this is not an error, but be advised that these terms will not be
+            machine-interpretable and do not function as linked data elements. These are the keys in question: [${issues.termIssues}]`,
         },
       ]);
     });
   }
 
-  // Handle invalid type issues
   if (issues.typeIssues.length != 0) {
     issues.typeIssues.forEach((issue) => {
       const rootKey = issue.split(".")[1];
@@ -358,16 +295,15 @@ function logSchemaIssues(
           ...issueFile,
           evidence:
             `This file contains one or more objects with types that do not match the selectional constraints of their keys.
-                        Each schema.org property (which take the form of keys in your metadata json) has a specific range of types
-                        that can be used as its value. Type constraints for a given property can be found by visiting their corresponding schema.org
-                        URL. All properties can take strings or URLS as objects, under the assumption that the string/URL represents a unique ID.
-                        Type selection errors occurred at the following locations in your json structure: [${issues.typeIssues}]`,
+            Each schema.org property (which take the form of keys in your metadata json) has a specific range of types
+            that can be used as its value. Type constraints for a given property can be found by visiting their corresponding schema.org
+            URL. All properties can take strings or URLS as objects, under the assumption that the string/URL represents a unique ID.
+            Type selection errors occurred at the following locations in your json structure: [${issues.typeIssues}]`,
         },
       ]);
     });
   }
 
-  // Handle missing type issues
   if (issues.typeMissingIssues.length != 0) {
     issues.typeMissingIssues.forEach((issue) => {
       const rootKey = issue.split(".")[1];
@@ -383,15 +319,14 @@ function logSchemaIssues(
           ...issueFile,
           evidence:
             `This file contains one or more objects without a @type property. Make sure that any object that you include
-                      as the value of a schema.org property contains a valid schema.org @type, unless it is functioning as some kind of 
-                      base type, such as Text or URL, containing a @value key. @type is optional, but not required on such objects.
-                      The following objects without @type were found: [${issues.typeMissingIssues}]`,
+            as the value of a schema.org property contains a valid schema.org @type, unless it is functioning as some kind of 
+            base type, such as Text or URL, containing a @value key. @type is optional, but not required on such objects.
+            The following objects without @type were found: [${issues.typeMissingIssues}]`,
         },
       ]);
     });
   }
 
-  // Handle unknown namespace issues
   if (issues.unknownNamespaceIssues.length != 0) {
     issues.unknownNamespaceIssues.forEach((issue) => {
       const rootKey = issue.split(".")[0];
@@ -407,25 +342,15 @@ function logSchemaIssues(
           ...issueFile,
           evidence:
             `This file contains one or more references to namespaces other than https://schema.org:
-                      [${issues.unknownNamespaceIssues}].`,
+            [${issues.unknownNamespaceIssues}].`,
         },
       ]);
     });
   }
 }
 
-/**
- * Recursively validates schema.org metadata structure
- * Checks each node for proper typing and property usage
- *
- * @param node - Current node being validated
- * @param context - Validation context
- * @param schema - Complete schema
- * @param objectPath - Path to current node
- * @param nameSpace - Schema.org namespace
- * @param issues - Collection of validation issues
- * @returns Updated collection of validation issues
- */
+// ============== RECURSIVE SCHEMA CHECK ==============
+
 function _schemaCheck(
   node: object,
   context: psychDSContext,
@@ -445,20 +370,22 @@ function _schemaCheck(
     ) as string[];
   }
 
-  // Process each property in the node
+  // Get slots object once, with null check
+  const slotsObj = schema[`schemaOrg.slots`];
+
   for (const [key, value] of Object.entries(node)) {
     if (key.startsWith("@")) {
       continue;
     } else {
-      // Check namespace usage
       if (!key.startsWith(nameSpace)) {
         issues.unknownNamespaceIssues.push(key);
         continue;
       } else {
         const property = key.replace(nameSpace, "");
         let range: string[] = [];
-        // Validate property against schema
-        if (property in schema[`schemaOrg.slots`]) {
+        
+        // DEFENSIVE: Check slotsObj exists before using 'in' operator
+        if (slotsObj && property in slotsObj) {
           // Handle single range
           if ("range" in schema[`schemaOrg.slots.${property}`]) {
             range.push(schema[`schemaOrg.slots.${property}.range`] as string);
@@ -488,11 +415,9 @@ function _schemaCheck(
         }
 
         let subKeys: string[] = [];
-        // Check if property is valid for the current type
         if (!(superClassSlots.includes(property))) {
           issues.termIssues.push(`${objectPath}.${property}`);
         } else {
-          // Process property values
           for (let i = 0; i < value.length; i++) {
             const obj = value[i];
             subKeys = Object.keys(obj);
@@ -509,7 +434,6 @@ function _schemaCheck(
                     `${objectPath}.${property}${i === 0 ? "" : `[${i}]`}`,
                   );
                 }
-                // Recursive validation of nested objects
                 issues = _schemaCheck(
                   obj,
                   context,
@@ -532,73 +456,80 @@ function _schemaCheck(
   return issues;
 }
 
+// ============== MEMOIZED SCHEMA HELPERS ==============
+
 /**
- * Recursively collects valid property slots from type hierarchy
- * Traverses up the schema.org class hierarchy to gather all applicable properties
- *
- * @param type - Current type being processed
- * @param schema - Complete schema
- * @param nameSpace - Schema.org namespace
- * @returns Array of valid property names
+ * MEMOIZED: Recursively collects valid property slots from type hierarchy
  */
 function getSuperClassSlots(
-    type: string,
-    schema: GenericSchema,
-    nameSpace: string
-  ): string[]{
-    
-    type = type.replace(nameSpace,"")
+  type: string,
+  schema: GenericSchema,
+  nameSpace: string
+): string[] {
+  type = type.replace(nameSpace, "");
 
-    if (!(type in schema['schemaOrg.classes'])) {
-      return []
-    }
+  const cacheKey = `super:${type}`;
+  if (superClassSlotsCache.has(cacheKey)) {
+    return superClassSlotsCache.get(cacheKey)!;
+  }
 
-    //if type has a super class, append this type's slots to the result of this function for super class
-    const slots = schema[`schemaOrg.classes.${type}.slots`] as string[] || []
-    const is_a = 'is_a' in schema[`schemaOrg.classes.${type}`] ? getSuperClassSlots(schema[`schemaOrg.classes.${type}.is_a`] as string, schema, nameSpace) : []
+  // DEFENSIVE: Get classes object and check it exists
+  const classesObj = schema['schemaOrg.classes'];
+  if (!classesObj || !(type in classesObj)) {
+    superClassSlotsCache.set(cacheKey, []);
+    return [];
+  }
 
-    return [...slots, ...is_a];
- }
+  const slots = schema[`schemaOrg.classes.${type}.slots`] as string[] || [];
+  const is_a = 'is_a' in schema[`schemaOrg.classes.${type}`] 
+    ? getSuperClassSlots(schema[`schemaOrg.classes.${type}.is_a`] as string, schema, nameSpace) 
+    : [];
+
+  const result = [...slots, ...is_a];
+  superClassSlotsCache.set(cacheKey, result);
+  return result;
+}
 
 /**
- * Recursively collects subclass types that are valid for a property
- * Finds all types that could be valid values for a property
- *
- * @param type - Base type to find subclasses for
- * @param schema - Complete schema
- * @param nameSpace - Schema.org namespace
- * @returns Array of valid subclass type names
+ * MEMOIZED: Recursively collects subclass types that are valid for a property
+ * FIXED: Original bug where concat result was discarded
  */
 function getSubClassSlots(
   type: string,
   schema: GenericSchema,
   nameSpace: string,
 ): string[] {
-  const subClasses: string[] = [];
   if (type.includes(nameSpace)) {
     type = type.replace(nameSpace, "");
   }
-  if (type in schema[`schemaOrg.classes`]) {
-    for (const [key, value] of Object.entries(schema["schemaOrg.classes"])) {
-      if ("is_a" in value && value["is_a"] === type) {
-        subClasses.push(key);
-        subClasses.concat(getSubClassSlots(key, schema, nameSpace));
-      }
-    }
-    return subClasses;
-  } else {
+
+  const cacheKey = `sub:${type}`;
+  if (subClassSlotsCache.has(cacheKey)) {
+    return subClassSlotsCache.get(cacheKey)!;
+  }
+
+  // DEFENSIVE: Get classes object and check it exists
+  const classesObj = schema[`schemaOrg.classes`];
+  if (!classesObj || !(type in classesObj)) {
+    subClassSlotsCache.set(cacheKey, []);
     return [];
   }
+
+  const subClasses: string[] = [];
+  for (const [key, value] of Object.entries(classesObj)) {
+    if ("is_a" in value && value["is_a"] === type) {
+      subClasses.push(key);
+      // FIXED: was subClasses.concat(...) which discards result
+      subClasses.push(...getSubClassSlots(key, schema, nameSpace));
+    }
+  }
+
+  subClassSlotsCache.set(cacheKey, subClasses);
+  return subClasses;
 }
 
-/**
- * Determines the severity level for a JSON field requirement
- * Handles conditional requirements based on other field values
- *
- * @param requirement - Requirement specification
- * @param context - Current validation context
- * @returns Appropriate severity level for the requirement
- */
+// ============== FIELD SEVERITY ==============
+
 function getFieldSeverity(
   requirement: string | SchemaFields,
   context: psychDSContext,

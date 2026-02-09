@@ -244,10 +244,10 @@ export class psychDSContext implements Context {
 
   /**
    * Extracts valid column names from metadata
-   * Used for CSV header validation
+   * Used for CSV/TSV header validation
    */
   loadValidColumns() {
-    if (this.extension !== ".csv") {
+    if (this.extension !== ".csv" && this.extension !== ".tsv") {
       return;
     }
     const nameSpace = "http://schema.org/";
@@ -276,15 +276,15 @@ export class psychDSContext implements Context {
   }
 
   /**
-   * Loads and validates CSV column data
+   * Loads and validates CSV/TSV column data
    */
   async loadColumns(): Promise<void> {
-    if (this.extension !== ".csv") {
+    if (this.extension !== ".csv" && this.extension !== ".tsv") {
       return;
     }
     let result;
     try {
-      result = await parseCSV(await this.file.text());
+      result = await parseCSV(await this.file.text(), this.extension);
     } catch (_error) {
       result = new Map<string, string[]>() as ColumnsMap;
     }
@@ -299,16 +299,20 @@ export class psychDSContext implements Context {
    */
   reportCSVIssues(issues: csvIssue[]) {
     issues.forEach((issue) => {
+      console.log('report issue')
+      console.log(issue)
       if (issue.message) {
         this.issues.addSchemaIssue(
           issue.issue,
           [{ ...this.file, evidence: issue.message as string }],
         );
       } else {
+        console.log('get reported')
         this.issues.addSchemaIssue(
           issue.issue,
           [this.file],
         );
+        console.log(this)
       }
     });
   }
