@@ -46,11 +46,20 @@ export async function parseCSV(contents: string, extension: string = ".csv") {
     const headers = rows.length ? rows[0] : [];
 
     if (new Set(headers).size !== headers.length) {
-      issues.push({ issue: "CSVHeaderRepeated", message: null });
+      const seen = new Set<string>();
+      const duplicates = new Set<string>();
+      for (const h of headers) {
+        if (seen.has(h)) duplicates.add(h);
+        seen.add(h);
+      }
+      issues.push({
+        issue: "CSVHeaderRepeated",
+        message: `Duplicate column headers found: [${[...duplicates].join(", ")}]`,
+      });
     }
 
     if (headers.length === 0) {
-      issues.push({ issue: "CSVHeaderMissing", message: null });
+      issues.push({ issue: "CSVHeaderMissing", message: `${formatName} file contains no headers` });
     } else {
       const numDataRows = rows.length - 1;
       
@@ -87,7 +96,16 @@ export async function parseCSV(contents: string, extension: string = ".csv") {
         const rowIds = columns["row_id"];
         const rowIdSet = new Set(rowIds);
         if (rowIdSet.size !== rowIds.length) {
-          issues.push({ issue: "RowidValuesNotUnique", message: null });
+          const seen = new Set<string>();
+          const duplicates = new Set<string>();
+          for (const id of rowIds) {
+            if (seen.has(id)) duplicates.add(id);
+            seen.add(id);
+          }
+          issues.push({
+            issue: "RowidValuesNotUnique",
+            message: `Duplicate row_id values found: [${[...duplicates].join(", ")}]`,
+          });
         }
       }
     }
