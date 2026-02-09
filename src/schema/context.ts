@@ -299,20 +299,16 @@ export class psychDSContext implements Context {
    */
   reportCSVIssues(issues: csvIssue[]) {
     issues.forEach((issue) => {
-      console.log('report issue')
-      console.log(issue)
       if (issue.message) {
         this.issues.addSchemaIssue(
           issue.issue,
           [{ ...this.file, evidence: issue.message as string }],
         );
       } else {
-        console.log('get reported')
         this.issues.addSchemaIssue(
           issue.issue,
           [this.file],
         );
-        console.log(this)
       }
     });
   }

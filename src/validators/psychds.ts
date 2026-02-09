@@ -100,23 +100,30 @@ export async function validate(
   const rulesRecord: Record<string, boolean> = {};
   findFileRules(schema, rulesRecord);
 
+  const failedEvents = new Set<string>();
+
   /**
    * Helper to emit check events based on presence of specific issues
    * @param event_name - Name of event to emit
    * @param issue_keys - Array of issue keys to check for
    */
   const emitCheck = (
-    event_name: string, 
-    issue_keys: string[], 
-    progress?: { current: number; total: number }
+    event_name: string,
+    issue_keys: string[],
+    progress?: { current: number; total: number },
+    failOnly: boolean = false,
   ) => {
     const fails = issue_keys.filter((issue) => issues.hasIssue({ key: issue }));
-  
-    const eventData = fails.length > 0
-      ? { success: false, issue: issues.get(fails[0]), progress }
-      : { success: true, progress };
-  
-    options.emitter?.emit(event_name, eventData);
+
+    if (fails.length > 0) {
+      options.emitter?.emit(event_name, {
+        success: false,
+        issue: issues.get(fails[0]),
+        progress,
+      });
+    } else if (!failOnly) {
+      options.emitter?.emit(event_name, { success: true, progress });
+    }
   };
 
   let validColumns: Record<string, boolean> = {}
@@ -202,12 +209,12 @@ export async function validate(
       // Emit progress for each data file validation step with counter
       const dataFileProgress = { current: processedDataFiles, total: totalDataFiles };
       
-      emitCheck("csv-keywords", ["FILENAME_KEYWORD_FORMATTING_ERROR", "FILENAME_UNOFFICIAL_KEYWORD_ERROR"], dataFileProgress);
-      emitCheck("csv-parse", ["CSV_FORMATTING_ERROR"], dataFileProgress);
-      emitCheck("csv-header", ["CSV_HEADER_MISSING"], dataFileProgress);
-      emitCheck("csv-header-repeat", ["CSV_HEADER_REPEATED"], dataFileProgress);
-      emitCheck("csv-nomismatch", ["CSV_HEADER_LENGTH_MISMATCH"], dataFileProgress);
-      emitCheck("csv-rowid", ["ROWID_VALUES_NOT_UNIQUE"], dataFileProgress);
+      emitCheck("csv-keywords", ["FILENAME_KEYWORD_FORMATTING_ERROR", "FILENAME_UNOFFICIAL_KEYWORD_ERROR"], dataFileProgress, true);
+      emitCheck("csv-parse", ["CSV_FORMATTING_ERROR"], dataFileProgress, true);
+      emitCheck("csv-header", ["CSV_HEADER_MISSING"], dataFileProgress, true);
+      emitCheck("csv-header-repeat", ["CSV_HEADER_REPEATED"], dataFileProgress, true);
+      emitCheck("csv-nomismatch", ["CSV_HEADER_LENGTH_MISMATCH"], dataFileProgress, true);
+      emitCheck("csv-rowid", ["ROWID_VALUES_NOT_UNIQUE"], dataFileProgress, true);
     
     }
 
