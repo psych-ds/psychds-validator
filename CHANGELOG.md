@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.1](https://github.com/psych-ds/psychds-validator/compare/v1.5.0...v1.5.1) (2026-02-09)
+
+
+### Bug Fixes
+
+* Added better error handling and troubleshooting text for instances where the [@context](https://github.com/context) url is either incorrect or missing an http/https at the beginning ([ee550a5](https://github.com/psych-ds/psychds-validator/commit/ee550a5c8e78aaaa87fc83c7e3a84bc3e023f3b3))
+
+
+### Performance Improvements
+
+* Add memoization to schema validation, fix schema caching bug ([38a816a](https://github.com/psych-ds/psychds-validator/commit/38a816a7ddc76b879fb4eb26f403c863ab0e5cde))
+
 ## [1.5.0](https://github.com/psych-ds/psychds-validator/compare/v1.4.0...v1.5.0) (2025-01-29)
 
 
