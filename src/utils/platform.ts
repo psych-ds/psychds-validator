@@ -66,16 +66,37 @@ export const path = {
     _path ? _path.basename(path, ext) : path.split("/").pop() || "",
 
   /**
-   * Joins all given path segments together.
+   * Joins path segments into a normalized POSIX path.
    *
-   * Always produces POSIX-style paths and collapses duplicate slashes. The
-   * validator addresses files by their POSIX path (SEP is "/" everywhere) and
-   * builds those paths by joining from a "/" root, so delegating to the native
-   * `_path.join` would yield backslashes on Windows, and the previous
-   * `paths.join("/")` fallback turned `join("/", "x")` into `"//x"` — either of
-   * which breaks the validator's exact-path file lookups.
+   * The validator looks files up by exact POSIX path, so this needs to:
+   *   - always use "/" (native path.join gives "\" on Windows, which won't match)
+   *   - collapse duplicate slashes (we join from a "/" root, so join("/", "x")
+   *     would otherwise give "//x")
+   *   - resolve "." and ".." segments
+   *
+   * The last one is easy to miss. The previous string-join version left ".."
+   * in place, so join(file, "..", "..", "tests") produced a path like
+   * ".../deno.test.ts/../../tests/foo.json", and the OS failed with ENOTDIR
+   * trying to step into a file as if it were a directory.
+   *
+   * Rules: a leading "/" stays absolute; "" and "." are dropped; ".." pops the
+   * previous segment (but can't escape an absolute root); an empty result is "/".
    */
-  join: (...paths: string[]) => paths.join("/").replace(/\/+/g, "/") || "/",
+  join: (...paths: string[]) => {
+    const joined = paths.join("/");
+    const isAbsolute = joined.startsWith("/");
+    const out: string[] = [];
+    for (const seg of joined.split("/")) {
+      if (seg === "" || seg === ".") continue;
+      if (seg === "..") {
+        if (out.length > 0 && out[out.length - 1] !== "..") out.pop();
+        else if (!isAbsolute) out.push("..");
+      } else {
+        out.push(seg);
+      }
+    }
+    return ((isAbsolute ? "/" : "") + out.join("/")) || "/";
+  },
 
   /** Returns the directory name of a path */
   dirname: (path: string) =>
