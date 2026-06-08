@@ -65,8 +65,17 @@ export const path = {
   basename: (path: string, ext?: string) =>
     _path ? _path.basename(path, ext) : path.split("/").pop() || "",
 
-  /** Joins all given path segments together */
-  join: (...paths: string[]) => _path ? _path.join(...paths) : paths.join("/"),
+  /**
+   * Joins all given path segments together.
+   *
+   * Always produces POSIX-style paths and collapses duplicate slashes. The
+   * validator addresses files by their POSIX path (SEP is "/" everywhere) and
+   * builds those paths by joining from a "/" root, so delegating to the native
+   * `_path.join` would yield backslashes on Windows, and the previous
+   * `paths.join("/")` fallback turned `join("/", "x")` into `"//x"` — either of
+   * which breaks the validator's exact-path file lookups.
+   */
+  join: (...paths: string[]) => paths.join("/").replace(/\/+/g, "/") || "/",
 
   /** Returns the directory name of a path */
   dirname: (path: string) =>
