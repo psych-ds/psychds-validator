@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.5.1](https://github.com/psych-ds/psychds-validator/compare/v1.5.0...v1.5.1) (2026-06-08)
+
+
+### Bug Fixes
+
+* Added better error handling and troubleshooting text for instances where the [@context](https://github.com/context) url is either incorrect or missing an http/https at the beginning ([ee550a5](https://github.com/psych-ds/psychds-validator/commit/ee550a5c8e78aaaa87fc83c7e3a84bc3e023f3b3))
+* added necessary release-please manifest ([ef5b815](https://github.com/psych-ds/psychds-validator/commit/ef5b8156e4f367386cd8770ad0d77636872a0643))
+* new path joiner caused test fail ([fda1da1](https://github.com/psych-ds/psychds-validator/commit/fda1da1a882b24c7ea5599459683372f242ea172))
+* **platform:** make path.join POSIX-only and collapse duplicate slashes ([53680ce](https://github.com/psych-ds/psychds-validator/commit/53680ce4bebfcf4d7375e2f5e30d69dccf21dd3e))
+* prevent premature success events for CSV checks in --useEvents mode ([510ec44](https://github.com/psych-ds/psychds-validator/commit/510ec44a4c0cf3b632af0ed85ebfc77ad595c98c))
+
+
+### Performance Improvements
+
+* Add memoization to schema validation, fix schema caching bug ([38a816a](https://github.com/psych-ds/psychds-validator/commit/38a816a7ddc76b879fb4eb26f403c863ab0e5cde))
+
 ## [1.5.0](https://github.com/psych-ds/psychds-validator/compare/v1.4.0...v1.5.0) (2025-01-29)
 
 
