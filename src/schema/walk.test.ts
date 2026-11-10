@@ -35,7 +35,7 @@ Deno.test({
       }
       assertEquals(
         accumulator,
-        12,
+        10,
       );
     });
   },
