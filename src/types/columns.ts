@@ -1,42 +1,16 @@
-// Allow ColumnsMap to be accessed as an object too
-export class ColumnsMap extends Map<string, string[]> {
-  [key: string]: Map<string, string[]>[keyof Map<string, string[]>] | string[];
+// ColumnsMap stores parsed CSV/TSV columns keyed by their header name.
+//
+// It is backed by a null-prototype object rather than a Map so that header
+// names which collide with built-in prototype members — most importantly
+// "size" (a getter-only accessor on Map.prototype), but also "constructor",
+// "hasOwnProperty", and similar — can be assigned as ordinary properties
+// without throwing a TypeError under strict mode. Downstream code reads
+// columns purely via property access (`columns[header]`,
+// `Object.keys(columns)`, `header in columns`), so a plain null-prototype
+// object is both sufficient and safer than a Map. See issue #108.
+export class ColumnsMap {
+  [key: string]: string[];
   constructor() {
-    super();
-    const columns = new Map<string, string[]>() as ColumnsMap;
-    return columns;
-    //return new Proxy<ColumnsMap>(columns, columnMapAccessorProxy)
+    return Object.create(null);
   }
 }
-/*
-  // Proxy handler to implement ColumnsMap type
-  export const columnMapAccessorProxy = {
-    get: function (
-      target: ColumnsMap,
-      prop: symbol | string,
-      receiver: ColumnsMap,
-    ) {
-      const value = Reflect.get(target, prop, receiver)
-      if (typeof value === 'function') return value.bind(target)
-      if (prop === Symbol.iterator) return target[Symbol.iterator].bind(target)
-      if (value === undefined) return target.get(prop as string)
-      return value
-    },
-    set: function (target: ColumnsMap, prop: string, value: string[]) {
-      target.set(prop, value)
-      return true
-    },
-    has: function (target: ColumnsMap, prop: string) {
-      return Reflect.has(target, prop)
-    },
-    ownKeys: function (target: ColumnsMap) {
-      return Array.from(target.keys())
-    },
-    getOwnPropertyDescriptor: function (
-      target: ColumnsMap,
-      prop: string,
-    ): PropertyDescriptor {
-      return { enumerable: true, configurable: true, value: target.get(prop) }
-    },
-  }
-  */

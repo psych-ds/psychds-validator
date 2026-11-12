@@ -7,20 +7,13 @@ Deno.test("ColumnsMap", async (t) => {
     columns["a"] = ["0"];
     assertEquals(columns["a"], ["0"]);
   });
-  await t.step("preserves insertion order with property access", () => {
+  await t.step("preserves insertion order of string keys", () => {
     const columns = new ColumnsMap();
     columns["a"] = ["0"];
-    columns[2] = ["1"];
-    columns[1] = ["2"];
-    columns["b"] = ["3"];
-
-    // Check that the order is still correct with iteration
-    let iteration = 0;
-    for (const [_, val] of columns) {
-      assertEquals(val, [iteration.toString()]);
-      iteration += 1;
-    }
-    assertEquals(columns.a, ["0"]);
+    columns["c"] = ["1"];
+    columns["b"] = ["2"];
+    assertEquals(Object.keys(columns), ["a", "c", "b"]);
+    assertEquals(columns["a"], ["0"]);
   });
   await t.step("keys are accessible with Object.keys", () => {
     const columns = new ColumnsMap();
@@ -28,5 +21,11 @@ Deno.test("ColumnsMap", async (t) => {
     columns["b"] = ["1"];
     columns[0] = ["2"];
     assertEquals(Object.keys(columns), ["0", "a", "b"]);
+  });
+  await t.step("reserved names like 'size' can be used as columns (issue #108)", () => {
+    const columns = new ColumnsMap();
+    columns["size"] = ["0"];
+    assertEquals(columns["size"], ["0"]);
+    assertEquals(Object.keys(columns), ["size"]);
   });
 });

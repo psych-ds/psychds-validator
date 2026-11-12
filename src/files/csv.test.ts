@@ -14,7 +14,7 @@ Deno.test("Test parseCSV", async (t) => {
       .then((text) => parseCSV(text))
       .catch((_error) => {
         return {
-          "columns": new Map<string, string[]>() as ColumnsMap,
+          "columns": new ColumnsMap(),
           "issues": [],
         };
       });
@@ -32,7 +32,7 @@ Deno.test("Test parseCSV", async (t) => {
       .then((text) => parseCSV(text))
       .catch((_error) => {
         return {
-          "columns": new Map<string, string[]>() as ColumnsMap,
+          "columns": new ColumnsMap(),
           "issues": [],
         };
       });
@@ -49,7 +49,7 @@ Deno.test("Test parseCSV", async (t) => {
       .then((text) => parseCSV(text))
       .catch((_error) => {
         return {
-          "columns": new Map<string, string[]>() as ColumnsMap,
+          "columns": new ColumnsMap(),
           "issues": [],
         };
       });
@@ -66,7 +66,7 @@ Deno.test("Test parseCSV", async (t) => {
       .then((text) => parseCSV(text))
       .catch((_error) => {
         return {
-          "columns": new Map<string, string[]>() as ColumnsMap,
+          "columns": new ColumnsMap(),
           "issues": [],
         };
       });
@@ -83,11 +83,17 @@ Deno.test("Test parseCSV", async (t) => {
     .then((text) => parseCSV(text))
     .catch((_error) => {
       return {
-        "columns": new Map<string, string[]>() as ColumnsMap,
+        "columns": new ColumnsMap(),
         "issues": [],
       };
     });
     assertEquals(result["issues"][0]["issue"], "CSVHeaderRepeated");
   })
+  await t.step("column named 'size' is valid (issue #108)", async () => {
+    const result = await parseCSV("id,size\n1,10\n2,20");
+    assertEquals(result["issues"], []);
+    assertEquals(Object.keys(result["columns"]).includes("size"), true);
+    assertEquals((result["columns"] as ColumnsMap)["size"], ["10", "20"]);
+  });
 });
 
