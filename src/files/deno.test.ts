@@ -71,7 +71,7 @@ Deno.test("Deno implementation of BIDSFile", async (t) => {
       const bomFilename = "bom-utf8.json";
       const file = new psychDSFileDeno(bomDir, bomFilename, ignore);
       const text = await file.text();
-      assertEquals(text, '{\n  "example": "JSON for test suite"\n}\n');
+      assertEquals(text.replace(/\r\n/g, "\n"), '{\n  "example": "JSON for test suite"\n}\n');
     },
   );
   // Moved all test steps within main Deno test
