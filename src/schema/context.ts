@@ -286,7 +286,7 @@ export class psychDSContext implements Context {
     try {
       result = await parseCSV(await this.file.text(), this.extension);
     } catch (_error) {
-      result = new Map<string, string[]>() as ColumnsMap;
+      result = { columns: new ColumnsMap(), issues: [] };
     }
     this.columns = result["columns"] as ColumnsMap;
     this.reportCSVIssues(result["issues"] as csvIssue[]);
