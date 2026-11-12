@@ -10,8 +10,10 @@ Deno.test("Deno implementation of BIDSFile", async (t) => {
   await initializePlatform();
 
   // Use this file for testing file behavior
-  const testUrl = import.meta.url;
-  const testPath = testUrl.slice("file://".length);
+  // file:// URL -> path; slicing "file://" leaves "/D:/..." on Windows, so use
+  // fileURLToPath and normalize separators to "/" to match path.join below.
+  const { fileURLToPath } = await import("node:url");
+  const testPath = fileURLToPath(import.meta.url).replace(/\\/g, "/");
   const testDir = path.dirname(testPath);
   const testFilename = path.basename(testPath);
   const ignore = new FileIgnoreRules([]);
