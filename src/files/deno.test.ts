@@ -10,8 +10,10 @@ Deno.test("Deno implementation of BIDSFile", async (t) => {
   await initializePlatform();
 
   // Use this file for testing file behavior
-  const testUrl = import.meta.url;
-  const testPath = testUrl.slice("file://".length);
+  // file:// URL -> path; slicing "file://" leaves "/D:/..." on Windows, so use
+  // fileURLToPath and normalize separators to "/" to match path.join below.
+  const { fileURLToPath } = await import("node:url");
+  const testPath = fileURLToPath(import.meta.url).replace(/\\/g, "/");
   const testDir = path.dirname(testPath);
   const testFilename = path.basename(testPath);
   const ignore = new FileIgnoreRules([]);
@@ -69,7 +71,7 @@ Deno.test("Deno implementation of BIDSFile", async (t) => {
       const bomFilename = "bom-utf8.json";
       const file = new psychDSFileDeno(bomDir, bomFilename, ignore);
       const text = await file.text();
-      assertEquals(text, '{\n  "example": "JSON for test suite"\n}\n');
+      assertEquals(text.replace(/\r\n/g, "\n"), '{\n  "example": "JSON for test suite"\n}\n');
     },
   );
   // Moved all test steps within main Deno test
