@@ -97,8 +97,6 @@ try {
       // External dependencies required by the package
       dependencies: {
         "jsonld": "8.3.2",
-        "node-fetch": "^3.3.0",
-        "undici": "5.28.4",
         "winston": "^3.8.2",
         "commander": "^9.4.0",
         "chalk": "^4.1.2",
