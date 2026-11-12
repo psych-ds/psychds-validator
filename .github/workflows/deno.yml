@@ -7,6 +7,30 @@ on:
     branches: [main]
 
 jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Cache dependencies
+        run: deno cache --allow-scripts=npm:esbuild@0.20.2 src/index.ts
+
+      - name: Run Deno tests
+        run: deno test --allow-all
+
+      - name: Type check
+        run: deno check "src/**/*.ts"
+
   release-please:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
