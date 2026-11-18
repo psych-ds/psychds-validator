@@ -3,7 +3,10 @@
     "test": "deno test -A"
   },
   "lint": {
-    "exclude": ["npm/"]
+    "exclude": ["npm/"],
+    "rules": {
+      "exclude": ["no-import-prefix", "no-unversioned-import"]
+    }
   },
   "test": {
     "exclude": ["npm/"]
