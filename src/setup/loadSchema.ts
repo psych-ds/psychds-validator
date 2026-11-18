@@ -43,7 +43,7 @@ async function loadDefaultSchemas(): Promise<void> {
       defaultSchema = await fetchJSON("/defaultSchema.json") || {};
       defaultSchemaOrg = await fetchJSON("/defaultSchemaOrg.json") || {};
     } else {
-      const dirname = getDirname();
+      const dirname = await getDirname();
       defaultSchema = JSON.parse(
         await readFile(path.join(dirname, "defaultSchema.json")),
       );
@@ -64,14 +64,18 @@ async function loadDefaultSchemas(): Promise<void> {
  *
  * @returns Directory path string, or empty string if unable to determine
  */
-function getDirname(): string {
+async function getDirname(): Promise<string> {
   if (isNode && typeof __dirname !== "undefined") {
     // CommonJS environment
     return __dirname;
   } else if (isDeno || (isNode && typeof __dirname === "undefined")) {
-    // Deno or Node.js ESM
-    const url = new URL(import.meta.url);
-    return path.dirname(url.pathname);
+    // Deno or Node.js ESM: convert the module's file:// URL to a real path.
+    // `new URL(...).pathname` yields "/D:/..." on Windows, which is not a valid
+    // filesystem path; fileURLToPath handles that, and we normalize separators
+    // to "/" so the POSIX-style path.join used below matches on every platform.
+    // Imported dynamically so the browser bundle never resolves node:url.
+    const { fileURLToPath } = await import("node:url");
+    return path.dirname(fileURLToPath(import.meta.url).replace(/\\/g, "/"));
   } else {
     console.warn("Unable to determine directory in browser environment");
     return "";
