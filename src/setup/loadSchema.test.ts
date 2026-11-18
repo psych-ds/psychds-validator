@@ -173,11 +173,11 @@ Deno.test({
       // the bundled schema was read from disk and actually used.
       assertExists(schema.rules, "rules should load from the bundled default");
       assert(
-        "common" in (schema.rules.files as Record<string, unknown>),
+        "common" in (schema.rules.files as unknown as Record<string, unknown>),
         "rules.files should be populated from the bundled default schema",
       );
       assert(
-        Object.keys(schema.objects as Record<string, unknown>).length > 0,
+        Object.keys(schema.objects as unknown as Record<string, unknown>).length > 0,
         "objects should be populated from the bundled default schema",
       );
       assertExists(
