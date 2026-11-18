@@ -84,7 +84,7 @@ export async function validate(
         "InvalidJsonFormatting",
         [{
           ...ddFile,
-          evidence: (_error as unknown as any).message,
+          evidence: (_error as Error).message,
         } as IssueFile],
       );
       options.emitter?.emit("metadata-json", {
@@ -99,8 +99,6 @@ export async function validate(
   // Track which schema rules are satisfied by files in the dataset
   const rulesRecord: Record<string, boolean> = {};
   findFileRules(schema, rulesRecord);
-
-  const failedEvents = new Set<string>();
 
   /**
    * Helper to emit check events based on presence of specific issues
@@ -126,7 +124,7 @@ export async function validate(
     }
   };
 
-  let validColumns: Record<string, boolean> = {}
+  const validColumns: Record<string, boolean> = {}
 
   // Count total data files (CSV and TSV)
   for await (const context of walkFileTree(fileTree, issues, dsContext)) {
@@ -230,7 +228,7 @@ export async function validate(
 
 
   const extraVars = Object.entries(validColumns)
-  .filter(([key, value]) => !value)
+  .filter(([_key, value]) => !value)
   .map(([key]) => key);
 
   if (extraVars.length != 0){

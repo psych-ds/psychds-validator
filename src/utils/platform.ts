@@ -18,7 +18,6 @@ declare global {
       };
     };
   }
-  // deno-lint-ignore no-var
   var process: NodeJS.Process;
 
   /**
