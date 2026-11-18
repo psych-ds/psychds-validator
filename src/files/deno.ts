@@ -14,7 +14,6 @@ import { issueInfo, psychDSFile } from "../types/file.ts";
 import { FileTree } from "../types/filetree.ts";
 import { requestReadPermission } from "../setup/requestPermissions.ts";
 import { FileIgnoreRules, readPsychDSIgnore } from "./ignore.ts";
-import { exit } from "node:process";
 
 /**
  * Custom error for UTF-16 character detection in UTF-8 decoding
@@ -216,7 +215,7 @@ async function _readFileTree(
         }
       }
     }
-    catch(error){
+    catch(_error){
       console.log("The path for your dataset must point to a directory, not a file. Please input a directory for your dataset input.")
     }
     
