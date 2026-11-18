@@ -1,4 +1,9 @@
-import { assert, assertEquals, assertRejects } from "../deps/asserts.ts";
+import {
+  assert,
+  assertEquals,
+  assertExists,
+  assertRejects,
+} from "../deps/asserts.ts";
 import { loadSchema } from "./loadSchema.ts";
 
 // Store the original fetch function
@@ -137,6 +142,52 @@ Deno.test({
     });
   },
   // Disable resource and op sanitizers to allow for mocked fetch
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+// Offline fallback: when the versioned schema can't be fetched (e.g. no
+// network), loadSchema must fall back to the default schema bundled in the
+// package. Loading those bundled files resolves the module's own directory via
+// getDirname(), which is the step that broke on Windows (deriving a path from
+// import.meta.url left "/D:/..."). loadDefaultSchemas() swallows a read failure
+// and leaves the defaults empty, so the existing tests pass even when that path
+// is broken because their mocked fetch succeeds and the defaults are never
+// used. This test forces the fetch to fail so the bundled schema must load and
+// be used, failing on any platform where the module directory can't be
+// resolved or the bundled files aren't found.
+Deno.test({
+  name: "falls back to the bundled default schema when offline",
+  fn: async () => {
+    const mockedFetch = globalThis.fetch;
+    // Simulate being offline: every request rejects.
+    globalThis.fetch = () => Promise.reject(new Error("offline"));
+    try {
+      // A version not requested by the other tests, so the module-level cache
+      // can't satisfy this call with a previously fetched schema.
+      const schema = await loadSchema("9.9.9");
+
+      // If getDirname() produced an unreadable path (the Windows bug) or the
+      // bundled files weren't packaged, loadDefaultSchemas() would have left
+      // these empty and the fallback would carry nothing. Non-empty here means
+      // the bundled schema was read from disk and actually used.
+      assertExists(schema.rules, "rules should load from the bundled default");
+      assert(
+        "common" in (schema.rules.files as Record<string, unknown>),
+        "rules.files should be populated from the bundled default schema",
+      );
+      assert(
+        Object.keys(schema.objects as Record<string, unknown>).length > 0,
+        "objects should be populated from the bundled default schema",
+      );
+      assertExists(
+        (schema.schemaOrg as Record<string, unknown>).classes,
+        "schemaOrg should fall back to the bundled default schemaOrg",
+      );
+    } finally {
+      globalThis.fetch = mockedFetch;
+    }
+  },
   sanitizeResources: false,
   sanitizeOps: false,
 });
