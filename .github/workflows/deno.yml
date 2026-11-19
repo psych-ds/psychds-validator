@@ -1,4 +1,4 @@
-name: Build, Test, and Publish
+name: CI and Release
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
     branches: [main]
 
 jobs:
+  # Lint, type-check, and test on every push and PR, across platforms.
   test:
     name: Test (${{ matrix.os }})
     strategy:
@@ -20,20 +21,67 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.x
+          deno-version: v2.x
 
       - name: Cache dependencies
         run: deno cache --allow-scripts=npm:esbuild@0.20.2 src/index.ts
 
-      - name: Run Deno tests
-        run: deno test --allow-all
+      - name: Lint
+        run: deno lint
 
       - name: Type check
         run: deno check "src/**/*.ts"
 
+      - name: Test
+        run: deno test --allow-all
+
+  # Verify the dnt (Deno -> Node) build and the generated npm package's tests
+  # on every push and PR, so publishing can't be the first time the build runs.
+  build-npm:
+    name: Build npm package (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
+
+      - name: Cache dependencies
+        run: deno cache --allow-scripts=npm:esbuild@0.20.2 src/index.ts
+
+      - name: Install build dependencies
+        run: npm install jsonld @types/jsonld
+
+      - name: Get version from package.json
+        id: get_version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Build npm package
+        run: deno run -A build_npm.ts ${{ steps.get_version.outputs.VERSION }}
+
+      - name: Run npm package tests
+        run: npm ci && npm test
+        working-directory: npm
+
+  # Open/update the release PR on pushes to main; sets release_created=true
+  # on the push where a release PR is merged.
   release-please:
-    if: github.event_name == 'pull_request'
+    name: Release Please
+    needs: [test, build-npm]
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       version: ${{ steps.release.outputs.version }}
@@ -47,60 +95,40 @@ jobs:
           path: .
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  build-test-publish:
-    needs: [release-please]
+  # Build and publish to npm only when release-please actually cut a release.
+  publish:
+    name: Publish to npm
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.x
+          deno-version: v2.x
 
-      - name: Cache Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.deno
-          key: ${{ runner.OS }}-deno-${{ hashFiles('**/deno.json', 'src/deps/*.ts') }}
-
-      - name: Cache Dependencies 2
+      - name: Cache dependencies
         run: deno cache --allow-scripts=npm:esbuild@0.20.2 src/index.ts
 
-      - name: Run Deno Tests
-        run: deno test --allow-all
-
-      - name: Run Type Check
-        run: deno check **/*.ts
-
-      - name: Install dependencies
+      - name: Install build dependencies
         run: npm install jsonld @types/jsonld
 
       - name: Get version from package.json
         id: get_version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
-      - name: Build NPM Package
-        run: deno run --allow-read --allow-write --allow-env --allow-net --allow-run --allow-sys --allow-ffi --allow-hrtime -A build_npm.ts ${{ steps.get_version.outputs.VERSION }}
+      - name: Build npm package
+        run: deno run -A build_npm.ts ${{ steps.get_version.outputs.VERSION }}
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Install Dependencies
-        run: npm ci
-        working-directory: npm
-
-      - name: Run NPM Tests
-        run: npm test
-        working-directory: npm
-
-      - name: Publish to NPM
-        if: needs.release-please.outputs.release_created == 'true'
+      - name: Publish to npm
         run: npm publish
         working-directory: npm
         env:
