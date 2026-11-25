@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.3](https://github.com/psych-ds/psychds-validator/compare/v1.5.2...v1.5.3) (2026-11-19)
+
+
+### Bug Fixes
+
+* resolve deno lint findings ([4aae511](https://github.com/psych-ds/psychds-validator/commit/4aae511a9371e75437d59edd327f7c4355f66abb))
+
 ## [1.5.2](https://github.com/psych-ds/psychds-validator/compare/v1.5.1...v1.5.2) (2026-11-12)
 
 Maintenance release — no source changes. Republished with `node-fetch` and `undici` removed from the package's declared dependencies; the removal committed for 1.5.1 had not been reflected in the published package.
